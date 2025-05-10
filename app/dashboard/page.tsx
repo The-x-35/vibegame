@@ -95,6 +95,11 @@ export default function DashboardPage() {
         <div>
           <h1 className="text-3xl font-bold">Your Dashboard</h1>
           <p className="text-muted-foreground">Manage and monitor all your game projects</p>
+          {user.wallet && (
+            <p className="mt-2 text-sm font-mono break-all">
+              <span className="font-medium">Wallet:</span> {user.wallet}
+            </p>
+          )}
         </div>
         
         <Button size="lg">

@@ -5,6 +5,7 @@ import Navbar from '@/components/layout/navbar';
 import Footer from '@/components/layout/footer';
 import { ThemeProvider } from '@/components/theme-provider';
 import { PrivyProvider } from '@/components/privy-provider';
+import { GoogleProvider } from '@/components/google-provider';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -27,11 +28,13 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <PrivyProvider>
-            <Navbar />
-            <main className="flex-1 pt-16">{children}</main>
-            <Footer />
-          </PrivyProvider>
+          <GoogleProvider>
+            <PrivyProvider>
+              <Navbar />
+              <main className="flex-1 pt-16">{children}</main>
+              <Footer />
+            </PrivyProvider>
+          </GoogleProvider>
         </ThemeProvider>
       </body>
     </html>
