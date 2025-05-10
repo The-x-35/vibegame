@@ -12,6 +12,7 @@ export default function Navbar() {
   const { user, isLoading } = useUser();
   const [isOpen, setIsOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -30,6 +31,21 @@ export default function Navbar() {
   const authenticatedLinks = [
     { href: "/dashboard", label: "Dashboard", icon: <DashboardIcon className="w-4 h-4 mr-2" /> },
   ];
+
+  // Add handler for sign out that clears token and redirects
+  const handleSignOut = () => {
+    localStorage.removeItem('appToken');
+    window.location.href = '/login';
+  };
+
+  // Handler to copy wallet address to clipboard and show feedback
+  const handleCopy = () => {
+    if (user?.wallet) {
+      navigator.clipboard.writeText(user.wallet);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
 
   return (
     <header 
@@ -67,11 +83,20 @@ export default function Navbar() {
               ))}
             </div>
 
-            <div className="pl-4 ml-4 border-l">
+            <div className="pl-4 ml-4 border-l flex items-center space-x-2">
               {isLoading ? (
                 <div className="h-8 w-8 rounded-full bg-muted animate-pulse" />
               ) : user ? (
-                <UserButton />
+                <>
+                  <span
+                    className="text-sm font-mono cursor-pointer select-all"
+                    onClick={handleCopy}
+                    title={copied ? 'Copied!' : 'Click to copy'}
+                  >
+                    {copied ? 'Copied!' : `${user.wallet.slice(0,6)}...${user.wallet.slice(-4)}`}
+                  </span>
+                  <Button variant="ghost" onClick={handleSignOut}>Sign Out</Button>
+                </>
               ) : (
                 <Button asChild>
                   <Link href="/login">Sign In</Link>
@@ -127,11 +152,23 @@ export default function Navbar() {
           </div>
           
           <div className="mt-auto">
-            {user ? (
+            {isLoading ? (
+              <div className="h-8 w-8 rounded-full bg-muted animate-pulse" />
+            ) : user ? (
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <UserButton />
-                </div>
+                <span
+                  className="text-sm font-mono cursor-pointer select-all"
+                  onClick={handleCopy}
+                  title={copied ? 'Copied!' : 'Click to copy'}
+                >
+                  {copied ? 'Copied!' : `${user.wallet.slice(0,6)}...${user.wallet.slice(-4)}`}
+                </span>
+                <Button variant="ghost" onClick={() => {
+                  setIsOpen(false);
+                  handleSignOut();
+                }}>
+                  Sign Out
+                </Button>
               </div>
             ) : (
               <Button 

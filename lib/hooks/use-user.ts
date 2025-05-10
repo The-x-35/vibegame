@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { usePathname } from "next/navigation";
 import { jwtDecode } from "jwt-decode";
 
 // Define the shape of the decoded application JWT payload
@@ -20,6 +21,7 @@ type User = {
 };
 
 export function useUser() {
+  const pathname = usePathname();
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -45,7 +47,7 @@ export function useUser() {
       setUser(null);
     }
     setIsLoading(false);
-  }, []);
+  }, [pathname]);
 
   return { user, isLoading };
 }

@@ -59,6 +59,23 @@ export default function LoginPage() {
       localStorage.setItem('appToken', token);
       const decoded = jwtDecode<AppTokenPayload>(token);
       setUserData(decoded);
+      // Upsert user record in Postgres via API
+      try {
+        // Decode Google credential to extract profile info
+        const googleInfo = jwtDecode<{ name?: string; email?: string; picture?: string }>(response.credential);
+        await fetch('/api/users', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            wallet: decoded.wallet,
+            email: googleInfo.email || decoded.sub,
+            name: googleInfo.name || '',
+            profileImage: googleInfo.picture || ''
+          }),
+        });
+      } catch (err) {
+        console.error('Failed to upsert user to DB', err);
+      }
       router.push('/dashboard');
     } catch (e: any) {
       setError(e.message || 'Sign-in failed');
@@ -89,6 +106,7 @@ export default function LoginPage() {
                   onSuccess={handleGoogleSuccess}
                   onError={handleGoogleError}
                   useOneTap
+                  use_fedcm_for_prompt={false}
                 />
               )}
             </div>
