@@ -7,6 +7,7 @@ import { ProjectCard, type Project } from "@/components/project-card";
 import { Button } from "@/components/ui/button";
 import { PlusCircle, Gamepad2 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import CreateProjectDialog from "@/components/create-project-dialog";
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -102,10 +103,7 @@ export default function DashboardPage() {
           )}
         </div>
         
-        <Button size="lg">
-          <PlusCircle className="mr-2 h-4 w-4" />
-          Create New Project
-        </Button>
+        <CreateProjectDialog onCreate={(project) => setProjects(prev => [project, ...prev])} />
       </div>
       
       <Tabs defaultValue="all" className="w-full">
@@ -144,10 +142,7 @@ export default function DashboardPage() {
               <Gamepad2 className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
               <h3 className="text-lg font-medium mb-2">No projects yet</h3>
               <p className="text-muted-foreground mb-6">Start by creating your first game project</p>
-              <Button>
-                <PlusCircle className="mr-2 h-4 w-4" />
-                Create New Project
-              </Button>
+              <CreateProjectDialog onCreate={(project) => setProjects(prev => [project, ...prev])} />
             </div>
           )}
         </TabsContent>
