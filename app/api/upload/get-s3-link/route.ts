@@ -13,6 +13,7 @@ const s3 = new S3Client({
 });
 
 // Generate signed URL for file upload/update
+//TODO: add authentication
 export async function POST(req: NextRequest) {
     const { filename, userId, fileId } = await req.json();
 

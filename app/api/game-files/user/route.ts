@@ -1,8 +1,5 @@
-import type { NextApiRequest, NextApiResponse } from "next";
+import { NextRequest, NextResponse } from "next/server";
 import { S3Client, ListObjectsV2Command } from "@aws-sdk/client-s3";
-import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
-import { NextResponse } from "next/server";
-import { NextRequest } from "next/server";
 
 const s3 = new S3Client({
     region: process.env.AWS_REGION!,
@@ -12,12 +9,17 @@ const s3 = new S3Client({
     },
 });
 
-// Get all files in the bucket
 //TODO: add authentication
+// Get all files in the user's folder from s3
 export async function GET(req: NextRequest) {
+    const userId = req.nextUrl.searchParams.get("userId");
+    if (!userId) {
+        return NextResponse.json({ error: "Missing userId parameter" }, { status: 400 });
+    }
+
     const command = new ListObjectsV2Command({
         Bucket: process.env.S3_BUCKET_NAME!,
-        Prefix: "",
+        Prefix: userId,
     });
     const response = await s3.send(command);
     return NextResponse.json(response.Contents, { status: 200 });
