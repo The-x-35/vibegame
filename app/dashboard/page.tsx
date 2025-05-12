@@ -22,57 +22,58 @@ export default function DashboardPage() {
   }, [user, isLoading, router]);
 
   useEffect(() => {
-    // Simulating fetching projects from the database
-    // In a real app, you would fetch from your API
-    setTimeout(() => {
-      const dummyProjects: Project[] = [
-        {
-          id: "1",
-          name: "Space Adventure",
-          description: "A thrilling space shooter game with multiple levels and power-ups.",
-          isPublic: true,
-          createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
-          updatedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
-          thumbnail: "https://images.pexels.com/photos/1274260/pexels-photo-1274260.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1"
-        },
-        {
-          id: "2",
-          name: "Platformer Challenge",
-          description: "Jump and run through challenging obstacles in this platformer game.",
-          isPublic: false,
-          createdAt: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000),
-          updatedAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000),
-          thumbnail: "https://images.pexels.com/photos/371924/pexels-photo-371924.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1"
-        },
-        {
-          id: "3",
-          name: "Puzzle Master",
-          description: "Test your brain with this challenging puzzle collection.",
-          isPublic: true,
-          createdAt: new Date(Date.now() - 21 * 24 * 60 * 60 * 1000),
-          updatedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
-        },
-        {
-          id: "4",
-          name: "Racing Rivals",
-          description: "Compete against AI or friends in this fast-paced racing game.",
-          isPublic: false,
-          createdAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
-          updatedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
-          thumbnail: "https://images.pexels.com/photos/3165335/pexels-photo-3165335.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1"
-        },
-      ];
+    // Fetch the authenticated user's projects from the API
+    if (!isLoading && user) {
+      (async () => {
+        setIsProjectsLoading(true);
+        try {
+          const response = await fetch(`/api/projects?wallet=${user.wallet}`);
+          if (!response.ok) {
+            throw new Error(`Failed to fetch projects: ${response.statusText}`);
+          }
+          const data = await response.json();
+          // Map API rows to Project type
+          const fetched: Project[] = data.projects.map((p: any) => ({
+            id: p.id,
+            url: p.url,
+            name: p.name,
+            description: p.description,
+            isPublic: p.is_public,
+            createdAt: new Date(p.created_at),
+            updatedAt: new Date(p.updated_at),
+            thumbnail: undefined,
+          }));
+          setProjects(fetched);
+        } catch (err) {
+          console.error('Error fetching user projects:', err);
+        } finally {
+          setIsProjectsLoading(false);
+        }
+      })();
+    }
+  }, [user, isLoading]);
 
-      setProjects(dummyProjects);
-      setIsProjectsLoading(false);
-    }, 1000);
-  }, []);
-
-  const handleToggleVisibility = (id: string, isPublic: boolean) => {
-    // In a real app, you would call your API to update the project
-    setProjects(projects.map(project => 
-      project.id === id ? { ...project, isPublic } : project
-    ));
+  const handleToggleVisibility = async (id: string, isPublic: boolean) => {
+    try {
+      const response = await fetch('/api/projects', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, isPublic }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to update project visibility');
+      }
+      const updated = data.project;
+      setProjects(prev => prev.map(p =>
+        p.id === updated.id
+          ? { ...p, isPublic: updated.is_public, updatedAt: new Date(updated.updated_at) }
+          : p
+      ));
+    } catch (err) {
+      console.error('Failed to update project visibility', err);
+      alert(err instanceof Error ? err.message : 'Error updating project');
+    }
   };
 
   const getPublicProjects = () => projects.filter(p => p.isPublic);
@@ -130,10 +131,11 @@ export default function DashboardPage() {
           ) : projects.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {projects.map(project => (
-                <ProjectCard 
-                  key={project.id} 
-                  project={project} 
+                <ProjectCard
+                  key={project.id}
+                  project={project}
                   onToggleVisibility={handleToggleVisibility}
+                  onClick={() => router.push(`/projects/${project.id}`)}
                 />
               ))}
             </div>
@@ -164,10 +166,11 @@ export default function DashboardPage() {
           ) : getPublicProjects().length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {getPublicProjects().map(project => (
-                <ProjectCard 
-                  key={project.id} 
-                  project={project} 
+                <ProjectCard
+                  key={project.id}
+                  project={project}
                   onToggleVisibility={handleToggleVisibility}
+                  onClick={() => router.push(`/projects/${project.id}`)}
                 />
               ))}
             </div>
@@ -198,10 +201,11 @@ export default function DashboardPage() {
           ) : getPrivateProjects().length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {getPrivateProjects().map(project => (
-                <ProjectCard 
-                  key={project.id} 
-                  project={project} 
+                <ProjectCard
+                  key={project.id}
+                  project={project}
                   onToggleVisibility={handleToggleVisibility}
+                  onClick={() => router.push(`/projects/${project.id}`)}
                 />
               ))}
             </div>

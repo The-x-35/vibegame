@@ -3,6 +3,22 @@
 import React, { useEffect, useState } from "react";
 import Navbar from "@/components/layout/navbar";
 import SuggestionCard from "@/components/suggestion-card";
+import { useRouter } from "next/navigation";
+import { useUser } from "@/lib/hooks/use-user";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogFooter,
+  DialogTitle,
+  DialogDescription,
+  DialogClose
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 
 // Game template interface
 interface GameTemplate {
@@ -15,80 +31,76 @@ interface GameTemplate {
 export default function GamesPage() {
   const [templates, setTemplates] = useState<GameTemplate[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const { user } = useUser();
+  const router = useRouter();
+  const [selectedTemplate, setSelectedTemplate] = useState<GameTemplate | null>(null);
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [cloneName, setCloneName] = useState("");
+  const [cloneDescription, setCloneDescription] = useState("");
+  const [clonePublic, setClonePublic] = useState(false);
 
   useEffect(() => {
-    // In a real implementation, we would fetch from database
-    // For now, we'll use the static data provided
-    setTemplates([
-      {
-        id: "1",
-        name: "Ball Game",
-        url: "https://raw.githubusercontent.com/SendArcade/alpha-www/main/public/games/BallGame.sb3",
-        description: "A very simple ball game."
-      },
-      {
-        id: "2",
-        name: "3D Ping Pong",
-        url: "https://raw.githubusercontent.com/SendArcade/alpha-www/main/public/games/3DPingPong.sb3",
-        description: "Experience a dynamic 3D ping pong challenge with realistic physics."
-      },
-      {
-        id: "3",
-        name: "Brick Breaker",
-        url: "https://raw.githubusercontent.com/SendArcade/alpha-www/main/public/games/BrickBreaker.sb3",
-        description: "Break through walls of bricks with precision and exciting power-ups."
-      },
-      {
-        id: "4",
-        name: "Endless Runner",
-        url: "https://raw.githubusercontent.com/SendArcade/alpha-www/main/public/games/EndlessRunnerGames.sb3",
-        description: "Race through an endless course full of obstacles and non-stop action."
-      },
-      {
-        id: "5",
-        name: "Flappy Bird",
-        url: "https://raw.githubusercontent.com/SendArcade/alpha-www/main/public/games/FlappyBird.sb3",
-        description: "Guide your bird through challenging gaps in this addictive arcade classic."
-      },
-      {
-        id: "6",
-        name: "Hill Climb Racing",
-        url: "https://raw.githubusercontent.com/SendArcade/alpha-www/main/public/games/HillClimbRacing.sb3",
-        description: "Conquer rugged terrains and steep hills in this thrilling driving game."
-      },
-      {
-        id: "7",
-        name: "Maze Game",
-        url: "https://raw.githubusercontent.com/SendArcade/alpha-www/main/public/games/MazeGame.sb3",
-        description: "Navigate intricate mazes and test your puzzle-solving skills."
-      },
-      {
-        id: "8",
-        name: "Maze Runner Mario",
-        url: "https://raw.githubusercontent.com/SendArcade/alpha-www/main/public/games/MazeRunnerMario.sb3",
-        description: "Embark on a maze adventure with a fun twist reminiscent of classic Mario."
-      },
-      {
-        id: "9",
-        name: "Memory Card Game",
-        url: "https://raw.githubusercontent.com/SendArcade/alpha-www/main/public/games/MemoryCardGame.sb3",
-        description: "Challenge your memory with an engaging and fast-paced card matching game."
-      },
-      {
-        id: "10",
-        name: "Space Shooter",
-        url: "https://raw.githubusercontent.com/SendArcade/alpha-www/main/public/games/SpaceShooter.sb3",
-        description: "Pilot your spaceship and blast through waves of enemy forces in space."
-      },
-      {
-        id: "11",
-        name: "Whack-A-Mole",
-        url: "https://raw.githubusercontent.com/SendArcade/alpha-www/main/public/games/whackAMole.sb3",
-        description: "Test your reflexes in a fast-paced game where quick hits are key."
+    // Fetch templates from the database API
+    (async () => {
+      try {
+        const response = await fetch('/api/templates');
+        if (!response.ok) {
+          throw new Error(`Failed to fetch templates: ${response.statusText}`);
+        }
+        const data: GameTemplate[] = await response.json();
+        setTemplates(data);
+      } catch (error) {
+        console.error(error);
+      } finally {
+        setIsLoading(false);
       }
-    ]);
-    setIsLoading(false);
+    })();
   }, []);
+
+  useEffect(() => {
+    if (selectedTemplate) {
+      setCloneName(selectedTemplate.name);
+      setCloneDescription(selectedTemplate.description);
+      setClonePublic(false);
+    }
+  }, [selectedTemplate]);
+
+  const handleCloneTemplate = (template: GameTemplate) => {
+    if (!user) {
+      router.push('/login');
+      return;
+    }
+    setSelectedTemplate(template);
+    setIsFormOpen(true);
+  };
+
+  const handleSubmitClone = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user || !selectedTemplate) return;
+    try {
+      const response = await fetch('/api/projects', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          wallet: user.wallet,
+          url: selectedTemplate.url,
+          name: cloneName,
+          description: cloneDescription,
+          isPublic: clonePublic,
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to clone project');
+      }
+      const projectId = data.project.id;
+      setIsFormOpen(false);
+      router.push(`/editor/${projectId}`);
+    } catch (err) {
+      console.error(err);
+      alert(err instanceof Error ? err.message : 'Error cloning project');
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -116,22 +128,49 @@ export default function GamesPage() {
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {templates.map((t) => (
-              <SuggestionCard
-                key={t.id}
-                embedUrl={`https://alpha-gui.vercel.app/embed.html?autoplay&project_url=${encodeURIComponent(
-                  t.url
-                )}`}
-                name={t.name}
-                description={t.description}
-                onOpen={() => window.open(
-                  `https://alpha-gui.vercel.app/?project_url=${encodeURIComponent(t.url)}`,
-                  "_blank"
-                )}
-              />
-            ))}
-          </div>
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {templates.map((t) => (
+                <SuggestionCard
+                  key={t.id}
+                  embedUrl={`https://alpha-gui.vercel.app/embed.html?autoplay&project_url=${encodeURIComponent(
+                    t.url
+                  )}`}
+                  name={t.name}
+                  description={t.description}
+                  onOpen={() => handleCloneTemplate(t)}
+                />
+              ))}
+            </div>
+            <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Clone Game</DialogTitle>
+                  <DialogDescription>Customize your cloned game details</DialogDescription>
+                </DialogHeader>
+                <form onSubmit={handleSubmitClone} className="grid gap-4 py-4">
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="clone-name" className="text-right">Name</Label>
+                    <Input id="clone-name" className="col-span-3" value={cloneName} onChange={(e) => setCloneName(e.target.value)} required />
+                  </div>
+                  <div className="grid grid-cols-4 items-start gap-4">
+                    <Label htmlFor="clone-description" className="text-right pt-2">Description</Label>
+                    <Textarea id="clone-description" className="col-span-3" value={cloneDescription} onChange={(e) => setCloneDescription(e.target.value)} required />
+                  </div>
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="clone-public" className="text-right">Public</Label>
+                    <Switch id="clone-public" checked={clonePublic} onCheckedChange={setClonePublic} className="col-span-3" />
+                  </div>
+                  <DialogFooter>
+                    <DialogClose asChild>
+                      <Button variant="outline">Cancel</Button>
+                    </DialogClose>
+                    <Button type="submit">Clone</Button>
+                  </DialogFooter>
+                </form>
+              </DialogContent>
+            </Dialog>
+          </>
         )}
       </div>
     </div>

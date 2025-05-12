@@ -4,18 +4,26 @@ import React from 'react';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { TowerControl as GameController } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 type SuggestionCardProps = {
   embedUrl: string;
   name: string;
   description: string;
-  onOpen: () => void;
+  onOpen?: () => void;
+  fullScreen?: boolean;
 };
 
-export default function SuggestionCard({ embedUrl, name, description, onOpen }: SuggestionCardProps) {
+export default function SuggestionCard({ embedUrl, name, description, onOpen, fullScreen }: SuggestionCardProps) {
   return (
-    <Card className="overflow-hidden shadow-sm hover:shadow-md transition-all duration-200 border border-border/50 group">
-      <div className="relative h-48 bg-muted overflow-hidden">
+    <Card className={cn(
+      "overflow-hidden shadow-sm hover:shadow-md transition-all duration-200 border border-border/50 group",
+      fullScreen && "fixed inset-0 m-0 rounded-none"
+    )}>
+      <div className={cn(
+        "relative bg-muted overflow-hidden",
+        fullScreen ? "w-full h-full" : "h-48"
+      )}>
         <iframe
           src={embedUrl}
           title={name}
@@ -38,15 +46,17 @@ export default function SuggestionCard({ embedUrl, name, description, onOpen }: 
         </div>
       </CardContent>
       
-      <CardFooter className="p-4 pt-0">
-        <Button 
-          onClick={onOpen} 
-          className="w-full group-hover:bg-green-600 group-hover:text-white transition-colors"
-          variant="outline"
-        >
-          Edit Game
-        </Button>
-      </CardFooter>
+      {onOpen && !fullScreen && (
+        <CardFooter className="p-4 pt-0">
+          <Button
+            onClick={onOpen}
+            className="w-full group-hover:bg-green-600 group-hover:text-white transition-colors"
+            variant="outline"
+          >
+            Edit Game
+          </Button>
+        </CardFooter>
+      )}
     </Card>
   );
 }

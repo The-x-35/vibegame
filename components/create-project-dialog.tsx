@@ -53,6 +53,7 @@ export default function CreateProjectDialog({ onCreate }: CreateProjectDialogPro
     }
     const newProject: Project = {
       id: Date.now().toString(),
+      url,
       name,
       description,
       isPublic: false,

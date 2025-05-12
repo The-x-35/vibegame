@@ -99,3 +99,11 @@ export async function getGameById(id: string) {
   const result = await query('SELECT * FROM games WHERE id = $1', [id]);
   return result[0];
 }
+
+// Add a function to get all game templates
+export async function getTemplates() {
+  return query(
+    'SELECT id, name, url, description FROM templates ORDER BY created_at',
+    []
+  );
+}

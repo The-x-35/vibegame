@@ -2,12 +2,14 @@
 
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Share2, Lock, Edit, Eye } from "lucide-react";
+import { Share2, Lock as LockIcon, Edit, Eye } from "lucide-react";
 import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
+import { cn } from "@/lib/utils";
 
 export interface Project {
   id: string;
+  url: string;
   name: string;
   description: string;
   isPublic: boolean;
@@ -19,28 +21,36 @@ export interface Project {
 interface ProjectCardProps {
   project: Project;
   onToggleVisibility?: (id: string, isPublic: boolean) => void;
+  onClick?: () => void;
 }
 
-export function ProjectCard({ project, onToggleVisibility }: ProjectCardProps) {
-  const handleToggleVisibility = () => {
-    if (onToggleVisibility) {
-      onToggleVisibility(project.id, !project.isPublic);
-    }
+export function ProjectCard({ project, onToggleVisibility, onClick }: ProjectCardProps) {
+  const handleToggle = () => {
+    onToggleVisibility?.(project.id, !project.isPublic);
   };
 
+  // Preview embed URL
+  const embedUrl = `https://alpha-gui.vercel.app/embed.html?autoplay&project_url=${encodeURIComponent(
+    project.url
+  )}`;
+
   return (
-    <Card className="overflow-hidden hover:shadow-md transition-all duration-200 border border-border/50">
-      <div className="relative aspect-video bg-muted">
-        {project.thumbnail ? (
-          <div 
-            className="w-full h-full bg-cover bg-center"
-            style={{ backgroundImage: `url(${project.thumbnail})` }}
-          />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-secondary/30 to-primary/10">
-            <span className="text-xl font-bold text-foreground/30">{project.name.substring(0, 2).toUpperCase()}</span>
-          </div>
-        )}
+    <Card
+      onClick={onClick}
+      className={cn(
+        "group overflow-hidden hover:shadow-md transition-all duration-200 border border-border/50",
+        onClick && "cursor-pointer"
+      )}
+    >
+      <div className="relative aspect-video bg-muted overflow-hidden">
+        <iframe
+          src={embedUrl}
+          title={project.name}
+          className="w-full h-full"
+          frameBorder="0"
+          loading="lazy"
+        />
+        <div className="absolute inset-0 bg-black/10 group-hover:bg-black/0 transition-all duration-300" />
         <div className="absolute top-2 right-2">
           {project.isPublic ? (
             <div className="bg-green-500/20 text-green-500 text-xs px-2 py-1 rounded-full flex items-center">
@@ -49,13 +59,13 @@ export function ProjectCard({ project, onToggleVisibility }: ProjectCardProps) {
             </div>
           ) : (
             <div className="bg-amber-500/20 text-amber-500 text-xs px-2 py-1 rounded-full flex items-center">
-              <Lock className="w-3 h-3 mr-1" />
+              <LockIcon className="w-3 h-3 mr-1" />
               Private
             </div>
           )}
         </div>
       </div>
-      
+
       <CardHeader className="pb-2">
         <div className="flex justify-between items-start">
           <div>
@@ -66,28 +76,24 @@ export function ProjectCard({ project, onToggleVisibility }: ProjectCardProps) {
           </div>
         </div>
       </CardHeader>
-      
+
       <CardContent className="pb-2">
         <p className="text-sm text-muted-foreground line-clamp-2">{project.description}</p>
       </CardContent>
-      
+
       <CardFooter className="flex justify-between border-t pt-3 mt-2">
-        <Button size="sm" variant="outline" asChild>
+        <Button size="sm" variant="outline" asChild onClick={(e) => e.stopPropagation()}>
           <Link href={`/editor/${project.id}`}>
             <Edit className="w-4 h-4 mr-1" />
             Edit
           </Link>
         </Button>
-        
+
         <div className="flex gap-2">
-          <Button 
-            size="sm" 
-            variant="secondary" 
-            onClick={handleToggleVisibility}
-          >
+          <Button size="sm" variant="secondary" onClick={(e) => { e.stopPropagation(); handleToggle(); }}>
             {project.isPublic ? (
               <>
-                <Lock className="w-4 h-4 mr-1" />
+                <LockIcon className="w-4 h-4 mr-1" />
                 Make Private
               </>
             ) : (
@@ -97,9 +103,9 @@ export function ProjectCard({ project, onToggleVisibility }: ProjectCardProps) {
               </>
             )}
           </Button>
-          
+
           {project.isPublic && (
-            <Button size="sm" variant="outline" asChild>
+            <Button size="sm" variant="outline" asChild onClick={(e) => e.stopPropagation()}>
               <Link href={`/projects/${project.id}`}>
                 <Share2 className="w-4 h-4" />
               </Link>
