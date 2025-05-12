@@ -3,7 +3,7 @@ import { jwtVerify } from "jose";
 import { AppTokenPayload } from "./types";
 
 // Secret key for verifying tokens - should be stored in environment variables
-const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key";
+const JWT_SECRET = process.env.JWT_SECRET;
 
 /**
  * Verifies a JWT token's validity and returns the decoded payload
