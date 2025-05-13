@@ -12,9 +12,11 @@ type SuggestionCardProps = {
   description: string;
   onOpen?: () => void;
   fullScreen?: boolean;
+  /** optional custom height class for non-fullscreen mode */
+  heightClass?: string;
 };
 
-export default function SuggestionCard({ embedUrl, name, description, onOpen, fullScreen }: SuggestionCardProps) {
+export default function SuggestionCard({ embedUrl, name, description, onOpen, fullScreen, heightClass }: SuggestionCardProps) {
   return (
     <Card className={cn(
       "overflow-hidden shadow-sm hover:shadow-md transition-all duration-200 border border-border/50 group",
@@ -22,7 +24,7 @@ export default function SuggestionCard({ embedUrl, name, description, onOpen, fu
     )}>
       <div className={cn(
         "relative bg-muted overflow-hidden",
-        fullScreen ? "w-full h-full" : "h-48"
+        fullScreen ? "w-full h-full" : heightClass ?? "h-48"
       )}>
         <iframe
           src={embedUrl}
@@ -31,7 +33,7 @@ export default function SuggestionCard({ embedUrl, name, description, onOpen, fu
           frameBorder="0"
           loading="lazy"
         />
-        <div className="absolute inset-0 bg-black/10 group-hover:bg-black/0 transition-all duration-300" />
+        <div className="absolute inset-0 bg-black/10 group-hover:bg-black/0 transition-all duration-300 pointer-events-none" />
       </div>
       
       <CardContent className="p-4">

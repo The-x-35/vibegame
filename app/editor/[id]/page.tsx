@@ -1,25 +1,24 @@
 import { notFound } from 'next/navigation';
-import Link from 'next/link';
+import SuggestionCard from '@/components/suggestion-card';
 import { query } from '@/lib/db';
-import { Button } from '@/components/ui/button';
-import { ArrowLeft } from 'lucide-react';
-import EditorRedirect from '@/components/editor-redirect';
 
 interface ProjectRow {
   id: string;
   url: string;
   name: string;
   description: string;
-  creator: string;
 }
 
-export default async function ProjectPage({ params }: { params: { id: string } }) {
+export default async function EditorPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
+
   const result = await query(
-    `SELECT p.id, p.url, p.name, p.description, u.name AS creator
-       FROM projects p
-       JOIN users u ON p.wallet = u.wallet
-       WHERE p.id = $1;`,
-    [params.id]
+    `SELECT id, url, name, description FROM projects WHERE id = $1`,
+    [id]
   );
 
   if (result.rowCount === 0) {
@@ -27,25 +26,16 @@ export default async function ProjectPage({ params }: { params: { id: string } }
   }
 
   const project: ProjectRow = result.rows[0];
-  const url = `https://alpha-gui.vercel.app/?project_url=${encodeURIComponent(
-    project.url
-  )}`;
+  const embedUrl = `https://alpha-gui.vercel.app/?project_url=${encodeURIComponent(project.url)}`;
 
-  // Open editor in new tab
   return (
-    <>
-      <EditorRedirect url={url} />
-      <div className="container mx-auto px-4 py-10">
-        <div className="mb-6">
-          <Button variant="ghost" asChild>
-            <Link href="/dashboard" className="flex items-center text-muted-foreground hover:text-foreground">
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to Dashboard
-            </Link>
-          </Button>
-        </div>
-        <p>Opening editor in a new tab...</p>
-      </div>
-    </>
+    <div className="container mx-auto py-8">
+      <SuggestionCard
+        embedUrl={embedUrl}
+        name={project.name}
+        description={project.description}
+        heightClass="h-[90vh]"
+      />
+    </div>
   );
-} 
+}
