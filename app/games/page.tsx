@@ -78,15 +78,17 @@ export default function GamesPage() {
     e.preventDefault();
     if (!user || !selectedTemplate) return;
     try {
-      const response = await fetch('/api/projects', {
+      const response = await fetch('/api/projects/clone', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify({
-          wallet: user.wallet,
-          url: selectedTemplate.url,
+          projectId: selectedTemplate.id,
           name: cloneName,
           description: cloneDescription,
           isPublic: clonePublic,
+          wallet: user.wallet,
         }),
       });
       const data = await response.json();

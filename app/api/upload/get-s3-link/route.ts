@@ -48,9 +48,10 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: "User not authorised to upload to this file" }, { status: 401 });
     }
 
-    // If fileId is provided, we're updating an existing file
-    // Otherwise, we're creating a new file with timestamp
-    const key = fileId ? `${userId}/${fileId}` : `${userId}/${filename.replace(".sb3", "")}-${Date.now()}.sb3`;
+    // Determine S3 key: if updating, use provided fileId directly; otherwise create new key with timestamp
+    const key = fileId
+        ? fileId
+        : `${userId}/${filename.replace(".sb3", "")}-${Date.now()}.sb3`;
 
     const command = new PutObjectCommand({
         Bucket: process.env.S3_BUCKET_NAME!,

@@ -1,6 +1,7 @@
 import { jwtDecode } from "jwt-decode";
-import { jwtVerify } from "jose";
+import { jwtVerify, decodeProtectedHeader } from "jose";
 import { AppTokenPayload } from "./types";
+import { Buffer } from "buffer";
 
 // Secret key for verifying tokens - should be stored in environment variables
 const JWT_SECRET = process.env.JWT_SECRET;
@@ -12,6 +13,19 @@ const JWT_SECRET = process.env.JWT_SECRET;
  * @returns Decoded token payload or null if invalid
  */
 export async function verifyToken(token: string): Promise<AppTokenPayload | null> {
+    if (!JWT_SECRET) {
+        console.error("Missing JWT_SECRET environment variable; cannot verify tokens");
+        return null;
+    }
+    // Debug: log that secret is loaded and inspect its length
+    console.log(`verifyToken: JWT_SECRET loaded (length=${JWT_SECRET.length})`);
+    // Debug: log the token header to verify algorithm
+    try {
+        const header = decodeProtectedHeader(token);
+        console.log('verifyToken: token header', header);
+    } catch (e) {
+        console.error('verifyToken: failed to decode token header', e);
+    }
     try {
         // Basic structure validation with jwt-decode
         let decoded: AppTokenPayload;
@@ -26,14 +40,31 @@ export async function verifyToken(token: string): Promise<AppTokenPayload | null
         // Verify token signature and expiration
         try {
             const encoder = new TextEncoder();
-            const secretKey = encoder.encode(JWT_SECRET);
+            let payloadResult: unknown;
+            try {
+                // Try verifying with UTF-8 encoded secret
+                const secretKeyUtf8 = encoder.encode(JWT_SECRET);
+                const { payload } = await jwtVerify(token, secretKeyUtf8, {
+                    algorithms: ["HS256"],
+                });
+                payloadResult = payload;
+            } catch (utf8Error) {
+                try {
+                    // Try verifying with Base64-decoded secret
+                    const rawKey = Buffer.from(JWT_SECRET, "base64");
+                    const secretKeyBase64 = new Uint8Array(rawKey);
+                    const { payload } = await jwtVerify(token, secretKeyBase64, {
+                        algorithms: ["HS256"],
+                    });
+                    payloadResult = payload;
+                } catch (base64Error) {
+                    console.error("Token signature verification failed:", utf8Error);
+                    return null;
+                }
+            }
 
-            const { payload } = await jwtVerify(token, secretKey, {
-                algorithms: ["HS256"], // Use the algorithm that matches how your tokens are signed
-            });
-
-            // Cast to unknown first then to AppTokenPayload to avoid the type error
-            const verifiedPayload = payload as unknown as AppTokenPayload;
+            // Cast to AppTokenPayload
+            const verifiedPayload = (payloadResult as unknown) as AppTokenPayload;
 
             // Check if the required fields are present
             if (!verifiedPayload.wallet || !verifiedPayload.userId) {
