@@ -15,6 +15,7 @@ export const API_ENDPOINTS = {
 export const ALPHA_GUI = {
     BASE_URL: 'https://alpha-gui.vercel.app',
     EMBED_URL: 'https://alpha-gui.vercel.app/embed.html',
+    SEND_TOKEN_CA: 'SENDdRQtYMWaQrBroBrJ2Q53fgVuq95CV9UPGEvpCxa'
 } as const;
 
 // Website URLs

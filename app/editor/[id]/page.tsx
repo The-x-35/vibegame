@@ -2,6 +2,9 @@ import { notFound } from 'next/navigation';
 import SuggestionCard from '@/components/suggestion-card';
 import { query } from '@/lib/db';
 import { ALPHA_GUI } from '@/global/constant';
+import { Button } from '@/components/ui/button';
+import { Rocket } from 'lucide-react';
+import Link from 'next/link';
 
 interface ProjectRow {
   id: string;
@@ -31,6 +34,14 @@ export default async function EditorPage({
 
   return (
     <div className="container mx-auto py-8">
+      <div className="flex justify-end mb-4">
+        <Button asChild>
+          <Link href={`/projects/${project.id}`}>
+            <Rocket className="mr-2 h-4 w-4" />
+            Deploy Project
+          </Link>
+        </Button>
+      </div>
       <SuggestionCard
         embedUrl={embedUrl}
         name={project.name}
