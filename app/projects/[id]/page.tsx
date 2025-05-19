@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { query } from '@/lib/db';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Edit } from 'lucide-react';
+import { ALPHA_GUI } from '@/global/constant';
 
 interface ProjectRow {
   id: string;
@@ -26,7 +27,7 @@ export default async function ProjectPage({ params }: { params: { id: string } }
   }
 
   const project: ProjectRow = result.rows[0];
-  const embedUrl = `https://alpha-gui.vercel.app/embed.html?autoplay&project_url=${encodeURIComponent(
+  const embedUrl = `${ALPHA_GUI.EMBED_URL}?project_url=${encodeURIComponent(
     project.url
   )}`;
 

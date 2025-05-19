@@ -7,6 +7,7 @@ import { GoogleLogin, CredentialResponse } from '@react-oauth/google';
 import { jwtDecode } from 'jwt-decode';
 import { Button } from "@/components/ui/button";
 import { Mail, Wallet } from "lucide-react";
+import { API_ENDPOINTS } from '@/global/constant';
 
 // Define payload type for our app token
 interface AppTokenPayload {
@@ -48,7 +49,7 @@ export default function LoginPage() {
       setError('Google credential not received'); setIsLoading(false); return;
     }
     try {
-      const res = await fetch('https://mrgbnbr5uk.execute-api.eu-central-1.amazonaws.com/auth/google/verify', {
+      const res = await fetch(API_ENDPOINTS.AUTH_VERIFY_ENDPOINT, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${response.credential}` }
       });

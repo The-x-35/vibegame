@@ -19,6 +19,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
+import { ALPHA_GUI } from '@/global/constant';
 
 // Game template interface
 interface GameTemplate {
@@ -135,7 +136,7 @@ export default function GamesPage() {
               {templates.map((t) => (
                 <SuggestionCard
                   key={t.id}
-                  embedUrl={`https://alpha-gui.vercel.app/embed.html?autoplay&project_url=${encodeURIComponent(
+                  embedUrl={`${ALPHA_GUI.EMBED_URL}?project_url=${encodeURIComponent(
                     t.url
                   )}`}
                   name={t.name}

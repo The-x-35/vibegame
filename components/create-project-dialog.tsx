@@ -10,14 +10,15 @@ import { PlusCircle } from "lucide-react";
 import { Project } from "@/components/project-card";
 import { Switch } from "@/components/ui/switch";
 import launchPumpFunToken from "../lib/launchPumpFunToken";
+import { API_ENDPOINTS, ALPHA_GUI } from '@/global/constant';
 
 interface CreateProjectDialogProps {
   onCreate: (project: Project) => void;
 }
 
 export default function CreateProjectDialog({ onCreate }: CreateProjectDialogProps) {
-  const SOLANA_RPC_ENDPOINT = 'https://skilled-misti-fast-devnet.helius-rpc.com';
-  const SIGN_ENDPOINT = 'https://mrgbnbr5uk.execute-api.eu-central-1.amazonaws.com/transactions/initiate-sign';
+  const SOLANA_RPC_ENDPOINT = API_ENDPOINTS.SOLANA_RPC_ENDPOINT;
+  const SIGN_ENDPOINT = API_ENDPOINTS.SIGN_ENDPOINT;
   const [isOpen, setIsOpen] = useState(false);
   const [url, setUrl] = useState("");
   const [name, setName] = useState("");

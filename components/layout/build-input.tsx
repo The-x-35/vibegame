@@ -4,6 +4,22 @@ import React, { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Sparkles } from "lucide-react";
 import SuggestionCard from "@/components/suggestion-card";
+import { useRouter } from "next/navigation";
+import { useUser } from "@/lib/hooks/use-user";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogFooter,
+  DialogTitle,
+  DialogDescription,
+  DialogClose
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { ALPHA_GUI } from '@/global/constant';
 
 interface BuildInputProps {
   placeholder?: string;
@@ -18,6 +34,13 @@ export function BuildInput({ placeholder = "What do you want to build?", classNa
   const [dynamicSuggestions, setDynamicSuggestions] = useState<Array<{ name: string; description: string; url: string }>>([]);
   const [lastRequest, setLastRequest] = useState<string>("");
   const inputRef = useRef<HTMLInputElement>(null);
+  const router = useRouter();
+  const { user } = useUser();
+  const [selectedTemplate, setSelectedTemplate] = useState<{ name: string; description: string; url: string } | null>(null);
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [cloneName, setCloneName] = useState("");
+  const [cloneDescription, setCloneDescription] = useState("");
+  const [clonePublic, setClonePublic] = useState(false);
 
   const gameTemplates = [
     "Make a Mario game",
@@ -56,6 +79,14 @@ export function BuildInput({ placeholder = "What do you want to build?", classNa
     return () => clearTimeout(timer);
   }, []);
 
+  useEffect(() => {
+    if (selectedTemplate) {
+      setCloneName(selectedTemplate.name);
+      setCloneDescription(selectedTemplate.description);
+      setClonePublic(false);
+    }
+  }, [selectedTemplate]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!input.trim()) return;
@@ -79,6 +110,45 @@ export function BuildInput({ placeholder = "What do you want to build?", classNa
     } finally {
       setIsLoading(false);
       setInput("");
+    }
+  };
+
+  const handleCloneTemplate = (template: { name: string; description: string; url: string }) => {
+    if (!user) {
+      router.push('/login');
+      return;
+    }
+    setSelectedTemplate(template);
+    setIsFormOpen(true);
+  };
+
+  const handleSubmitClone = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user || !selectedTemplate) return;
+    try {
+      const response = await fetch('/api/projects/clone', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          projectId: selectedTemplate.url,
+          name: cloneName,
+          description: cloneDescription,
+          isPublic: clonePublic,
+          wallet: user.wallet,
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to clone project');
+      }
+      const projectId = data.project.id;
+      setIsFormOpen(false);
+      router.push(`/editor/${projectId}`);
+    } catch (err) {
+      console.error(err);
+      alert(err instanceof Error ? err.message : 'Error cloning project');
     }
   };
 
@@ -134,20 +204,44 @@ export function BuildInput({ placeholder = "What do you want to build?", classNa
             {dynamicSuggestions.map((sugg, idx) => (
               <SuggestionCard
                 key={idx}
-                embedUrl={`https://alpha-gui.vercel.app/embed.html?autoplay&project_url=${encodeURIComponent(sugg.url)}`}
+                embedUrl={`${ALPHA_GUI.EMBED_URL}?project_url=${encodeURIComponent(sugg.url)}`}
                 name={sugg.name}
                 description={sugg.description}
-                onOpen={() =>
-                  window.open(
-                    `https://alpha-gui.vercel.app/?project_url=${encodeURIComponent(sugg.url)}`,
-                    "_blank"
-                  )
-                }
+                onOpen={() => handleCloneTemplate(sugg)}
               />
             ))}
           </div>
         </div>
       )}
+
+      <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Clone Game</DialogTitle>
+            <DialogDescription>Customize your cloned game details</DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleSubmitClone} className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="clone-name" className="text-right">Name</Label>
+              <Input id="clone-name" className="col-span-3" value={cloneName} onChange={(e) => setCloneName(e.target.value)} required />
+            </div>
+            <div className="grid grid-cols-4 items-start gap-4">
+              <Label htmlFor="clone-description" className="text-right pt-2">Description</Label>
+              <Textarea id="clone-description" className="col-span-3" value={cloneDescription} onChange={(e) => setCloneDescription(e.target.value)} required />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="clone-public" className="text-right">Public</Label>
+              <Switch id="clone-public" checked={clonePublic} onCheckedChange={setClonePublic} className="col-span-3" />
+            </div>
+            <DialogFooter>
+              <DialogClose asChild>
+                <Button variant="outline">Cancel</Button>
+              </DialogClose>
+              <Button type="submit">Clone</Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 } 

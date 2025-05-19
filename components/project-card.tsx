@@ -6,6 +6,7 @@ import { Share2, Lock as LockIcon, Edit, Eye } from "lucide-react";
 import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
 import { cn } from "@/lib/utils";
+import { ALPHA_GUI } from '@/global/constant';
 
 export interface Project {
   id: string;
@@ -30,7 +31,7 @@ export function ProjectCard({ project, onToggleVisibility, onClick }: ProjectCar
   };
 
   // Preview embed URL
-  const embedUrl = `https://alpha-gui.vercel.app/embed.html?autoplay&project_url=${encodeURIComponent(
+  const embedUrl = `${ALPHA_GUI.EMBED_URL}?project_url=${encodeURIComponent(
     project.url
   )}`;
 
