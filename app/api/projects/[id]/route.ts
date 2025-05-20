@@ -51,4 +51,58 @@ export async function PATCH(
     console.error('Error updating project:', err);
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
+}
+
+export async function DELETE(
+  request: Request,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const { id } = params;
+    const { searchParams } = new URL(request.url);
+    const wallet = searchParams.get('wallet');
+
+    if (!wallet) {
+      return NextResponse.json({ error: 'Missing wallet parameter' }, { status: 400 });
+    }
+
+    // First verify that the project belongs to the user
+    const verifyResult = await query(
+      'SELECT url FROM projects WHERE id = $1 AND wallet = $2',
+      [id, wallet]
+    );
+
+    if (verifyResult.rows.length === 0) {
+      return NextResponse.json({ error: 'Project not found or unauthorized' }, { status: 404 });
+    }
+
+    const projectUrl = verifyResult.rows[0].url;
+
+    // Delete the project from the database
+    await query('DELETE FROM projects WHERE id = $1', [id]);
+
+    // Delete the file from S3
+    try {
+      const urlObj = new URL(projectUrl);
+      const key = urlObj.pathname.startsWith('/') ? urlObj.pathname.substring(1) : urlObj.pathname;
+      
+      const response = await fetch(`/api/game-files/${encodeURIComponent(key)}?userId=${wallet}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${request.headers.get('Authorization')?.split(' ')[1]}`
+        }
+      });
+
+      if (!response.ok) {
+        console.error('Failed to delete file from S3:', await response.text());
+      }
+    } catch (err) {
+      console.error('Error deleting file from S3:', err);
+    }
+
+    return NextResponse.json({ message: 'Project deleted successfully' }, { status: 200 });
+  } catch (err: any) {
+    console.error('Error deleting project:', err);
+    return NextResponse.json({ error: err.message }, { status: 500 });
+  }
 } 

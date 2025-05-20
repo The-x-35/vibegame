@@ -2,10 +2,11 @@ import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { query } from '@/lib/db';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Edit } from 'lucide-react';
+import { ArrowLeft, Edit, Trash2 } from 'lucide-react';
 import { ALPHA_GUI } from '@/global/constant';
 import { Suspense } from 'react';
 import LaunchTokenDialog from '@/components/launch-token-dialog';
+import DeleteProjectDialog from '@/components/delete-project-dialog';
 
 interface ProjectRow {
   id: string;
@@ -83,17 +84,20 @@ function ProjectContent({ project }: { project: ProjectRow }) {
             <span className="font-medium">Status:</span> {project.is_public ? 'Public' : 'Private'}
           </p>
 
-          <div className="flex gap-4 mt-4">
-            <LaunchTokenDialog
-              projectId={project.id}
-              projectUrl={project.url}
-              projectName={project.name}
-              projectDescription={project.description}
-              ca={project.ca}
-            />
-            <Button size="lg" variant="outline" className="flex-1" asChild>
-              <Link href={`/editor/${project.id}`}>Edit Project</Link>
-            </Button>
+          <div className="flex flex-col gap-4 mt-4">
+            <div className="flex gap-4">
+              <LaunchTokenDialog
+                projectId={project.id}
+                projectUrl={project.url}
+                projectName={project.name}
+                projectDescription={project.description}
+                ca={project.ca}
+              />
+              <Button size="lg" variant="outline" className="flex-1" asChild>
+                <Link href={`/editor/${project.id}`}>Edit Project</Link>
+              </Button>
+            </div>
+            <DeleteProjectDialog projectId={project.id} />
           </div>
         </div>
       </div>
