@@ -17,11 +17,11 @@ export async function POST(req: Request) {
     const { message } = await req.json();
     // Fetch templates from the database
     const dbResult = await query(
-      'SELECT name, url, description FROM templates ORDER BY created_at',
+      'SELECT name, url, description, id FROM templates ORDER BY created_at',
       []
     );
     // Explicitly type the templates for proper type inference
-    const templates = dbResult.rows as Array<{ name: string; url: string; description: string }>;
+    const templates = dbResult.rows as Array<{ name: string; url: string; description: string; id: string }>;
 
     const completion = await openai.chat.completions.create({
       messages: [
@@ -65,7 +65,8 @@ Return your output as a JSON object with a "urls" field, e.g.:
       return {
         url: url,
         name: template?.name || "Unknown Game",
-        description: template?.description || ""
+        description: template?.description || "",
+        id: template?.id || ""
       };
     });
 

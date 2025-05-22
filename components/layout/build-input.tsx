@@ -31,12 +31,12 @@ export function BuildInput({ placeholder = "What do you want to build?", classNa
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [staticSuggestions, setStaticSuggestions] = useState<string[]>([]);
-  const [dynamicSuggestions, setDynamicSuggestions] = useState<Array<{ name: string; description: string; url: string }>>([]);
+  const [dynamicSuggestions, setDynamicSuggestions] = useState<Array<{ name: string; description: string; url: string; id: string }>>([]);
   const [lastRequest, setLastRequest] = useState<string>("");
   const inputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
   const { user } = useUser();
-  const [selectedTemplate, setSelectedTemplate] = useState<{ name: string; description: string; url: string } | null>(null);
+  const [selectedTemplate, setSelectedTemplate] = useState<{ name: string; description: string; url: string; id: string } | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [cloneName, setCloneName] = useState("");
   const [cloneDescription, setCloneDescription] = useState("");
@@ -113,7 +113,7 @@ export function BuildInput({ placeholder = "What do you want to build?", classNa
     }
   };
 
-  const handleCloneTemplate = (template: { name: string; description: string; url: string }) => {
+  const handleCloneTemplate = (template: { name: string; description: string; url: string; id: string }) => {
     if (!user) {
       router.push('/login');
       return;
@@ -132,7 +132,7 @@ export function BuildInput({ placeholder = "What do you want to build?", classNa
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          projectId: selectedTemplate.url,
+          projectId: selectedTemplate.id,
           name: cloneName,
           description: cloneDescription,
           isPublic: clonePublic,
@@ -244,4 +244,4 @@ export function BuildInput({ placeholder = "What do you want to build?", classNa
       </Dialog>
     </div>
   );
-} 
+}
