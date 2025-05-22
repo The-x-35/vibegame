@@ -8,19 +8,11 @@ export async function GET(
   try {
     const { id } = await params;
     
-    // First try to find in templates
-    let result = await query(
-      'SELECT id, name, url, description FROM templates WHERE id = $1',
+    // Query the projects table
+    const result = await query(
+      'SELECT id, name, url, description, ca FROM projects WHERE id = $1',
       [id]
     );
-
-    // If not found in templates, try games table
-    if (result.rows.length === 0) {
-      result = await query(
-        'SELECT id, name, url, description FROM games WHERE id = $1',
-        [id]
-      );
-    }
 
     if (result.rows.length === 0) {
       return new NextResponse('Game not found', { status: 404 });

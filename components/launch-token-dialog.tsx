@@ -11,6 +11,7 @@ import { Switch } from "@/components/ui/switch";
 import launchPumpFunToken from "../lib/launchPumpFunToken";
 import { useRouter } from "next/navigation";
 import { ALPHA_GUI } from "@/global/constant";
+import Link from "next/link";
 
 interface LaunchTokenDialogProps {
   projectId: string;
@@ -96,10 +97,10 @@ export default function LaunchTokenDialog({
   if (ca) {
     return (
       <Button size="lg" asChild>
-        <a href={`${ALPHA_GUI.EMBED_URL}?project_url=${encodeURIComponent(projectUrl)}`} target="_blank" rel="noopener noreferrer">
+        <Link href={`/games/${projectId}`}>
           <ExternalLink className="mr-2 h-4 w-4" />
           Open Project
-        </a>
+        </Link>
       </Button>
     );
   }
