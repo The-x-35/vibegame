@@ -47,14 +47,19 @@ export default function GameDetailPage() {
 
     const fetchPrice = async () => {
       try {
-        const response = await fetch('/api/jupiter/price');
+        const tokenId = game?.ca || ALPHA_GUI.SEND_TOKEN_CA;
+        const response = await fetch(`/api/jupiter/price?tokenId=${tokenId}`);
         if (!response.ok) {
           throw new Error(`Failed to fetch price: ${response.statusText}`);
         }
         const data = await response.json();
+        if (data.error) {
+          throw new Error(data.error);
+        }
         setPrice(data);
       } catch (error) {
-        console.error(error);
+        console.error('Price fetch error:', error);
+        setPrice(null);
       }
     };
 
