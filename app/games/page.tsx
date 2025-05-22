@@ -141,7 +141,7 @@ export default function GamesPage() {
                   )}`}
                   name={t.name}
                   description={t.description}
-                  onOpen={() => handleCloneTemplate(t)}
+                  onOpen={() => router.push(`/games/${t.id}`)}
                 />
               ))}
             </div>
