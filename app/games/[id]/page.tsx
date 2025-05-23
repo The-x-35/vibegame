@@ -6,6 +6,7 @@ import Navbar from "@/components/layout/navbar";
 import { ALPHA_GUI } from '@/global/constant';
 import { Button } from "@/components/ui/button";
 import { Copy, TrendingUp, TrendingDown } from "lucide-react";
+import { Input } from "@/components/ui/input";
 
 interface Game {
   id: string;
@@ -28,6 +29,8 @@ export default function GameDetailPage() {
   const [price, setPrice] = useState<PriceData | null>(null);
   const [isBuying, setIsBuying] = useState(false);
   const [isSelling, setIsSelling] = useState(false);
+  const [buyAmount, setBuyAmount] = useState<string>('');
+  const [showBuyInput, setShowBuyInput] = useState<boolean>(false);
 
   useEffect(() => {
     const fetchGame = async () => {
@@ -78,6 +81,16 @@ export default function GameDetailPage() {
   };
 
   const handleBuy = async () => {
+    if (!showBuyInput) {
+      setShowBuyInput(true);
+      return;
+    }
+
+    if (!buyAmount || isNaN(Number(buyAmount)) || Number(buyAmount) <= 0) {
+      alert('Please enter a valid amount');
+      return;
+    }
+
     setIsBuying(true);
     try {
       const appToken = localStorage.getItem('appToken');
@@ -90,12 +103,19 @@ export default function GameDetailPage() {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${appToken}`,
         },
+        body: JSON.stringify({
+          amount: Number(buyAmount),
+          outputMint: game?.ca || ALPHA_GUI.SEND_TOKEN_CA,
+        }),
       });
       const data = await res.json();
       if (!res.ok) {
+        console.log(data);
         throw new Error(data.error || `HTTP error! status: ${res.status}`);
       }
       alert('Transaction successful! TxID: ' + data.transactionId);
+      setShowBuyInput(false);
+      setBuyAmount('');
     } catch (error) {
       console.error('Buy error:', error);
       alert(error instanceof Error ? error.message : 'Failed to process transaction');
@@ -180,14 +200,44 @@ export default function GameDetailPage() {
                 </span>
               </div>
               <div className="flex gap-2">
-                <Button
-                  onClick={handleBuy}
-                  disabled={isBuying}
-                  className="bg-green-500 hover:bg-green-600 text-white"
-                >
-                  <TrendingUp className="h-4 w-4 mr-2" />
-                  Buy
-                </Button>
+                {showBuyInput ? (
+                  <div className="flex gap-2">
+                    <Input
+                      type="number"
+                      placeholder="Amount in SOL"
+                      value={buyAmount}
+                      onChange={(e) => setBuyAmount(e.target.value)}
+                      className="w-32"
+                      min="0"
+                      step="0.01"
+                    />
+                    <Button
+                      onClick={handleBuy}
+                      disabled={isBuying}
+                      className="bg-green-500 hover:bg-green-600 text-white"
+                    >
+                      {isBuying ? 'Buying...' : 'Confirm Buy'}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setShowBuyInput(false);
+                        setBuyAmount('');
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                ) : (
+                  <Button
+                    onClick={handleBuy}
+                    disabled={isBuying}
+                    className="bg-green-500 hover:bg-green-600 text-white"
+                  >
+                    <TrendingUp className="h-4 w-4 mr-2" />
+                    Buy
+                  </Button>
+                )}
                 <Button
                   onClick={handleSell}
                   disabled={isSelling}
