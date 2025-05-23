@@ -68,7 +68,7 @@ export default function GameDetailPage() {
     // Refresh price every 30 seconds
     const priceInterval = setInterval(fetchPrice, 30000);
     return () => clearInterval(priceInterval);
-  }, [params.id]);
+  }, [params.id, game?.ca]);
 
   const handleCopyCA = () => {
     const ca = game?.ca || ALPHA_GUI.SEND_TOKEN_CA;
@@ -80,17 +80,25 @@ export default function GameDetailPage() {
   const handleBuy = async () => {
     setIsBuying(true);
     try {
-      const response = await fetch('/api/jupiter/buy', {
+      const appToken = localStorage.getItem('appToken');
+      if (!appToken) {
+        throw new Error('Not authenticated. Please sign in first.');
+      }
+      const res = await fetch('/api/jupiter/buy', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${appToken}`,
         },
-        body: JSON.stringify({ amount: 1 }), // Sample amount
       });
-      const data = await response.json();
-      console.log('Buy response:', data);
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || `HTTP error! status: ${res.status}`);
+      }
+      alert('Transaction successful! TxID: ' + data.transactionId);
     } catch (error) {
       console.error('Buy error:', error);
+      alert(error instanceof Error ? error.message : 'Failed to process transaction');
     } finally {
       setIsBuying(false);
     }

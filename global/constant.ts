@@ -1,7 +1,7 @@
 import { PublicKey } from "@solana/web3.js";
 
 // Wallet
-export const REFERRAL_WALLET = new PublicKey("AidmVBuszvzCJ6cWrBQfKNwgNPU4KCvXBcrWh91vitm8");
+export const WALLET = new PublicKey("AidmVBuszvzCJ6cWrBQfKNwgNPU4KCvXBcrWh91vitm8");
 
 // API Endpoints
 export const API_ENDPOINTS = {
