@@ -7,12 +7,15 @@ import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/ui/logo";
 import { useState, useEffect } from "react";
 import { Menu, X, Code, GamepadIcon, LayoutDashboardIcon as DashboardIcon } from "lucide-react";
+import { Connection, LAMPORTS_PER_SOL, PublicKey } from "@solana/web3.js";
+import { API_ENDPOINTS } from "@/global/constant";
 
 export default function Navbar() {
   const { user, isLoading } = useUser();
   const [isOpen, setIsOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [balance, setBalance] = useState<number | null>(null);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -22,6 +25,25 @@ export default function Navbar() {
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  useEffect(() => {
+    const fetchBalance = async () => {
+      if (user?.wallet) {
+        try {
+          const connection = new Connection(API_ENDPOINTS.SOLANA_RPC_ENDPOINT);
+          const balance = await connection.getBalance(new PublicKey(user.wallet));
+          setBalance(balance / LAMPORTS_PER_SOL);
+        } catch (error) {
+          console.error("Error fetching balance:", error);
+        }
+      }
+    };
+
+    fetchBalance();
+    // Refresh balance every 30 seconds
+    const interval = setInterval(fetchBalance, 30000);
+    return () => clearInterval(interval);
+  }, [user?.wallet]);
 
   const navLinks = [
     { href: "/", label: "Home", icon: <Code className="w-4 h-4 mr-2" /> },
@@ -88,13 +110,20 @@ export default function Navbar() {
                 <div className="h-8 w-8 rounded-full bg-muted animate-pulse" />
               ) : user ? (
                 <>
-                  <span
-                    className="text-sm font-mono cursor-pointer select-all"
-                    onClick={handleCopy}
-                    title={copied ? 'Copied!' : 'Click to copy'}
-                  >
-                    {copied ? 'Copied!' : `${user.wallet.slice(0,6)}...${user.wallet.slice(-4)}`}
-                  </span>
+                  <div className="flex items-center space-x-2">
+                    {balance !== null && (
+                      <span className="text-sm font-medium bg-primary/10 px-2 py-1 rounded">
+                        {balance.toFixed(4)} SOL
+                      </span>
+                    )}
+                    <span
+                      className="text-sm font-mono cursor-pointer select-all"
+                      onClick={handleCopy}
+                      title={copied ? 'Copied!' : 'Click to copy'}
+                    >
+                      {copied ? 'Copied!' : `${user.wallet.slice(0,6)}...${user.wallet.slice(-4)}`}
+                    </span>
+                  </div>
                   <Button variant="ghost" onClick={handleSignOut}>Sign Out</Button>
                 </>
               ) : (
@@ -156,13 +185,20 @@ export default function Navbar() {
               <div className="h-8 w-8 rounded-full bg-muted animate-pulse" />
             ) : user ? (
               <div className="flex items-center justify-between">
-                <span
-                  className="text-sm font-mono cursor-pointer select-all"
-                  onClick={handleCopy}
-                  title={copied ? 'Copied!' : 'Click to copy'}
-                >
-                  {copied ? 'Copied!' : `${user.wallet.slice(0,6)}...${user.wallet.slice(-4)}`}
-                </span>
+                <div className="flex items-center space-x-2">
+                  {balance !== null && (
+                    <span className="text-sm font-medium bg-primary/10 px-2 py-1 rounded">
+                      {balance.toFixed(4)} SOL
+                    </span>
+                  )}
+                  <span
+                    className="text-sm font-mono cursor-pointer select-all"
+                    onClick={handleCopy}
+                    title={copied ? 'Copied!' : 'Click to copy'}
+                  >
+                    {copied ? 'Copied!' : `${user.wallet.slice(0,6)}...${user.wallet.slice(-4)}`}
+                  </span>
+                </div>
                 <Button variant="ghost" onClick={() => {
                   setIsOpen(false);
                   handleSignOut();
