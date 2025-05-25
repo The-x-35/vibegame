@@ -31,45 +31,55 @@ export async function POST(request: Request) {
     }
 
     // Get signature from external service
-    const res = await fetch(API_ENDPOINTS.SIGN_ENDPOINT, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${appToken}`,
-      },
-      body: JSON.stringify({
-        operation: "signTransaction",
-        payload: transactionHex
-      }),
-    });
+    try {
+      const res = await fetch(API_ENDPOINTS.SIGN_ENDPOINT, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${appToken}`,
+        },
+        body: JSON.stringify({
+          operation: "signTransaction",
+          payload: transactionHex
+        }),
+      });
 
-    const data = await res.json();
-    if (!res.ok) {
-      throw new Error(data.message || `HTTP error! status: ${res.status}`);
+      const data = await res.json();
+      if (!res.ok) {
+        console.error('Signing service error:', { status: res.status, data });
+        throw new Error(data.message || `Signing service error: ${res.status}`);
+      }
+
+      if (!data.signature) {
+        throw new Error('Failed to get signature from signing service');
+      }
+
+      // Send and confirm transaction
+      const connection = new Connection(API_ENDPOINTS.SOLANA_RPC_ENDPOINT, 'confirmed');
+      const signedTxBuffer = Buffer.from(data.signature, 'hex');
+      const txid = await connection.sendRawTransaction(signedTxBuffer, {
+        skipPreflight: true,
+      });
+
+      const confirmation = await connection.confirmTransaction(txid, 'confirmed');
+      if (confirmation.value.err) {
+        throw new Error(`Transaction confirmation failed: ${confirmation.value.err}`);
+      }
+
+      return NextResponse.json({
+        success: true,
+        transactionId: txid,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error('Signing service error:', error);
+      return NextResponse.json(
+        { error: error instanceof Error ? error.message : 'Failed to connect to signing service' },
+        { status: 500 }
+      );
     }
-
-    if (!data.signature) {
-      throw new Error('Failed to get signature');
-    }
-
-    // Send and confirm transaction
-    const connection = new Connection(API_ENDPOINTS.SOLANA_RPC_ENDPOINT, 'confirmed');
-    const signedTxBuffer = Buffer.from(data.signature, 'hex');
-    const txid = await connection.sendRawTransaction(signedTxBuffer, {
-      skipPreflight: true,
-    });
-
-    const confirmation = await connection.confirmTransaction(txid, 'confirmed');
-    if (confirmation.value.err) {
-      throw new Error(`Transaction confirmation failed: ${confirmation.value.err}`);
-    }
-
-    return NextResponse.json({
-      success: true,
-      transactionId: txid,
-      timestamp: new Date().toISOString()
-    });
   } catch (error) {
+    console.error('Transaction processing error:', error);
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Failed to process transaction' },
       { status: 500 }

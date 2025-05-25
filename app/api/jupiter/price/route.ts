@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
-import { PublicKey } from "@solana/web3.js";
+import { PublicKey, Connection } from "@solana/web3.js";
+import { getMint } from '@solana/spl-token';
+import { API_ENDPOINTS } from '@/global/constant';
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -28,9 +30,16 @@ export async function GET(request: Request) {
       throw new Error("Price data not available for the given token.");
     }
 
+    // Get token supply for market cap calculation
+    const connection = new Connection(API_ENDPOINTS.SOLANA_RPC_ENDPOINT, 'confirmed');
+    const mintInfo = await getMint(connection, new PublicKey(tokenId));
+    const supply = Number(mintInfo.supply) / Math.pow(10, mintInfo.decimals);
+    const marketCap = supply * parseFloat(price);
+
     return NextResponse.json({
       price: parseFloat(price),
-      lastUpdated: new Date().toISOString()
+      lastUpdated: new Date().toISOString(),
+      marketCap
     });
   } catch (error: any) {
     return NextResponse.json(
