@@ -191,26 +191,34 @@ export function BuildInput({ placeholder = "What do you want to build?", classNa
         </div>
       </form>
       {/* Dynamic Suggestion Cards */}
-      {dynamicSuggestions.length > 0 && (
+      {(dynamicSuggestions.length > 0 || isLoading) && (
         <div className="mt-6 p-4 bg-gray-900/50 rounded-lg border border-gray-700">
-          <h3 className="text-white text-xl font-medium mb-4">Recommended Templates</h3>
-          {lastRequest && (
-            <div className="mb-4 p-4 bg-gray-800/50 rounded-lg border border-gray-700">
-              <h4 className="text-gray-300 text-sm mb-1">Your request:</h4>
-              <p className="text-white font-mono text-sm">{lastRequest}</p>
+          {isLoading ? (
+            <div className="flex items-center justify-center p-8">
+              <p className="text-white text-lg">Finding the best template for you...</p>
             </div>
+          ) : (
+            <>
+              <h3 className="text-white text-xl font-medium mb-4">Recommended Templates</h3>
+              {lastRequest && (
+                <div className="mb-4 p-4 bg-gray-800/50 rounded-lg border border-gray-700">
+                  <h4 className="text-gray-300 text-sm mb-1">Your request:</h4>
+                  <p className="text-white font-mono text-sm">{lastRequest}</p>
+                </div>
+              )}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {dynamicSuggestions.map((sugg, idx) => (
+                  <SuggestionCard
+                    key={idx}
+                    embedUrl={`${ALPHA_GUI.EMBED_URL}?project_url=${encodeURIComponent(sugg.url)}`}
+                    name={sugg.name}
+                    description={sugg.description}
+                    onOpen={() => handleCloneTemplate(sugg)}
+                  />
+                ))}
+              </div>
+            </>
           )}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {dynamicSuggestions.map((sugg, idx) => (
-              <SuggestionCard
-                key={idx}
-                embedUrl={`${ALPHA_GUI.EMBED_URL}?project_url=${encodeURIComponent(sugg.url)}`}
-                name={sugg.name}
-                description={sugg.description}
-                onOpen={() => handleCloneTemplate(sugg)}
-              />
-            ))}
-          </div>
         </div>
       )}
 
