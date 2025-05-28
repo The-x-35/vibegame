@@ -12,6 +12,7 @@ import { Connection, PublicKey } from '@solana/web3.js';
 import { API_ENDPOINTS } from '@/global/constant';
 import { jwtDecode } from 'jwt-decode';
 import { Toaster } from "@/components/ui/toaster";
+import { CommentsSection } from '@/components/comments-section';
 
 interface Game {
   id: string;
@@ -34,6 +35,7 @@ interface AppTokenPayload {
 
 export default function GameDetailPage() {
   const params = useParams();
+  const gameId = params.id as string;
   const { toast } = useToast();
   const [game, setGame] = useState<Game | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -90,7 +92,7 @@ export default function GameDetailPage() {
   useEffect(() => {
     const fetchGame = async () => {
       try {
-        const response = await fetch(`/api/games/${params.id}`);
+        const response = await fetch(`/api/games/${gameId}`);
         if (!response.ok) {
           throw new Error(`Failed to fetch game: ${response.statusText}`);
         }
@@ -126,7 +128,7 @@ export default function GameDetailPage() {
     const fetchLikeStatus = async () => {
       try {
         const appToken = localStorage.getItem('appToken');
-        const response = await fetch(`/api/games/${params.id}/like`, {
+        const response = await fetch(`/api/games/${gameId}/like`, {
           headers: appToken ? {
             'Authorization': `Bearer ${appToken}`
           } : {}
@@ -164,7 +166,7 @@ export default function GameDetailPage() {
     }, 30000);
     
     return () => clearInterval(interval);
-  }, [params.id, game?.ca]);
+  }, [gameId, game?.ca]);
 
   const handleCopyCA = () => {
     const ca = game?.ca || ALPHA_GUI.SEND_TOKEN_CA;
@@ -301,7 +303,7 @@ export default function GameDetailPage() {
       }
 
       setIsLiking(true);
-      const response = await fetch(`/api/games/${params.id}/like`, {
+      const response = await fetch(`/api/games/${gameId}/like`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${appToken}`
@@ -383,6 +385,7 @@ export default function GameDetailPage() {
             </Button>
           </div>
           <p className="text-muted-foreground mb-4">{game.description}</p>
+          
           <div className="flex flex-col gap-4 mb-4">
             <div className="flex items-center gap-2">
               <p className="text-sm text-muted-foreground">Contract Address:</p>
@@ -508,6 +511,11 @@ export default function GameDetailPage() {
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
               allowFullScreen
             />
+          </div>
+
+          <div className="mt-8">
+            <h2 className="text-xl font-semibold mb-4">Comments</h2>
+            <CommentsSection projectId={gameId} />
           </div>
         </div>
       </div>
