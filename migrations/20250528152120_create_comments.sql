@@ -2,7 +2,7 @@
 
 -- Create comments table
 CREATE TABLE IF NOT EXISTS comments (
-    id SERIAL PRIMARY KEY,
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     project_id UUID NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
     wallet TEXT NOT NULL,
     content TEXT NOT NULL,
@@ -19,3 +19,6 @@ CREATE INDEX IF NOT EXISTS idx_comments_wallet ON comments(wallet);
 
 -- Update existing rows to have 0 comments
 UPDATE projects SET comments_count = 0 WHERE comments_count IS NULL;
+
+-- Grant necessary permissions to app_user
+GRANT SELECT, INSERT, UPDATE, DELETE ON comments TO app_user;

@@ -2,7 +2,7 @@
 
 -- Create likes table with proper column name (project_id instead of game_id)
 CREATE TABLE IF NOT EXISTS likes (
-    id SERIAL PRIMARY KEY,
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     project_id UUID NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
     wallet TEXT NOT NULL,
     created_at TIMESTAMPTZ DEFAULT NOW(),
@@ -17,4 +17,7 @@ CREATE INDEX IF NOT EXISTS idx_likes_project_id ON likes(project_id);
 CREATE INDEX IF NOT EXISTS idx_likes_wallet ON likes(wallet);
 
 -- Update existing rows to have 0 likes
-UPDATE projects SET likes_count = 0 WHERE likes_count IS NULL; 
+UPDATE projects SET likes_count = 0 WHERE likes_count IS NULL;
+
+-- Grant necessary permissions to app_user
+GRANT SELECT, INSERT, UPDATE, DELETE ON likes TO app_user; 

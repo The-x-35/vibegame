@@ -10,9 +10,6 @@
       - `thumbnail` (text)
       - `created_at` (timestamp)
       - `updated_at` (timestamp)
-  2. Security
-    - Enable RLS on `games` table
-    - Add policy for anyone to read game templates
 */
 
 CREATE TABLE IF NOT EXISTS games (
@@ -25,11 +22,5 @@ CREATE TABLE IF NOT EXISTS games (
   updated_at timestamptz DEFAULT now()
 );
 
-ALTER TABLE games ENABLE ROW LEVEL SECURITY;
-
--- Policy to allow anyone to read game templates
-CREATE POLICY "Anyone can read game templates"
-  ON games
-  FOR SELECT
-  TO anon, authenticated
-  USING (true);
+-- Grant necessary permissions to app_user
+GRANT SELECT, INSERT, UPDATE, DELETE ON games TO app_user;

@@ -10,10 +10,6 @@
       - `profile_image` (text)
       - `created_at` (timestamp)
       - `updated_at` (timestamp)
-  2. Security
-    - Enable RLS on `users` table
-    - Add policy for authenticated users to read their own data
-    - Add policy for authenticated users to update their own data
 */
 
 CREATE TABLE IF NOT EXISTS users (
@@ -26,16 +22,14 @@ CREATE TABLE IF NOT EXISTS users (
   updated_at timestamptz DEFAULT now()
 );
 
-ALTER TABLE users ENABLE ROW LEVEL SECURITY;
+-- Create a role for application users if it doesn't exist
+DO $$ 
+BEGIN
+  IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'app_user') THEN
+    CREATE ROLE app_user;
+  END IF;
+END
+$$;
 
-CREATE POLICY "Users can read own data"
-  ON users
-  FOR SELECT
-  TO authenticated
-  USING (auth.uid()::text = auth_id);
-
-CREATE POLICY "Users can update own data"
-  ON users
-  FOR UPDATE
-  TO authenticated
-  USING (auth.uid()::text = auth_id);
+-- Grant necessary permissions to app_user
+GRANT SELECT, INSERT, UPDATE ON users TO app_user;
