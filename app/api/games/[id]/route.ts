@@ -8,9 +8,9 @@ export async function GET(
   try {
     const { id } = await params;
     
-    // Query the projects table
+    // Query the projects table with likes count
     const result = await query(
-      'SELECT id, name, url, description, ca FROM projects WHERE id = $1',
+      'SELECT id, name, url, description, ca, likes_count FROM projects WHERE id = $1',
       [id]
     );
 

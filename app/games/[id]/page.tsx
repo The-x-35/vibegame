@@ -5,7 +5,7 @@ import { useParams } from "next/navigation";
 import Navbar from "@/components/layout/navbar";
 import { ALPHA_GUI } from '@/global/constant';
 import { Button } from "@/components/ui/button";
-import { Copy, TrendingUp, TrendingDown } from "lucide-react";
+import { Copy, TrendingUp, TrendingDown, Heart } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/use-toast";
 import { Connection, PublicKey } from '@solana/web3.js';
@@ -19,6 +19,7 @@ interface Game {
   url: string;
   description: string;
   ca?: string;
+  likesCount?: number;
 }
 
 interface PriceData {
@@ -45,6 +46,9 @@ export default function GameDetailPage() {
   const [tokenBalance, setTokenBalance] = useState<number>(0);
   const [showSellInput, setShowSellInput] = useState<boolean>(false);
   const [sellAmount, setSellAmount] = useState<string>('');
+  const [isLiked, setIsLiked] = useState(false);
+  const [likesCount, setLikesCount] = useState(0);
+  const [isLiking, setIsLiking] = useState(false);
 
   const fetchTokenBalance = async () => {
     try {
@@ -92,6 +96,8 @@ export default function GameDetailPage() {
         }
         const data = await response.json();
         setGame(data);
+        // Set initial likes count from game data
+        setLikesCount(data.likesCount || 0);
       } catch (error) {
         console.error(error);
       } finally {
@@ -117,14 +123,46 @@ export default function GameDetailPage() {
       }
     };
 
+    const fetchLikeStatus = async () => {
+      try {
+        const appToken = localStorage.getItem('appToken');
+        const response = await fetch(`/api/games/${params.id}/like`, {
+          headers: appToken ? {
+            'Authorization': `Bearer ${appToken}`
+          } : {}
+        });
+
+        if (response.status === 404) {
+          // Game not found - this is handled by the game fetch
+          return;
+        }
+
+        if (!response.ok) {
+          console.error('Failed to fetch like status:', response.statusText);
+          return;
+        }
+
+        const data = await response.json();
+        setIsLiked(data.liked);
+        setLikesCount(data.likesCount);
+      } catch (error) {
+        console.error('Error fetching like status:', error);
+        // Don't throw the error, just log it
+      }
+    };
+
     fetchGame();
     fetchPrice();
     fetchTokenBalance();
+    fetchLikeStatus();
+    
     // Refresh price and balance every 30 seconds
     const interval = setInterval(() => {
       fetchPrice();
       fetchTokenBalance();
+      fetchLikeStatus(); // This will also update the likes count
     }, 30000);
+    
     return () => clearInterval(interval);
   }, [params.id, game?.ca]);
 
@@ -250,6 +288,45 @@ export default function GameDetailPage() {
     }
   };
 
+  const handleLike = async () => {
+    try {
+      const appToken = localStorage.getItem('appToken');
+      if (!appToken) {
+        toast({
+          title: "Authentication required",
+          description: "Please sign in to like games",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setIsLiking(true);
+      const response = await fetch(`/api/games/${params.id}/like`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${appToken}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to update like: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      setIsLiked(data.liked);
+      setLikesCount(prev => data.liked ? prev + 1 : prev - 1);
+    } catch (error) {
+      console.error('Error updating like:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update like status",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLiking(false);
+    }
+  };
+
   const formatNumber = (num: number): string => {
     if (num >= 1e9) {
       return `$${(num / 1e9).toFixed(2)}B`;
@@ -292,7 +369,19 @@ export default function GameDetailPage() {
       <Navbar />
       <div className="flex-1 container mx-auto px-4 py-6">
         <div className="mb-4">
-          <h1 className="text-2xl font-bold">{game.name}</h1>
+          <div className="flex items-center justify-between mb-4">
+            <h1 className="text-2xl font-bold">{game.name}</h1>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleLike}
+              disabled={isLiking}
+              className={`h-10 w-10 ${isLiked ? 'text-red-500' : 'text-muted-foreground'}`}
+            >
+              <Heart className={`h-5 w-5 ${isLiked ? 'fill-current' : ''}`} />
+              <span className="ml-2">{likesCount}</span>
+            </Button>
+          </div>
           <p className="text-muted-foreground mb-4">{game.description}</p>
           <div className="flex flex-col gap-4 mb-4">
             <div className="flex items-center gap-2">

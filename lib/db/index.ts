@@ -107,3 +107,8 @@ export async function getTemplates() {
     []
   );
 }
+
+export async function getLikesCount(projectId: string): Promise<number> {
+  const result = await query('SELECT COUNT(*) FROM likes WHERE project_id = $1', [projectId]);
+  return parseInt(result[0].count, 10) || 0;
+}

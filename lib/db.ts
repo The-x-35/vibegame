@@ -2,7 +2,7 @@ import { Pool } from 'pg';
 import 'dotenv/config';
 
 // Create a connection pool using DATABASE_URL from environment
-const pool = new Pool({
+export const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
 });
 
