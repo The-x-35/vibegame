@@ -7,6 +7,7 @@ import { ALPHA_GUI } from '@/global/constant';
 import { Suspense } from 'react';
 import LaunchTokenDialog from '@/components/launch-token-dialog';
 import DeleteProjectDialog from '@/components/delete-project-dialog';
+import ShareProjectButton from '@/components/share-project-button';
 
 interface ProjectRow {
   id: string;
@@ -43,6 +44,7 @@ function ProjectContent({ project }: { project: ProjectRow }) {
   const embedUrl = `${ALPHA_GUI.EMBED_URL}?project_url=${encodeURIComponent(
     project.url
   )}`;
+  const projectUrl = `${process.env.NEXT_PUBLIC_APP_URL}/projects/${project.id}`;
 
   return (
     <div className="container mx-auto px-4 py-10">
@@ -97,7 +99,10 @@ function ProjectContent({ project }: { project: ProjectRow }) {
                 <Link href={`/editor/${project.id}`}>Edit Project</Link>
               </Button>
             </div>
-            <DeleteProjectDialog projectId={project.id} />
+            <div className="flex gap-4">
+              <ShareProjectButton projectId={project.id} projectName={project.name} />
+              <DeleteProjectDialog projectId={project.id} />
+            </div>
           </div>
         </div>
       </div>

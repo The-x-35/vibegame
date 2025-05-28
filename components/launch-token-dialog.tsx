@@ -39,7 +39,9 @@ export default function LaunchTokenDialog({
   const [tokenTelegram, setTokenTelegram] = useState("");
   const [tokenTwitter, setTokenTwitter] = useState("");
   const [tokenWebsite, setTokenWebsite] = useState("");
+  const [tokenAmount, setTokenAmount] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [imageUrl, setImageUrl] = useState<string>("");
 
   useEffect(() => {
     if (isOpen) {
@@ -53,13 +55,15 @@ export default function LaunchTokenDialog({
     setIsLoading(true);
     try {
       let ca: string;
-      
       if (useSendToken) {
         ca = ALPHA_GUI.SEND_TOKEN_CA;
       } else {
         const token = localStorage.getItem('appToken') || '';
+        if (!tokenAmount || isNaN(Number(tokenAmount)) || Number(tokenAmount) <= 0) {
+          throw new Error('Please enter a valid token amount');
+        }
         ca = await launchPumpFunToken({
-          imageUrl: projectUrl,
+          imageUrl,
           tokenName,
           tokenTicker,
           tokenDescription,
@@ -67,6 +71,7 @@ export default function LaunchTokenDialog({
           tokenTwitter,
           tokenWebsite,
           appToken: token,
+          amount: Number(tokenAmount),
         });
       }
 
@@ -177,6 +182,18 @@ export default function LaunchTokenDialog({
                 />
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="token-amount" className="text-right">Token Amount</Label>
+                <Input
+                  id="token-amount"
+                  type="number"
+                  className="col-span-3"
+                  placeholder="Amount of tokens to mint"
+                  value={tokenAmount}
+                  onChange={(e) => setTokenAmount(e.target.value)}
+                  required
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="token-telegram" className="text-right">Telegram</Label>
                 <Input
                   id="token-telegram"
@@ -204,6 +221,18 @@ export default function LaunchTokenDialog({
                   placeholder="Website (optional)"
                   value={tokenWebsite}
                   onChange={(e) => setTokenWebsite(e.target.value)}
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="token-image" className="text-right">Token Image URL</Label>
+                <Input
+                  id="token-image"
+                  className="col-span-3"
+                  type="url"
+                  placeholder="https://example.com/image.png"
+                  value={imageUrl}
+                  onChange={e => setImageUrl(e.target.value)}
+                  required
                 />
               </div>
             </>
