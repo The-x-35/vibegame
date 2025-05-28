@@ -5,51 +5,34 @@ import Navbar from "@/components/layout/navbar";
 import SuggestionCard from "@/components/suggestion-card";
 import { useRouter } from "next/navigation";
 import { useUser } from "@/lib/hooks/use-user";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogFooter,
-  DialogTitle,
-  DialogDescription,
-  DialogClose
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
 import { ALPHA_GUI } from '@/global/constant';
 
-// Game template interface
-interface GameTemplate {
+// Game interface
+interface Game {
   id: string;
   name: string;
   url: string;
   description: string;
+  likes_count: number;
+  wallet: string;
 }
 
 export default function GamesPage() {
-  const [templates, setTemplates] = useState<GameTemplate[]>([]);
+  const [games, setGames] = useState<Game[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { user } = useUser();
   const router = useRouter();
-  const [selectedTemplate, setSelectedTemplate] = useState<GameTemplate | null>(null);
-  const [isFormOpen, setIsFormOpen] = useState(false);
-  const [cloneName, setCloneName] = useState("");
-  const [cloneDescription, setCloneDescription] = useState("");
-  const [clonePublic, setClonePublic] = useState(false);
 
   useEffect(() => {
-    // Fetch templates from the database API
+    // Fetch public games from the database API
     (async () => {
       try {
-        const response = await fetch('/api/templates');
+        const response = await fetch('/api/games');
         if (!response.ok) {
-          throw new Error(`Failed to fetch templates: ${response.statusText}`);
+          throw new Error(`Failed to fetch games: ${response.statusText}`);
         }
-        const data: GameTemplate[] = await response.json();
-        setTemplates(data);
+        const data: Game[] = await response.json();
+        setGames(data);
       } catch (error) {
         console.error(error);
       } finally {
@@ -58,51 +41,8 @@ export default function GamesPage() {
     })();
   }, []);
 
-  useEffect(() => {
-    if (selectedTemplate) {
-      setCloneName(selectedTemplate.name);
-      setCloneDescription(selectedTemplate.description);
-      setClonePublic(false);
-    }
-  }, [selectedTemplate]);
-
-  const handleCloneTemplate = (template: GameTemplate) => {
-    if (!user) {
-      router.push('/login');
-      return;
-    }
-    setSelectedTemplate(template);
-    setIsFormOpen(true);
-  };
-
-  const handleSubmitClone = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!user || !selectedTemplate) return;
-    try {
-      const response = await fetch('/api/projects/clone', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          projectId: selectedTemplate.id,
-          name: cloneName,
-          description: cloneDescription,
-          isPublic: clonePublic,
-          wallet: user.wallet,
-        }),
-      });
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to clone project');
-      }
-      const projectId = data.project.id;
-      setIsFormOpen(false);
-      router.push(`/editor/${projectId}`);
-    } catch (err) {
-      console.error(err);
-      alert(err instanceof Error ? err.message : 'Error cloning project');
-    }
+  const handlePlayGame = (game: Game) => {
+    router.push(`/games/${game.id}`);
   };
 
   return (
@@ -110,10 +50,10 @@ export default function GamesPage() {
       <div className="container mx-auto px-4 py-10">
         <div className="text-center mb-10">
           <h1 className="text-4xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-blue-500 to-purple-500">
-            Game Templates
+            Public Games
           </h1>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            Browse and open any of the available sample projects to kickstart your game development journey.
+            Explore games created by the community. Find inspiration and play amazing creations.
           </p>
         </div>
         
@@ -131,49 +71,20 @@ export default function GamesPage() {
             ))}
           </div>
         ) : (
-          <>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {templates.map((t) => (
-                <SuggestionCard
-                  key={t.id}
-                  embedUrl={`${ALPHA_GUI.EMBED_URL}?project_url=${encodeURIComponent(
-                    t.url
-                  )}`}
-                  name={t.name}
-                  description={t.description}
-                  onOpen={() => handleCloneTemplate(t)}
-                />
-              ))}
-            </div>
-            <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Clone Game</DialogTitle>
-                  <DialogDescription>Customize your cloned game details</DialogDescription>
-                </DialogHeader>
-                <form onSubmit={handleSubmitClone} className="grid gap-4 py-4">
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="clone-name" className="text-right">Name</Label>
-                    <Input id="clone-name" className="col-span-3" value={cloneName} onChange={(e) => setCloneName(e.target.value)} required />
-                  </div>
-                  <div className="grid grid-cols-4 items-start gap-4">
-                    <Label htmlFor="clone-description" className="text-right pt-2">Description</Label>
-                    <Textarea id="clone-description" className="col-span-3" value={cloneDescription} onChange={(e) => setCloneDescription(e.target.value)} required />
-                  </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="clone-public" className="text-right">Public</Label>
-                    <Switch id="clone-public" checked={clonePublic} onCheckedChange={setClonePublic} className="col-span-3" />
-                  </div>
-                  <DialogFooter>
-                    <DialogClose asChild>
-                      <Button variant="outline">Cancel</Button>
-                    </DialogClose>
-                    <Button type="submit">Clone</Button>
-                  </DialogFooter>
-                </form>
-              </DialogContent>
-            </Dialog>
-          </>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {games.map((game) => (
+              <SuggestionCard
+                key={game.id}
+                embedUrl={`${ALPHA_GUI.EMBED_URL}?project_url=${encodeURIComponent(
+                  game.url
+                )}`}
+                name={game.name}
+                description={game.description}
+                onOpen={() => handlePlayGame(game)}
+                buttonText="Play Game"
+              />
+            ))}
+          </div>
         )}
       </div>
     </div>

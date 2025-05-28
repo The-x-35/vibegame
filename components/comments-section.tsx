@@ -101,7 +101,8 @@ export function CommentsSection({ projectId }: CommentsSectionProps) {
     return wallet.substring(0, 2).toUpperCase();
   };
 
-  const formatDate = (dateString: string) => {
+  const formatDate = (dateString: string | undefined | null) => {
+    if (!dateString) return 'recently';
     try {
       return formatDistanceToNow(parseISO(dateString), { addSuffix: true });
     } catch (error) {

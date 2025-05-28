@@ -14,9 +14,19 @@ type SuggestionCardProps = {
   fullScreen?: boolean;
   /** optional custom height class for non-fullscreen mode */
   heightClass?: string;
+  /** optional custom button text */
+  buttonText?: string;
 };
 
-export default function SuggestionCard({ embedUrl, name, description, onOpen, fullScreen, heightClass }: SuggestionCardProps) {
+export default function SuggestionCard({ 
+  embedUrl, 
+  name, 
+  description, 
+  onOpen, 
+  fullScreen, 
+  heightClass,
+  buttonText = "Edit Game" 
+}: SuggestionCardProps) {
   return (
     <Card className={cn(
       "overflow-hidden shadow-sm hover:shadow-md transition-all duration-200 border border-border/50 group",
@@ -55,7 +65,7 @@ export default function SuggestionCard({ embedUrl, name, description, onOpen, fu
             className="w-full group-hover:bg-green-600 group-hover:text-white transition-colors"
             variant="outline"
           >
-            Edit Game
+            {buttonText}
           </Button>
         </CardFooter>
       )}

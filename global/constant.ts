@@ -19,7 +19,7 @@ export const ALPHA_GUI = {
 
 // Website URLs
 export const WEBSITE_URLS = {
-    SEND_ARCADE: 'https://www.vibegame.fun',
+    VIBE_GAME: 'https://www.vibegame.fun',
 } as const;
 
 // S3 Bucket Information
