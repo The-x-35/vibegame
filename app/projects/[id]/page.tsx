@@ -110,8 +110,8 @@ function ProjectContent({ project }: { project: ProjectRow }) {
   );
 }
 
-export default async function ProjectPage({ params }: { params: { id: string } }) {
-  const { id: projectId } = await Promise.resolve(params);
+export default async function ProjectPage(props: { params: Promise<{ id: string }> }) {
+  const { id: projectId } = await props.params;
   const project = await getProjectData(projectId);
 
   if (!project) {

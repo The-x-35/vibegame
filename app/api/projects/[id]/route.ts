@@ -3,12 +3,13 @@ import { query } from '@/lib/db';
 
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  props: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await props.params;
     const result = await query(
       'SELECT * FROM projects WHERE id = $1',
-      [params.id]
+      [id]
     );
     
     if (result.rows.length === 0) {
@@ -24,10 +25,10 @@ export async function GET(
 
 export async function PATCH(
   request: Request,
-  { params }: { params: Promise<{ id: string }> }
+  props: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = await params;
+    const { id } = await props.params;
     const { name, description, ca, is_public } = await request.json();
 
     const result = await query(
@@ -55,10 +56,10 @@ export async function PATCH(
 
 export async function DELETE(
   request: Request,
-  { params }: { params: { id: string } }
+  props: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params;
+    const { id } = await props.params;
     const { searchParams } = new URL(request.url);
     const wallet = searchParams.get('wallet');
 

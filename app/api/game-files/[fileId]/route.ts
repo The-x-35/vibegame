@@ -13,8 +13,11 @@ const s3 = new S3Client({
 
 // TODO: add authentication if needed
 // Fetch a file by its fileId
-export async function GET(req: NextRequest, { params }: { params: { fileId: string } }) {
-    const { fileId } = params;
+export async function GET(
+    request: NextRequest,
+    props: { params: Promise<{ fileId: string }> }
+): Promise<NextResponse> {
+    const { fileId } = await props.params;
 
     if (!fileId) {
         return NextResponse.json({ error: "Missing fileId parameter" }, { status: 400 });
@@ -38,12 +41,15 @@ export async function GET(req: NextRequest, { params }: { params: { fileId: stri
 }
 
 // delete a file by its fileId
-export async function DELETE(req: NextRequest, { params }: { params: { fileId: string } }) {
-    const { fileId } = params;
-    const userId = req.nextUrl.searchParams.get("userId");
+export async function DELETE(
+    request: NextRequest,
+    props: { params: Promise<{ fileId: string }> }
+): Promise<NextResponse> {
+    const { fileId } = await props.params;
+    const userId = request.nextUrl.searchParams.get("userId");
 
     // authenticate user
-    const token = req.headers.get("Authorization")?.split(" ")[1];
+    const token = request.headers.get("Authorization")?.split(" ")[1];
     if (!token) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }

@@ -18,6 +18,7 @@ type User = {
   id: string;
   email: string;
   wallet: string;
+  profileImage?: string;
 };
 
 export function useUser() {
@@ -33,7 +34,12 @@ export function useUser() {
         const decoded = jwtDecode<AppTokenPayload>(token);
         // Check expiration
         if (!decoded.exp || decoded.exp * 1000 > Date.now()) {
-          setUser({ id: decoded.userId, email: decoded.sub, wallet: decoded.wallet });
+          setUser({ 
+            id: decoded.userId, 
+            email: decoded.sub, 
+            wallet: decoded.wallet,
+            profileImage: undefined // Set to undefined by default
+          });
         } else {
           localStorage.removeItem('appToken');
           setUser(null);
