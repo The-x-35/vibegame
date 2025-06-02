@@ -5,12 +5,6 @@ export function middleware(request: NextRequest) {
   const url = request.nextUrl;
   const hostname = request.headers.get('host') || '';
   
-  // Redirect www to apex domain (non-www)
-  if (hostname.startsWith('www.')) {
-    const newHost = hostname.replace(/^www\./, '');
-    return NextResponse.redirect(`${url.protocol}//${newHost}${url.pathname}${url.search}`, 308);
-  }
-  
   // Extract the subdomain and check if we're on localhost or vibegame.fun
   const [subdomain, ...rest] = hostname.split('.');
   const domain = rest.join('.');
