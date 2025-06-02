@@ -24,8 +24,11 @@ export function middleware(request: NextRequest) {
   if (subdomain && subdomain !== 'www' && subdomain !== 'app' && (isLocalhost || isVibegameFun)) {
     // For the root path, show the game page
     if (url.pathname === '/' || url.pathname === '') {
-      url.pathname = `/games/${subdomain}`;
-      return NextResponse.rewrite(url);
+      // Only rewrite if we're not already on a game page
+      if (!url.pathname.startsWith('/games/')) {
+        url.pathname = `/games/${subdomain}`;
+        return NextResponse.rewrite(url);
+      }
     }
     
     // For other paths, let them pass through normally
