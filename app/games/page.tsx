@@ -6,6 +6,7 @@ import SuggestionCard from "@/components/suggestion-card";
 import { useRouter } from "next/navigation";
 import { useUser } from "@/lib/hooks/use-user";
 import { ALPHA_GUI } from '@/global/constant';
+import { getGameUrl } from '@/lib/utils';
 
 // Game interface
 interface Game {
@@ -42,7 +43,7 @@ export default function GamesPage() {
   }, []);
 
   const handlePlayGame = (game: Game) => {
-    router.push(`/games/${game.id}`);
+    router.push(getGameUrl(game.id));
   };
 
   return (

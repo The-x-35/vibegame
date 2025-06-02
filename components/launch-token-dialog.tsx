@@ -12,6 +12,7 @@ import launchPumpFunToken from "../lib/launchPumpFunToken";
 import { useRouter } from "next/navigation";
 import { ALPHA_GUI } from "@/global/constant";
 import Link from "next/link";
+import { getGameUrl } from '@/lib/utils';
 
 interface LaunchTokenDialogProps {
   projectId: string;
@@ -102,7 +103,7 @@ export default function LaunchTokenDialog({
   if (ca) {
     return (
       <Button size="lg" asChild>
-        <Link href={`/games/${projectId}`}>
+        <Link href={getGameUrl(projectId)}>
           <ExternalLink className="mr-2 h-4 w-4" />
           Open Project
         </Link>
