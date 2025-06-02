@@ -32,7 +32,10 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  return NextResponse.next();
+  // If we get here, it means we're on an invalid subdomain
+  // Instead of redirecting, we'll show the 404 page
+  url.pathname = '/404';
+  return NextResponse.rewrite(url);
 }
 
 export const config = {
