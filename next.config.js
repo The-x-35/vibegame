@@ -21,33 +21,6 @@ const nextConfig = {
       },
     ];
   },
-  async rewrites() {
-    return {
-      beforeFiles: [
-        // Handle subdomain routes
-        {
-          source: '/',
-          has: [
-            {
-              type: 'host',
-              value: '^(?<subdomain>[^.]+)\\.vibegame\\.fun$',
-            },
-          ],
-          destination: '/games/:subdomain',
-        },
-        {
-          source: '/',
-          has: [
-            {
-              type: 'host',
-              value: '^(?<subdomain>[^.]+)\\.localhost(:\\d+)?$',
-            },
-          ],
-          destination: '/games/:subdomain',
-        },
-      ],
-    };
-  },
   webpack: (config, { isServer }) => {
     // Disable all webpack caching
     config.cache = false;
