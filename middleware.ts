@@ -21,8 +21,7 @@ export function middleware(request: NextRequest) {
   if (
     hostname === 'vibegame.fun' ||
     hostname === 'localhost:3000' ||
-    hostname === 'localhost' ||
-    subdomain === 'www'
+    hostname === 'localhost'
   ) {
     return NextResponse.next();
   }
