@@ -9,6 +9,7 @@ const nextConfig = {
   async rewrites() {
     return {
       beforeFiles: [
+        // Handle subdomain routes
         {
           source: '/',
           has: [

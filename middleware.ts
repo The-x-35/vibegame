@@ -12,11 +12,14 @@ export function middleware(request: NextRequest) {
   
   // Only handle subdomain routing if we're on a subdomain and it's not 'www' or 'app'
   if (subdomain && subdomain !== 'www' && subdomain !== 'app' && (isLocalhost || isVibegameFun)) {
-    // If the path is just '/' or empty, route to the game page
+    // For the root path, show the game page
     if (url.pathname === '/' || url.pathname === '') {
       url.pathname = `/games/${subdomain}`;
       return NextResponse.rewrite(url);
     }
+    
+    // For other paths, let them pass through normally
+    return NextResponse.next();
   }
 
   return NextResponse.next();
