@@ -7,8 +7,14 @@ export function middleware(request: NextRequest) {
   
   // Extract the subdomain and check if we're on localhost or vibegame.fun
   const [subdomain, ...rest] = hostname.split('.');
-  const isLocalhost = rest.includes('localhost');
-  const isVibegameFun = rest.includes('vibegame.fun');
+  const domain = rest.join('.');
+  const isLocalhost = domain.startsWith('localhost');
+  const isVibegameFun = domain === 'vibegame.fun';
+  
+  // If we're on the main domain (no subdomain), let it pass through
+  if (hostname === 'vibegame.fun' || hostname === 'localhost:3000' || hostname === 'localhost') {
+    return NextResponse.next();
+  }
   
   // Only handle subdomain routing if we're on a subdomain and it's not 'www' or 'app'
   if (subdomain && subdomain !== 'www' && subdomain !== 'app' && (isLocalhost || isVibegameFun)) {

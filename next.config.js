@@ -15,7 +15,7 @@ const nextConfig = {
           has: [
             {
               type: 'host',
-              value: '(?<subdomain>[^.]+).vibegame.fun',
+              value: '^(?<subdomain>[^.]+)\\.vibegame\\.fun$',
             },
           ],
           destination: '/games/:subdomain',
@@ -25,7 +25,7 @@ const nextConfig = {
           has: [
             {
               type: 'host',
-              value: '(?<subdomain>[^.]+).localhost(:\\d+)?',
+              value: '^(?<subdomain>[^.]+)\\.localhost(:\\d+)?$',
             },
           ],
           destination: '/games/:subdomain',
