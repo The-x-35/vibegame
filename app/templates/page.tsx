@@ -20,6 +20,9 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { ALPHA_GUI } from '@/global/constant';
+import DeleteTemplateDialog from '@/components/delete-template-dialog';
+import { Trash2 } from 'lucide-react';
+import { jwtDecode } from 'jwt-decode';
 
 // Game template interface
 interface GameTemplate {
@@ -32,15 +35,47 @@ interface GameTemplate {
 export default function TemplatesPage() {
   const [templates, setTemplates] = useState<GameTemplate[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const { user } = useUser();
+  const { user, isLoading: isUserLoading } = useUser();
   const router = useRouter();
   const [selectedTemplate, setSelectedTemplate] = useState<GameTemplate | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [cloneName, setCloneName] = useState("");
   const [cloneDescription, setCloneDescription] = useState("");
   const [clonePublic, setClonePublic] = useState(false);
+  const [templateToDelete, setTemplateToDelete] = useState<GameTemplate | null>(null);
 
+  // Auth check effect
   useEffect(() => {
+    if (isUserLoading) return;
+    
+    if (!user) {
+      router.push('/login');
+      return;
+    }
+    
+    const token = localStorage.getItem('appToken');
+    if (!token) {
+      router.push('/login');
+      return;
+    }
+
+    try {
+      const decoded = jwtDecode<{ sub: string }>(token);
+      if (decoded.sub !== 'arpit.k3note@gmail.com') {
+        router.push('/');
+        return;
+      }
+    } catch (error) {
+      console.error('Error decoding token:', error);
+      router.push('/login');
+      return;
+    }
+  }, [user, isUserLoading, router]);
+
+  // Fetch templates effect
+  useEffect(() => {
+    if (!user || isUserLoading) return;
+    
     // Fetch templates from the database API
     (async () => {
       try {
@@ -56,8 +91,9 @@ export default function TemplatesPage() {
         setIsLoading(false);
       }
     })();
-  }, []);
+  }, [user, isUserLoading]);
 
+  // Clone form effect
   useEffect(() => {
     if (selectedTemplate) {
       setCloneName(selectedTemplate.name);
@@ -65,6 +101,18 @@ export default function TemplatesPage() {
       setClonePublic(false);
     }
   }, [selectedTemplate]);
+
+  // Show loading state while checking user authentication
+  if (isUserLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  // Don't render anything if not authorized
+  if (!user) return null;
 
   const handleCloneTemplate = (template: GameTemplate) => {
     if (!user) {
@@ -115,6 +163,14 @@ export default function TemplatesPage() {
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
             Browse and open any of the available sample projects to kickstart your game development journey.
           </p>
+          <div className="flex justify-end mb-6">
+            <Button
+              onClick={() => router.push('/templates/add')}
+              className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600"
+            >
+              Add New Template
+            </Button>
+          </div>
         </div>
         
         {isLoading ? (
@@ -134,15 +190,24 @@ export default function TemplatesPage() {
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {templates.map((t) => (
-                <SuggestionCard
-                  key={t.id}
-                  embedUrl={`${ALPHA_GUI.EMBED_URL}?project_url=${encodeURIComponent(
-                    t.url
-                  )}`}
-                  name={t.name}
-                  description={t.description}
-                  onOpen={() => handleCloneTemplate(t)}
-                />
+                <div key={t.id} className="relative group">
+                  <SuggestionCard
+                    embedUrl={`${ALPHA_GUI.EMBED_URL}?project_url=${encodeURIComponent(
+                      t.url
+                    )}`}
+                    name={t.name}
+                    description={t.description}
+                    onOpen={() => handleCloneTemplate(t)}
+                  />
+                  <Button
+                    variant="destructive"
+                    size="icon"
+                    className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                    onClick={() => setTemplateToDelete(t)}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
               ))}
             </div>
             <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
@@ -187,6 +252,14 @@ export default function TemplatesPage() {
                 </form>
               </DialogContent>
             </Dialog>
+            {templateToDelete && (
+              <DeleteTemplateDialog
+                isOpen={!!templateToDelete}
+                onClose={() => setTemplateToDelete(null)}
+                templateId={templateToDelete.id}
+                templateName={templateToDelete.name}
+              />
+            )}
           </>
         )}
       </div>
