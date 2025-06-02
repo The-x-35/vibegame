@@ -6,21 +6,6 @@ const nextConfig = {
     ignoreDuringBuilds: true,
   },
   images: { unoptimized: true },
-  async redirects() {
-    return [
-      {
-        source: '/:path*',
-        has: [
-          {
-            type: 'host',
-            value: 'www.vibegame.fun',
-          },
-        ],
-        destination: 'https://vibegame.fun/:path*',
-        permanent: true,
-      },
-    ];
-  },
   webpack: (config, { isServer }) => {
     // Disable all webpack caching
     config.cache = false;
