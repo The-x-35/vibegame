@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { S3Client, GetObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
-import { verifyToken } from "@/lib/auth";
+import { jwtDecode } from 'jwt-decode';
+import { AppTokenPayload } from '@/lib/types';
 
 const s3 = new S3Client({
     region: process.env.AWS_REGION!,
@@ -49,24 +50,27 @@ export async function DELETE(
     const userId = request.nextUrl.searchParams.get("userId");
 
     // authenticate user
-    const token = request.headers.get("Authorization")?.split(" ")[1];
+    const authHeader = request.headers.get("Authorization");
+    const token = authHeader?.split(" ")[1];
+    
     if (!token) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Verify token and get wallet address
-    const payload = await verifyToken(token);
-    if (!payload) {
-        return NextResponse.json({ error: "Invalid or expired token" }, { status: 401 });
-    }
-
-    const wallet = payload.wallet;
-
-    if (userId !== wallet) {
-        return NextResponse.json({ error: "User not authorised to delete this file" }, { status: 401 });
-    }
-
     try {
+        // Decode token and get user's wallet
+        const payload = jwtDecode<AppTokenPayload>(token);
+        
+        if (!payload || !payload.wallet) {
+            return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+        }
+
+        const wallet = payload.wallet;
+
+        if (userId !== wallet) {
+            return NextResponse.json({ error: "User not authorised to delete this file" }, { status: 401 });
+        }
+
         const command = new DeleteObjectCommand({
             Bucket: process.env.S3_BUCKET_NAME!,
             Key: fileId,
@@ -76,7 +80,7 @@ export async function DELETE(
 
         return NextResponse.json({ message: "File deleted successfully" }, { status: 200 });
     } catch (err) {
-        console.error(err);
+        console.error('Error in DELETE:', err);
         return NextResponse.json({ error: "Failed to delete file" }, { status: 500 });
     }
 }

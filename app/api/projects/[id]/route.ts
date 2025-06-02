@@ -23,6 +23,73 @@ export async function GET(
   }
 }
 
+export async function DELETE(
+  request: Request,
+  props: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await props.params;
+    const { searchParams } = new URL(request.url);
+    const wallet = searchParams.get('wallet');
+    const authHeader = request.headers.get('Authorization');
+
+    if (!wallet) {
+      return NextResponse.json({ error: 'Missing wallet parameter' }, { status: 400 });
+    }
+
+    if (!authHeader) {
+      return NextResponse.json({ error: 'Missing authorization header' }, { status: 401 });
+    }
+
+    // Get the project's URL before deleting it
+    const projectResult = await query(
+      'SELECT url FROM projects WHERE id = $1 AND wallet = $2',
+      [id, wallet]
+    );
+
+    if (projectResult.rows.length === 0) {
+      return NextResponse.json({ error: 'Project not found' }, { status: 404 });
+    }
+
+    const projectUrl = projectResult.rows[0].url;
+
+    // Delete the project from the database
+    await query(
+      'DELETE FROM projects WHERE id = $1 AND wallet = $2',
+      [id, wallet]
+    );
+
+    // Delete the associated file from S3
+    try {
+      const urlObj = new URL(projectUrl);
+      const key = urlObj.pathname.startsWith('/') ? urlObj.pathname.substring(1) : urlObj.pathname;
+      
+      // Construct absolute URL for the API endpoint
+      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+      const response = await fetch(`${baseUrl}/api/game-files/${encodeURIComponent(key)}?userId=${wallet}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': authHeader // Pass the original auth header as is
+        }
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Error deleting file from S3:', errorText);
+        // Don't throw the error, as the project is already deleted from the database
+      }
+    } catch (error) {
+      console.error('Error deleting file from S3:', error);
+      // Don't throw the error, as the project is already deleted from the database
+    }
+
+    return NextResponse.json({ success: true });
+  } catch (err: any) {
+    console.error('Error deleting project:', err);
+    return NextResponse.json({ error: err.message }, { status: 500 });
+  }
+}
+
 export async function PATCH(
   request: Request,
   props: { params: Promise<{ id: string }> }
@@ -50,60 +117,6 @@ export async function PATCH(
     return NextResponse.json({ project: result.rows[0] });
   } catch (err: any) {
     console.error('Error updating project:', err);
-    return NextResponse.json({ error: err.message }, { status: 500 });
-  }
-}
-
-export async function DELETE(
-  request: Request,
-  props: { params: Promise<{ id: string }> }
-) {
-  try {
-    const { id } = await props.params;
-    const { searchParams } = new URL(request.url);
-    const wallet = searchParams.get('wallet');
-
-    if (!wallet) {
-      return NextResponse.json({ error: 'Missing wallet parameter' }, { status: 400 });
-    }
-
-    // First verify that the project belongs to the user
-    const verifyResult = await query(
-      'SELECT url FROM projects WHERE id = $1 AND wallet = $2',
-      [id, wallet]
-    );
-
-    if (verifyResult.rows.length === 0) {
-      return NextResponse.json({ error: 'Project not found or unauthorized' }, { status: 404 });
-    }
-
-    const projectUrl = verifyResult.rows[0].url;
-
-    // Delete the project from the database
-    await query('DELETE FROM projects WHERE id = $1', [id]);
-
-    // Delete the file from S3
-    try {
-      const urlObj = new URL(projectUrl);
-      const key = urlObj.pathname.startsWith('/') ? urlObj.pathname.substring(1) : urlObj.pathname;
-      
-      const response = await fetch(`/api/game-files/${encodeURIComponent(key)}?userId=${wallet}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${request.headers.get('Authorization')?.split(' ')[1]}`
-        }
-      });
-
-      if (!response.ok) {
-        console.error('Failed to delete file from S3:', await response.text());
-      }
-    } catch (err) {
-      console.error('Error deleting file from S3:', err);
-    }
-
-    return NextResponse.json({ message: 'Project deleted successfully' }, { status: 200 });
-  } catch (err: any) {
-    console.error('Error deleting project:', err);
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 } 

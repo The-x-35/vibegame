@@ -43,6 +43,7 @@ export default function TemplatesPage() {
   const [cloneDescription, setCloneDescription] = useState("");
   const [clonePublic, setClonePublic] = useState(false);
   const [templateToDelete, setTemplateToDelete] = useState<GameTemplate | null>(null);
+  const [isCloning, setIsCloning] = useState(false);
 
   // Auth check effect
   useEffect(() => {
@@ -126,6 +127,7 @@ export default function TemplatesPage() {
   const handleSubmitClone = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user || !selectedTemplate) return;
+    setIsCloning(true);
     try {
       const response = await fetch('/api/projects/clone', {
         method: 'POST',
@@ -150,6 +152,8 @@ export default function TemplatesPage() {
     } catch (err) {
       console.error(err);
       alert(err instanceof Error ? err.message : 'Error cloning project');
+    } finally {
+      setIsCloning(false);
     }
   };
 
@@ -245,9 +249,11 @@ export default function TemplatesPage() {
                   </div>
                   <DialogFooter>
                     <DialogClose asChild>
-                      <Button type="button" variant="outline">Cancel</Button>
+                      <Button type="button" variant="outline" disabled={isCloning}>Cancel</Button>
                     </DialogClose>
-                    <Button type="submit">Clone Game</Button>
+                    <Button type="submit" disabled={isCloning}>
+                      {isCloning ? "Cloning..." : "Clone Game"}
+                    </Button>
                   </DialogFooter>
                 </form>
               </DialogContent>

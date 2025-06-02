@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { query } from '@/lib/db';
+import { generateUniqueSlug } from '@/lib/utils/slug';
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -30,11 +31,14 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
+    // Generate a unique slug from the project name
+    const id = await generateUniqueSlug(name);
+
     const result = await query(
-      `INSERT INTO projects (wallet, url, name, description, is_public, created_at, updated_at)
-       VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
+      `INSERT INTO projects (id, wallet, url, name, description, is_public, created_at, updated_at)
+       VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())
        RETURNING *;`,
-      [wallet, url, name, description, isPublic ?? false]
+      [id, wallet, url, name, description, isPublic ?? false]
     );
 
     return NextResponse.json({ project: result.rows[0] }, { status: 201 });

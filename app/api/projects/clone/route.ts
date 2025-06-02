@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { S3Client, GetObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3';
 import { query } from '@/lib/db';
 import { Readable } from 'stream';
+import { generateUniqueSlug } from '@/lib/utils/slug';
 
 const s3 = new S3Client({
   region: process.env.AWS_REGION!,
@@ -89,12 +90,15 @@ export async function POST(request: NextRequest) {
     const bucket = process.env.S3_BUCKET_NAME;
     const newUrl = `https://${bucket}.s3.${region}.amazonaws.com/${newKey}`;
 
+    // Generate a unique slug from the project name
+    const id = await generateUniqueSlug(newName || originalName);
+
     // Insert new project record into database
     const insertResult = await query(
-      `INSERT INTO projects (wallet, url, name, description, is_public, created_at, updated_at)
-       VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
+      `INSERT INTO projects (id, wallet, url, name, description, is_public, created_at, updated_at)
+       VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())
        RETURNING id, wallet, url, name, description, is_public, created_at, updated_at;`,
-      [wallet, newUrl, newName || originalName, newDescription || originalDescription, isPublic ?? false]
+      [id, wallet, newUrl, newName || originalName, newDescription || originalDescription, isPublic ?? false]
     );
 
     const newProject = insertResult.rows[0];

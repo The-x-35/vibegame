@@ -41,6 +41,7 @@ export function BuildInput({ placeholder = "What do you want to build?", classNa
   const [cloneName, setCloneName] = useState("");
   const [cloneDescription, setCloneDescription] = useState("");
   const [clonePublic, setClonePublic] = useState(false);
+  const [isCloning, setIsCloning] = useState(false);
 
   const gameTemplates = [
     "Make a Mario game",
@@ -125,6 +126,7 @@ export function BuildInput({ placeholder = "What do you want to build?", classNa
   const handleSubmitClone = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user || !selectedTemplate) return;
+    setIsCloning(true);
     try {
       const response = await fetch('/api/projects/clone', {
         method: 'POST',
@@ -149,6 +151,8 @@ export function BuildInput({ placeholder = "What do you want to build?", classNa
     } catch (err) {
       console.error(err);
       alert(err instanceof Error ? err.message : 'Error cloning project');
+    } finally {
+      setIsCloning(false);
     }
   };
 
@@ -243,9 +247,11 @@ export function BuildInput({ placeholder = "What do you want to build?", classNa
             </div>
             <DialogFooter>
               <DialogClose asChild>
-                <Button variant="outline">Cancel</Button>
+                <Button variant="outline" disabled={isCloning}>Cancel</Button>
               </DialogClose>
-              <Button type="submit">Clone</Button>
+              <Button type="submit" disabled={isCloning}>
+                {isCloning ? "Cloning..." : "Clone"}
+              </Button>
             </DialogFooter>
           </form>
         </DialogContent>

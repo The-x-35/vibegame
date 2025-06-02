@@ -15,7 +15,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
-import { useUser } from "@/components/ui/use-user";
+import { useUser } from "@/lib/hooks/use-user";
 import { jwtDecode } from 'jwt-decode';
 
 export default function AddTemplatePage() {

@@ -3,7 +3,7 @@
 
   1. New Tables
     - `projects`
-      - `id` (uuid, primary key)
+      - `id` (text, primary key)
       - `user_id` (uuid, foreign key to users.id)
       - `name` (text, not null)
       - `description` (text)
@@ -15,7 +15,7 @@
 */
 
 CREATE TABLE IF NOT EXISTS projects (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  id text PRIMARY KEY,
   user_id uuid REFERENCES users(id) ON DELETE CASCADE NOT NULL,
   name text NOT NULL,
   description text,
