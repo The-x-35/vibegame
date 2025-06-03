@@ -8,8 +8,9 @@ const nextConfig = {
   images: { unoptimized: true },
   api: {
     bodyParser: {
-      sizeLimit: '100mb',
+      sizeLimit: '500mb',
     },
+    responseLimit: '500mb',
   },
   webpack: (config, { isServer }) => {
     // Disable all webpack caching

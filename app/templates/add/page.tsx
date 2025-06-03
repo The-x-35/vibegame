@@ -98,10 +98,16 @@ export default function AddTemplatePage() {
       formData.append('description', description);
       formData.append('file', file);
 
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 300000); // 5 minute timeout
+
       const response = await fetch('/api/templates', {
         method: 'POST',
         body: formData,
+        signal: controller.signal,
       });
+
+      clearTimeout(timeoutId);
 
       if (!response.ok) {
         const error = await response.json();
@@ -122,11 +128,27 @@ export default function AddTemplatePage() {
       router.push('/templates');
     } catch (error) {
       console.error('Error creating template:', error);
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to create template",
-        variant: "destructive",
-      });
+      if (error instanceof Error) {
+        if (error.name === 'AbortError') {
+          toast({
+            title: "Upload Timeout",
+            description: "The upload took too long. Please try again with a smaller file or check your internet connection.",
+            variant: "destructive",
+          });
+        } else {
+          toast({
+            title: "Error",
+            description: error.message || "Failed to create template",
+            variant: "destructive",
+          });
+        }
+      } else {
+        toast({
+          title: "Error",
+          description: "Failed to create template",
+          variant: "destructive",
+        });
+      }
     } finally {
       setIsSubmitting(false);
     }
