@@ -6,6 +6,11 @@ const nextConfig = {
     ignoreDuringBuilds: true,
   },
   images: { unoptimized: true },
+  api: {
+    bodyParser: {
+      sizeLimit: '100mb',
+    },
+  },
   webpack: (config, { isServer }) => {
     // Disable all webpack caching
     config.cache = false;
