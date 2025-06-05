@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
 // Set this to true to enable production mode restrictions
-const IS_PRODUCTION = true
+const IS_PRODUCTION = false
 
 export function middleware(request: NextRequest) {
   console.log('Middleware executing...')
