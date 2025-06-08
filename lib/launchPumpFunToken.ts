@@ -14,7 +14,7 @@ export interface LaunchPumpFunTokenArgs {
   tokenTelegram?: string;
   tokenTwitter?: string;
   tokenWebsite?: string;
-  appToken: string;
+  wallet: string;
   amount: number;
 }
 
@@ -93,7 +93,7 @@ export async function launchPumpFunToken({
   tokenTelegram,
   tokenTwitter,
   tokenWebsite,
-  appToken,
+  wallet,
   amount,
 }: LaunchPumpFunTokenArgs): Promise<string> {
   try {
@@ -107,7 +107,7 @@ export async function launchPumpFunToken({
       tokenTwitter,
       tokenWebsite,
       amount,
-      appTokenLength: appToken?.length
+      wallet
     });
 
     console.log("=== Connection Setup ===");
@@ -200,12 +200,12 @@ export async function launchPumpFunToken({
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${appToken}`,
       },
       body: JSON.stringify({ 
         transactionHex,
         commitment: 'confirmed',
-        maxRetries: 3
+        maxRetries: 3,
+        wallet
       }),
     });
 
