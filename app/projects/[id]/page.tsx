@@ -22,9 +22,8 @@ interface ProjectRow {
 async function getProjectData(projectId: string) {
   try {
     const result = await query(
-      `SELECT p.id, p.url, p.name, p.description, p.ca, p.is_public, u.name AS creator
+      `SELECT p.id, p.url, p.name, p.description, p.ca, p.is_public, p.wallet
        FROM projects p
-       JOIN users u ON p.wallet = u.wallet
        WHERE p.id = $1;`,
       [projectId]
     );

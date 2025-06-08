@@ -10,26 +10,33 @@ import {
   DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
 import { useUser } from "@/lib/hooks/use-user";
+import { useWallet } from '@solana/wallet-adapter-react';
 import { LogOut, User, Settings } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 export function UserButton() {
   const { user } = useUser();
+  const { disconnect } = useWallet();
   const router = useRouter();
 
   if (!user) return null;
 
-  // Get initials from email or name
+  // Get initials from wallet address
   const getInitials = () => {
-    if (!user) return "U";
-    if (user.email) return user.email.substring(0, 2).toUpperCase();
-    return "U";
+    if (!user.wallet) return "U";
+    return user.wallet.substring(0, 2).toUpperCase();
   };
 
-  const handleLogout = () => {
-    // Implement logout logic here later
-    router.push("/login");
+  // Generate DiceBear avatar URL using wallet address as seed
+  const getAvatarUrl = () => {
+    if (!user.wallet) return "";
+    return `https://api.dicebear.com/9.x/pixel-art/svg?seed=${user.wallet}`;
+  };
+
+  const handleDisconnect = () => {
+    disconnect();
+    router.push("/");
   };
 
   return (
@@ -37,7 +44,7 @@ export function UserButton() {
       <DropdownMenuTrigger asChild>
         <button className="rounded-full outline-none ring-offset-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
           <Avatar>
-            <AvatarImage src={user.profileImage || ""} alt={user.email || "User"} />
+            <AvatarImage src={getAvatarUrl()} alt={user.wallet} />
             <AvatarFallback className="bg-gradient-to-r from-blue-500 to-purple-500">
               {getInitials()}
             </AvatarFallback>
@@ -62,10 +69,10 @@ export function UserButton() {
         <DropdownMenuSeparator />
         <DropdownMenuItem 
           className="text-destructive focus:text-destructive cursor-pointer"
-          onClick={handleLogout}
+          onClick={handleDisconnect}
         >
           <LogOut className="mr-2 h-4 w-4" />
-          <span>Log out</span>
+          <span>Disconnect Wallet</span>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

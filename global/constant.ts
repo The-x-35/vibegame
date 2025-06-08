@@ -1,13 +1,18 @@
 import { PublicKey } from "@solana/web3.js";
+import { WalletAdapterNetwork } from '@solana/wallet-adapter-base';
 
 // Wallet
 export const WALLET = new PublicKey("AidmVBuszvzCJ6cWrBQfKNwgNPU4KCvXBcrWh91vitm8");
 
+// Solana Network Configuration
+export const SOLANA_CONFIG = {
+    NETWORK: WalletAdapterNetwork.Mainnet,
+    RPC_ENDPOINT: 'https://flying-torrie-fast-mainnet.helius-rpc.com',
+} as const;
+
 // API Endpoints
 export const API_ENDPOINTS = {
-    SIGN_ENDPOINT: 'https://mrgbnbr5uk.execute-api.eu-central-1.amazonaws.com/transactions/initiate-sign',
-    AUTH_VERIFY_ENDPOINT: 'https://mrgbnbr5uk.execute-api.eu-central-1.amazonaws.com/auth/google/verify',
-    SOLANA_RPC_ENDPOINT: 'https://flying-torrie-fast-mainnet.helius-rpc.com',
+    SOLANA_RPC_ENDPOINT: SOLANA_CONFIG.RPC_ENDPOINT,
 } as const;
 
 // Alpha GUI URLs

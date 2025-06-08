@@ -6,9 +6,7 @@ CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 -- Users table with wallet as primary key
 CREATE TABLE IF NOT EXISTS users (
   wallet TEXT PRIMARY KEY,
-  email TEXT,
   name TEXT,
-  profile_image TEXT,
   created_at TIMESTAMPTZ DEFAULT now(),
   updated_at TIMESTAMPTZ DEFAULT now()
 );

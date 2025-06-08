@@ -4,6 +4,17 @@ import type { NextRequest } from 'next/server'
 // Set this to true to enable production mode restrictions
 const IS_PRODUCTION = false
 
+// List of public routes that don't require authentication
+const PUBLIC_ROUTES = [
+  '/',
+  '/games',
+  '/coming-soon',
+  '/terms',
+  '/privacy',
+  '/api/users',
+  '/api/games',
+]
+
 export function middleware(request: NextRequest) {
   console.log('Middleware executing...')
   
@@ -12,9 +23,9 @@ export function middleware(request: NextRequest) {
     const path = request.nextUrl.pathname
     console.log('Current path:', path)
 
-    // Allow access to games route and its sub-routes
-    if (path.startsWith('/games')) {
-      console.log('Allowing access to games route')
+    // Allow access to public routes
+    if (PUBLIC_ROUTES.some(route => path.startsWith(route))) {
+      console.log('Allowing access to public route')
       return NextResponse.next()
     }
 

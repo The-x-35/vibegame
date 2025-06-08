@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { UserButton } from "@/components/user-button";
 import { useUser } from "@/lib/hooks/use-user";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/ui/logo";
@@ -9,9 +8,14 @@ import { useState, useEffect } from "react";
 import { Menu, X, Code, GamepadIcon, LayoutDashboardIcon as DashboardIcon } from "lucide-react";
 import { Connection, LAMPORTS_PER_SOL, PublicKey } from "@solana/web3.js";
 import { API_ENDPOINTS } from "@/global/constant";
+import { useWallet } from '@solana/wallet-adapter-react';
+import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import '@solana/wallet-adapter-react-ui/styles.css';
 
 export default function Navbar() {
   const { user, isLoading } = useUser();
+  const { connected, publicKey } = useWallet();
   const [isOpen, setIsOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -26,24 +30,51 @@ export default function Navbar() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  // Create user in database when wallet is connected
   useEffect(() => {
-    const fetchBalance = async () => {
-      if (user?.wallet) {
+    const createUser = async () => {
+      if (connected && publicKey) {
+        try {
+          await fetch('/api/users', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              wallet: publicKey.toString(),
+              name: null
+            }),
+          });
+        } catch (err) {
+          console.error('Failed to create user:', err);
+        }
+      }
+    };
+
+    createUser();
+  }, [connected, publicKey]);
+
+  useEffect(() => {
+    const fetchBalance = async (retryCount = 0) => {
+      if (publicKey) {
         try {
           const connection = new Connection(API_ENDPOINTS.SOLANA_RPC_ENDPOINT);
-          const balance = await connection.getBalance(new PublicKey(user.wallet));
+          const balance = await connection.getBalance(publicKey);
           setBalance(balance / LAMPORTS_PER_SOL);
         } catch (error) {
           console.error("Error fetching balance:", error);
+          // Retry up to 3 times with exponential backoff
+          if (retryCount < 3) {
+            const delay = Math.pow(2, retryCount) * 1000; // 1s, 2s, 4s
+            setTimeout(() => fetchBalance(retryCount + 1), delay);
+          }
         }
       }
     };
 
     fetchBalance();
     // Refresh balance every 30 seconds
-    const interval = setInterval(fetchBalance, 30000);
+    const interval = setInterval(() => fetchBalance(), 30000);
     return () => clearInterval(interval);
-  }, [user?.wallet]);
+  }, [publicKey]);
 
   const navLinks = [
     { href: "/", label: "Home", icon: <Code className="w-4 h-4 mr-2" /> },
@@ -54,19 +85,25 @@ export default function Navbar() {
     { href: "/dashboard", label: "Dashboard", icon: <DashboardIcon className="w-4 h-4 mr-2" /> },
   ];
 
-  // Add handler for sign out that clears token and redirects
-  const handleSignOut = () => {
-    localStorage.removeItem('appToken');
-    window.location.href = '/login';
-  };
-
   // Handler to copy wallet address to clipboard and show feedback
   const handleCopy = () => {
-    if (user?.wallet) {
-      navigator.clipboard.writeText(user.wallet);
+    if (publicKey) {
+      navigator.clipboard.writeText(publicKey.toString());
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     }
+  };
+
+  // Get initials from wallet address
+  const getInitials = () => {
+    if (!publicKey) return "U";
+    return publicKey.toString().substring(0, 2).toUpperCase();
+  };
+
+  // Generate DiceBear avatar URL using wallet address as seed
+  const getAvatarUrl = () => {
+    if (!publicKey) return "";
+    return `https://api.dicebear.com/9.x/pixel-art/svg?seed=${publicKey.toString()}`;
   };
 
   return (
@@ -95,7 +132,7 @@ export default function Navbar() {
                 </Button>
               ))}
               
-              {user && authenticatedLinks.map((link) => (
+              {connected && authenticatedLinks.map((link) => (
                 <Button key={link.href} variant="ghost" asChild>
                   <Link href={link.href} className="flex items-center">
                     {link.icon}
@@ -108,7 +145,7 @@ export default function Navbar() {
             <div className="pl-4 ml-4 border-l flex items-center space-x-2">
               {isLoading ? (
                 <div className="h-8 w-8 rounded-full bg-muted animate-pulse" />
-              ) : user ? (
+              ) : connected ? (
                 <>
                   <div className="flex items-center space-x-2">
                     {balance !== null && (
@@ -116,20 +153,23 @@ export default function Navbar() {
                         {balance.toFixed(4)} SOL
                       </span>
                     )}
+                    <Avatar className="h-8 w-8">
+                      <AvatarImage src={getAvatarUrl()} alt={publicKey?.toString()} />
+                      <AvatarFallback className="bg-gradient-to-r from-blue-500 to-purple-500 text-xs">
+                        {getInitials()}
+                      </AvatarFallback>
+                    </Avatar>
                     <span
                       className="text-sm font-mono cursor-pointer select-all"
                       onClick={handleCopy}
                       title={copied ? 'Copied!' : 'Click to copy'}
                     >
-                      {copied ? 'Copied!' : `${user.wallet.slice(0,6)}...${user.wallet.slice(-4)}`}
+                      {copied ? 'Copied!' : `${publicKey?.toString().slice(0,6)}...${publicKey?.toString().slice(-4)}`}
                     </span>
                   </div>
-                  <Button variant="ghost" onClick={handleSignOut}>Sign Out</Button>
                 </>
               ) : (
-                <Button asChild>
-                  <Link href="/login">Sign In</Link>
-                </Button>
+                <WalletMultiButton />
               )}
             </div>
           </div>
@@ -164,7 +204,7 @@ export default function Navbar() {
               </Button>
             ))}
             
-            {user && authenticatedLinks.map((link) => (
+            {connected && authenticatedLinks.map((link) => (
               <Button 
                 key={link.href} 
                 variant="ghost" 
@@ -183,7 +223,7 @@ export default function Navbar() {
           <div className="mt-auto">
             {isLoading ? (
               <div className="h-8 w-8 rounded-full bg-muted animate-pulse" />
-            ) : user ? (
+            ) : connected ? (
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2">
                   {balance !== null && (
@@ -191,29 +231,25 @@ export default function Navbar() {
                       {balance.toFixed(4)} SOL
                     </span>
                   )}
+                  <Avatar className="h-8 w-8">
+                    <AvatarImage src={getAvatarUrl()} alt={publicKey?.toString()} />
+                    <AvatarFallback className="bg-gradient-to-r from-blue-500 to-purple-500 text-xs">
+                      {getInitials()}
+                    </AvatarFallback>
+                  </Avatar>
                   <span
                     className="text-sm font-mono cursor-pointer select-all"
                     onClick={handleCopy}
                     title={copied ? 'Copied!' : 'Click to copy'}
                   >
-                    {copied ? 'Copied!' : `${user.wallet.slice(0,6)}...${user.wallet.slice(-4)}`}
+                    {copied ? 'Copied!' : `${publicKey?.toString().slice(0,6)}...${publicKey?.toString().slice(-4)}`}
                   </span>
                 </div>
-                <Button variant="ghost" onClick={() => {
-                  setIsOpen(false);
-                  handleSignOut();
-                }}>
-                  Sign Out
-                </Button>
               </div>
             ) : (
-              <Button 
-                className="w-full" 
-                asChild
-                onClick={() => setIsOpen(false)}
-              >
-                <Link href="/login">Sign In</Link>
-              </Button>
+              <div className="flex justify-center">
+                <WalletMultiButton />
+              </div>
             )}
           </div>
         </div>

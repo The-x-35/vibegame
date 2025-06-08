@@ -33,10 +33,7 @@ const DeleteProjectDialog = ({ projectId }: DeleteProjectDialogProps) => {
     setIsDeleting(true);
     try {
       const response = await fetch(`/api/projects/${projectId}?wallet=${user.wallet}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('appToken')}`
-        }
+        method: 'DELETE'
       });
 
       if (!response.ok) {

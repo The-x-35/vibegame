@@ -1,7 +1,5 @@
 import { NextResponse } from 'next/server';
 import { query, pool } from '@/lib/db';
-import { jwtDecode } from 'jwt-decode';
-import { AppTokenPayload } from '@/lib/types';
 
 export async function POST(
   request: Request,
@@ -10,21 +8,11 @@ export async function POST(
   const client = await pool.connect();
   try {
     const { id } = await params;
-    const token = request.headers.get('Authorization')?.split(' ')[1];
+    const { wallet, content } = await request.json();
     
-    if (!token) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    if (!wallet) {
+      return NextResponse.json({ error: 'Wallet address is required' }, { status: 400 });
     }
-
-    // Decode token and get user's wallet
-    const payload = jwtDecode<AppTokenPayload>(token);
-    if (!payload || !payload.wallet) {
-      console.log('Invalid token payload:', payload);
-      return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
-    }
-
-    const wallet = payload.wallet;
-    const { content } = await request.json();
 
     if (!content || typeof content !== 'string' || content.trim().length === 0) {
       return NextResponse.json({ error: 'Comment content is required' }, { status: 400 });
@@ -92,22 +80,18 @@ export async function GET(
       return NextResponse.json({ error: 'Game not found' }, { status: 404 });
     }
 
-    // Get comments with user info
-    const comments = await client.query(
-      `SELECT c.id, c.content, c.created_at, c.wallet, u.name, u.profile_image
-       FROM comments c
-       LEFT JOIN users u ON c.wallet = u.wallet
-       WHERE c.project_id = $1
-       ORDER BY c.created_at DESC`,
+    // Get comments
+    const result = await client.query(
+      'SELECT id, content, created_at, wallet FROM comments WHERE project_id = $1 ORDER BY created_at DESC',
       [id]
     );
 
     await client.query('COMMIT');
 
-    return NextResponse.json(comments.rows);
+    return NextResponse.json(result.rows);
   } catch (error) {
     await client.query('ROLLBACK');
-    console.error('[GAME_COMMENTS_GET]', error);
+    console.error('[GAME_COMMENT_GET]', error);
     return NextResponse.json({ 
       error: error instanceof Error ? error.message : 'Internal error' 
     }, { status: 500 });

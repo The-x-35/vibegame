@@ -2,9 +2,15 @@ import { jwtDecode } from "jwt-decode";
 import { jwtVerify, decodeProtectedHeader } from "jose";
 import { AppTokenPayload } from "./types";
 import { Buffer } from "buffer";
+import { PublicKey } from '@solana/web3.js';
 
 // Secret key for verifying tokens - should be stored in environment variables
 const JWT_SECRET = process.env.JWT_SECRET;
+
+export interface WalletAuthPayload {
+  wallet: string;
+  publicKey: PublicKey;
+}
 
 /**
  * Verifies a JWT token's validity and returns the decoded payload
@@ -80,4 +86,33 @@ export async function verifyToken(token: string): Promise<AppTokenPayload | null
         console.error("Token verification failed:", error);
         return null;
     }
+}
+
+/**
+ * Verifies a wallet address is valid
+ * 
+ * @param wallet Wallet address to verify
+ * @returns True if valid, false otherwise
+ */
+export function verifyWallet(wallet: string): boolean {
+  try {
+    new PublicKey(wallet);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Creates a wallet auth payload
+ * 
+ * @param wallet Wallet address
+ * @returns Wallet auth payload
+ */
+export function createWalletAuthPayload(wallet: string): WalletAuthPayload {
+  const publicKey = new PublicKey(wallet);
+  return {
+    wallet,
+    publicKey
+  };
 }

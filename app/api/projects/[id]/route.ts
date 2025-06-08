@@ -31,14 +31,9 @@ export async function DELETE(
     const { id } = await props.params;
     const { searchParams } = new URL(request.url);
     const wallet = searchParams.get('wallet');
-    const authHeader = request.headers.get('Authorization');
 
     if (!wallet) {
       return NextResponse.json({ error: 'Missing wallet parameter' }, { status: 400 });
-    }
-
-    if (!authHeader) {
-      return NextResponse.json({ error: 'Missing authorization header' }, { status: 401 });
     }
 
     // Get the project's URL before deleting it
@@ -66,11 +61,8 @@ export async function DELETE(
       
       // Construct absolute URL for the API endpoint
       const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-      const response = await fetch(`${baseUrl}/api/game-files/${encodeURIComponent(key)}?userId=${wallet}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': authHeader // Pass the original auth header as is
-        }
+      const response = await fetch(`${baseUrl}/api/game-files/${encodeURIComponent(key)}?wallet=${wallet}`, {
+        method: 'DELETE'
       });
 
       if (!response.ok) {

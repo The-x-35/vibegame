@@ -1,15 +1,6 @@
 import { NextResponse } from 'next/server';
 import { PublicKey, Connection, VersionedTransaction } from '@solana/web3.js';
 import { API_ENDPOINTS, TOKENS, JUP_ULTRA_API } from '@/global/constant';
-import { jwtDecode } from 'jwt-decode';
-
-interface AppTokenPayload {
-  sub: string;
-  userId: string;
-  wallet: string;
-  exp?: number;
-  iat?: number;
-}
 
 interface JupiterUltraOrderResponse {
   requestId: string;
@@ -20,29 +11,16 @@ export async function POST(request: Request) {
   try {
     console.log('Starting Jupiter buy request...');
     
-    const appToken = request.headers.get('Authorization')?.split(' ')[1];
-    if (!appToken) {
-      console.log('No auth token provided');
-      return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
-    }
-
-    // Decode token and get user's wallet
-    const payload = jwtDecode<AppTokenPayload>(appToken);
-    if (!payload || !payload.wallet) {
-      console.log('Invalid token payload:', payload);
-      return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
-    }
-
-    const { amount, outputMint } = await request.json();
-    console.log('Request params:', { amount, outputMint });
+    const { amount, outputMint, wallet } = await request.json();
+    console.log('Request params:', { amount, outputMint, wallet });
     
-    if (!amount || !outputMint) {
+    if (!amount || !outputMint || !wallet) {
       console.log('Missing required parameters');
-      return NextResponse.json({ error: 'Amount and outputMint are required' }, { status: 400 });
+      return NextResponse.json({ error: 'Amount, outputMint, and wallet are required' }, { status: 400 });
     }
 
     const connection = new Connection(API_ENDPOINTS.SOLANA_RPC_ENDPOINT, 'confirmed');
-    const fromPublicKey = new PublicKey(payload.wallet);
+    const fromPublicKey = new PublicKey(wallet);
     const inputMint = TOKENS.SOL;
     const inputDecimals = 9;
     const scaledAmount = amount * Math.pow(10, inputDecimals);
@@ -81,34 +59,10 @@ export async function POST(request: Request) {
     const transactionHex = transactionBuffer.toString('hex');
     console.log('Converted transaction to hex');
 
-    // Get the base URL from the request
-    const url = new URL(request.url);
-    const baseUrl = `${url.protocol}//${url.host}`;
-
-    console.log('Sending transaction for signing...');
-    // Send to sign route for signing
-    const signRes = await fetch(`${baseUrl}/api/transactions/sign`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${appToken}`,
-      },
-      body: JSON.stringify({ transactionHex }),
-    });
-
-    const signResult = await signRes.json();
-    console.log('Sign response:', signResult);
-
-    if (!signRes.ok) {
-      console.error('Signing failed:', signResult);
-      return NextResponse.json({ error: signResult.error }, { status: 500 });
-    }
-
-    // The sign route has already sent the transaction to the network
-    // We just need to return the transaction ID
+    // Return the transaction hex and request ID for client-side signing
     return NextResponse.json({
-      success: true,
-      transactionId: signResult.transactionId,
+      transactionHex,
+      requestId,
       timestamp: new Date().toISOString()
     });
   } catch (error) {

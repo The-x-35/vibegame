@@ -1,7 +1,5 @@
 import { NextResponse } from 'next/server';
 import { query, pool } from '@/lib/db';
-import { jwtDecode } from 'jwt-decode';
-import { AppTokenPayload } from '@/lib/types';
 
 export async function POST(
   request: Request,
@@ -10,20 +8,11 @@ export async function POST(
   const client = await pool.connect();
   try {
     const { id } = await params;
-    const token = request.headers.get('Authorization')?.split(' ')[1];
+    const { wallet } = await request.json();
     
-    if (!token) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    if (!wallet) {
+      return NextResponse.json({ error: 'Wallet address is required' }, { status: 400 });
     }
-
-    // Decode token and get user's wallet
-    const payload = jwtDecode<AppTokenPayload>(token);
-    if (!payload || !payload.wallet) {
-      console.log('Invalid token payload:', payload);
-      return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
-    }
-
-    const wallet = payload.wallet;
 
     await client.query('BEGIN');
 
@@ -78,7 +67,8 @@ export async function GET(
   const client = await pool.connect();
   try {
     const { id } = await params;
-    const token = request.headers.get('Authorization')?.split(' ')[1];
+    const { searchParams } = new URL(request.url);
+    const wallet = searchParams.get('wallet');
     
     await client.query('BEGIN');
 
@@ -99,17 +89,14 @@ export async function GET(
       [id]
     );
 
-    // Only check if user has liked if they're authenticated
+    // Only check if user has liked if they provided a wallet
     let liked = false;
-    if (token) {
-      const payload = jwtDecode<AppTokenPayload>(token);
-      if (payload?.wallet) {
-        const result = await client.query(
-          'SELECT EXISTS(SELECT 1 FROM likes WHERE project_id = $1 AND wallet = $2) as has_liked',
-          [id, payload.wallet]
-        );
-        liked = result.rows[0].has_liked;
-      }
+    if (wallet) {
+      const result = await client.query(
+        'SELECT EXISTS(SELECT 1 FROM likes WHERE project_id = $1 AND wallet = $2) as has_liked',
+        [id, wallet]
+      );
+      liked = result.rows[0].has_liked;
     }
 
     await client.query('COMMIT');

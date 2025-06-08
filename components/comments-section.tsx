@@ -6,14 +6,13 @@ import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useToast } from '@/components/ui/use-toast';
 import { formatDistanceToNow, parseISO } from 'date-fns';
+import { useWallet } from '@solana/wallet-adapter-react';
 
 interface Comment {
   id: number;
   content: string;
   created_at: string;
   wallet: string;
-  name: string | null;
-  profile_image: string | null;
 }
 
 interface CommentsSectionProps {
@@ -25,6 +24,7 @@ export function CommentsSection({ projectId }: CommentsSectionProps) {
   const [newComment, setNewComment] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
+  const { connected, publicKey } = useWallet();
 
   const fetchComments = async () => {
     try {
@@ -52,11 +52,10 @@ export function CommentsSection({ projectId }: CommentsSectionProps) {
     e.preventDefault();
     if (!newComment.trim()) return;
 
-    const appToken = localStorage.getItem('appToken');
-    if (!appToken) {
+    if (!connected || !publicKey) {
       toast({
-        title: 'Authentication required',
-        description: 'Please sign in to comment',
+        title: 'Wallet not connected',
+        description: 'Please connect your wallet to comment',
         variant: 'destructive',
       });
       return;
@@ -68,9 +67,11 @@ export function CommentsSection({ projectId }: CommentsSectionProps) {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${appToken}`
         },
-        body: JSON.stringify({ content: newComment })
+        body: JSON.stringify({ 
+          content: newComment,
+          wallet: publicKey.toString()
+        })
       });
 
       if (!response.ok) {
@@ -96,9 +97,12 @@ export function CommentsSection({ projectId }: CommentsSectionProps) {
     }
   };
 
-  const getInitials = (name: string | null, wallet: string) => {
-    if (name) return name.substring(0, 2).toUpperCase();
+  const getInitials = (wallet: string) => {
     return wallet.substring(0, 2).toUpperCase();
+  };
+
+  const getAvatarUrl = (wallet: string) => {
+    return `https://api.dicebear.com/9.x/pixel-art/svg?seed=${wallet}`;
   };
 
   const formatDate = (dateString: string | undefined | null) => {
@@ -129,12 +133,12 @@ export function CommentsSection({ projectId }: CommentsSectionProps) {
         {comments.map((comment) => (
           <div key={comment.id} className="flex gap-4 p-4 rounded-lg border">
             <Avatar>
-              <AvatarImage src={comment.profile_image || undefined} />
-              <AvatarFallback>{getInitials(comment.name, comment.wallet)}</AvatarFallback>
+              <AvatarImage src={getAvatarUrl(comment.wallet)} alt={comment.wallet} />
+              <AvatarFallback>{getInitials(comment.wallet)}</AvatarFallback>
             </Avatar>
             <div className="flex-1 space-y-1">
               <div className="flex items-center gap-2">
-                <span className="font-medium">{comment.name || comment.wallet}</span>
+                <span className="font-medium">{comment.wallet}</span>
                 <span className="text-sm text-muted-foreground">
                   {formatDate(comment.created_at)}
                 </span>

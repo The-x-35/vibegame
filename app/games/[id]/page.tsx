@@ -13,6 +13,9 @@ import { API_ENDPOINTS } from '@/global/constant';
 import { jwtDecode } from 'jwt-decode';
 import { Toaster } from "@/components/ui/toaster";
 import { CommentsSection } from '@/components/comments-section';
+import { useWallet } from '@solana/wallet-adapter-react';
+import { VersionedTransaction } from '@solana/web3.js';
+import { JUP_ULTRA_API } from '@/global/constant';
 
 interface Game {
   id: string;
@@ -52,21 +55,18 @@ export default function GameDetailPage() {
   const [likesCount, setLikesCount] = useState(0);
   const [isLiking, setIsLiking] = useState(false);
 
+  const { signTransaction, connected, publicKey } = useWallet();
+
   const fetchTokenBalance = async () => {
     try {
-      const appToken = localStorage.getItem('appToken');
-      if (!appToken) return;
-
-      const payload = jwtDecode<AppTokenPayload>(appToken);
-      if (!payload || !payload.wallet) return;
+      if (!connected || !publicKey) return;
 
       const connection = new Connection(API_ENDPOINTS.SOLANA_RPC_ENDPOINT, 'confirmed');
-      const wallet = new PublicKey(payload.wallet);
       const tokenId = game?.ca || ALPHA_GUI.SEND_TOKEN_CA;
       const tokenPublicKey = new PublicKey(tokenId);
 
       try {
-        const tokenAccounts = await connection.getTokenAccountsByOwner(wallet, { mint: tokenPublicKey });
+        const tokenAccounts = await connection.getTokenAccountsByOwner(publicKey, { mint: tokenPublicKey });
         if (tokenAccounts.value.length === 0) {
           setTokenBalance(0);
           return;
@@ -78,7 +78,7 @@ export default function GameDetailPage() {
         console.error('RPC Error details:', {
           error: rpcError,
           endpoint: API_ENDPOINTS.SOLANA_RPC_ENDPOINT,
-          wallet: wallet.toString(),
+          wallet: publicKey.toString(),
           tokenId: tokenId
         });
         throw rpcError;
@@ -127,12 +127,9 @@ export default function GameDetailPage() {
 
     const fetchLikeStatus = async () => {
       try {
-        const appToken = localStorage.getItem('appToken');
-        const response = await fetch(`/api/games/${gameId}/like`, {
-          headers: appToken ? {
-            'Authorization': `Bearer ${appToken}`
-          } : {}
-        });
+        if (!connected || !publicKey) return;
+
+        const response = await fetch(`/api/games/${gameId}/like?wallet=${publicKey.toString()}`);
 
         if (response.status === 404) {
           // Game not found - this is handled by the game fetch
@@ -166,7 +163,7 @@ export default function GameDetailPage() {
     }, 30000);
     
     return () => clearInterval(interval);
-  }, [gameId, game?.ca]);
+  }, [gameId, game?.ca, connected, publicKey]);
 
   const handleCopyCA = () => {
     const ca = game?.ca || ALPHA_GUI.SEND_TOKEN_CA;
@@ -190,27 +187,65 @@ export default function GameDetailPage() {
       return;
     }
 
+    if (!connected || !publicKey) {
+      toast({
+        title: "Wallet not connected",
+        description: "Please connect your wallet to continue",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!signTransaction) {
+      toast({
+        title: "Error",
+        description: "Your wallet doesn't support signing transactions",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsBuying(true);
     try {
-      const appToken = localStorage.getItem('appToken');
-      if (!appToken) {
-        throw new Error('Not authenticated. Please sign in first.');
-      }
+      // Get the transaction from Jupiter API
       const res = await fetch('/api/jupiter/buy', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${appToken}`,
         },
         body: JSON.stringify({
           amount: Number(buyAmount),
           outputMint: game?.ca || ALPHA_GUI.SEND_TOKEN_CA,
+          wallet: publicKey.toString(),
         }),
       });
       const data = await res.json();
       if (!res.ok) {
         throw new Error(data.error || `HTTP error! status: ${res.status}`);
       }
+
+      // Convert hex back to transaction
+      const transactionBuffer = Uint8Array.from(Buffer.from(data.transactionHex, 'hex'));
+      const transaction = VersionedTransaction.deserialize(transactionBuffer);
+      
+      // Sign the transaction
+      const signedTransaction = await signTransaction(transaction);
+      
+      // Send to Jupiter's execute endpoint
+      const executeRes = await fetch(`${JUP_ULTRA_API}/execute`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          signedTransaction: Buffer.from(signedTransaction.serialize()).toString('base64'),
+          requestId: data.requestId,
+        }),
+      });
+      
+      const executeResult = await executeRes.json();
+      if (!executeRes.ok) {
+        throw new Error(executeResult.error || 'Failed to execute transaction');
+      }
+
       toast({
         title: "Success!",
         description: `Successfully bought tokens worth ${buyAmount} SOL`,
@@ -247,21 +282,36 @@ export default function GameDetailPage() {
       return;
     }
 
+    if (!connected || !publicKey) {
+      toast({
+        title: "Wallet not connected",
+        description: "Please connect your wallet to continue",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!signTransaction) {
+      toast({
+        title: "Error",
+        description: "Your wallet doesn't support signing transactions",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsSelling(true);
     try {
-      const appToken = localStorage.getItem('appToken');
-      if (!appToken) {
-        throw new Error('Not authenticated. Please sign in first.');
-      }
+      // Get the transaction from Jupiter API
       const response = await fetch('/api/jupiter/sell', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${appToken}`,
         },
         body: JSON.stringify({
           amount: Number(sellAmount),
           inputMint: game?.ca || ALPHA_GUI.SEND_TOKEN_CA,
+          wallet: publicKey.toString(),
         }),
       });
       const data = await response.json();
@@ -270,6 +320,29 @@ export default function GameDetailPage() {
         console.error('Sell error response:', { status: response.status, data });
         throw new Error(errorMessage || 'Failed to process sell transaction');
       }
+
+      // Convert hex back to transaction
+      const transactionBuffer = Uint8Array.from(Buffer.from(data.transactionHex, 'hex'));
+      const transaction = VersionedTransaction.deserialize(transactionBuffer);
+      
+      // Sign the transaction
+      const signedTransaction = await signTransaction(transaction);
+      
+      // Send to Jupiter's execute endpoint
+      const executeRes = await fetch(`${JUP_ULTRA_API}/execute`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          signedTransaction: Buffer.from(signedTransaction.serialize()).toString('base64'),
+          requestId: data.requestId,
+        }),
+      });
+      
+      const executeResult = await executeRes.json();
+      if (!executeRes.ok) {
+        throw new Error(executeResult.error || 'Failed to execute transaction');
+      }
+
       toast({
         title: "Success!",
         description: `Successfully sold ${sellAmount} tokens`,
@@ -291,23 +364,25 @@ export default function GameDetailPage() {
   };
 
   const handleLike = async () => {
-    try {
-      const appToken = localStorage.getItem('appToken');
-      if (!appToken) {
-        toast({
-          title: "Authentication required",
-          description: "Please sign in to like games",
-          variant: "destructive",
-        });
-        return;
-      }
+    if (!connected || !publicKey) {
+      toast({
+        title: "Wallet not connected",
+        description: "Please connect your wallet to like games",
+        variant: "destructive",
+      });
+      return;
+    }
 
+    try {
       setIsLiking(true);
       const response = await fetch(`/api/games/${gameId}/like`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${appToken}`
-        }
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          wallet: publicKey.toString(),
+        }),
       });
 
       if (!response.ok) {

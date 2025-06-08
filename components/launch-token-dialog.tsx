@@ -43,6 +43,8 @@ export default function LaunchTokenDialog({
   const [tokenAmount, setTokenAmount] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [imageUrl, setImageUrl] = useState<string>("");
+  const [connected, setConnected] = useState(false);
+  const [publicKey, setPublicKey] = useState<string | null>(null);
 
   useEffect(() => {
     if (isOpen) {
@@ -59,7 +61,9 @@ export default function LaunchTokenDialog({
       if (useSendToken) {
         ca = ALPHA_GUI.SEND_TOKEN_CA;
       } else {
-        const token = localStorage.getItem('appToken') || '';
+        if (!connected || !publicKey) {
+          throw new Error('Please connect your wallet to launch a token');
+        }
         if (!tokenAmount || isNaN(Number(tokenAmount)) || Number(tokenAmount) <= 0) {
           throw new Error('Please enter a valid token amount');
         }
@@ -71,7 +75,7 @@ export default function LaunchTokenDialog({
           tokenTelegram,
           tokenTwitter,
           tokenWebsite,
-          appToken: token,
+          wallet: publicKey.toString(),
           amount: Number(tokenAmount),
         });
       }

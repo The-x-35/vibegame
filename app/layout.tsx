@@ -5,7 +5,7 @@ import Navbar from '@/components/layout/navbar';
 import Footer from '@/components/layout/footer';
 import { ThemeProvider } from '@/components/theme-provider';
 import { PrivyProvider } from '@/components/privy-provider';
-import { GoogleProvider } from '@/components/google-provider';
+import { WalletContextProvider } from '@/components/wallet-provider';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -28,13 +28,13 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <GoogleProvider>
+          <WalletContextProvider>
             <PrivyProvider>
               <Navbar />
               <main className="flex-1 pt-16 overflow-auto pb-16">{children}</main>
               <Footer />
             </PrivyProvider>
-          </GoogleProvider>
+          </WalletContextProvider>
         </ThemeProvider>
       </body>
     </html>

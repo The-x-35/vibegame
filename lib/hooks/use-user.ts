@@ -2,58 +2,44 @@
 
 import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
-import { jwtDecode } from "jwt-decode";
-
-// Define the shape of the decoded application JWT payload
-interface AppTokenPayload {
-  sub: string; // email
-  userId: string;
-  wallet: string;
-  exp?: number;
-  iat?: number;
-}
+import { useWallet } from '@solana/wallet-adapter-react';
 
 // Define the shape of authenticated user in the app
 type User = {
   id: string;
-  email: string;
   wallet: string;
-  profileImage?: string;
+  name?: string | null;
 };
 
 export function useUser() {
   const pathname = usePathname();
+  const { connected, publicKey } = useWallet();
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('appToken') : null;
-    if (token) {
-      try {
-        // Decode our app token
-        const decoded = jwtDecode<AppTokenPayload>(token);
-        // Check expiration
-        if (!decoded.exp || decoded.exp * 1000 > Date.now()) {
-          setUser({ 
-            id: decoded.userId, 
-            email: decoded.sub, 
-            wallet: decoded.wallet,
-            profileImage: undefined // Set to undefined by default
-          });
-        } else {
-          localStorage.removeItem('appToken');
+    const fetchUser = async () => {
+      if (connected && publicKey) {
+        try {
+          const response = await fetch(`/api/users?wallet=${publicKey.toString()}`);
+          if (response.ok) {
+            const data = await response.json();
+            setUser(data.user);
+          } else {
+            setUser(null);
+          }
+        } catch (err) {
+          console.error('Failed to fetch user:', err);
           setUser(null);
         }
-      } catch (err) {
-        console.error('Failed to decode token in useUser:', err);
-        localStorage.removeItem('appToken');
+      } else {
         setUser(null);
       }
-    } else {
-      setUser(null);
-    }
-    setIsLoading(false);
-  }, [pathname]);
+      setIsLoading(false);
+    };
+
+    fetchUser();
+  }, [connected, publicKey, pathname]);
 
   return { user, isLoading };
 }

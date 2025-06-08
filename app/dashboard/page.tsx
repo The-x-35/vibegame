@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useUser } from "@/lib/hooks/use-user";
+import { useWallet } from '@solana/wallet-adapter-react';
 import { ProjectCard, type Project } from "@/components/project-card";
 import { Button } from "@/components/ui/button";
 import { PlusCircle, Gamepad2 } from "lucide-react";
@@ -12,14 +13,15 @@ import CreateProjectDialog from "@/components/create-project-dialog";
 export default function DashboardPage() {
   const router = useRouter();
   const { user, isLoading } = useUser();
+  const { connected } = useWallet();
   const [projects, setProjects] = useState<Project[]>([]);
   const [isProjectsLoading, setIsProjectsLoading] = useState(true);
 
   useEffect(() => {
-    if (!isLoading && !user) {
-      router.push("/login");
+    if (!isLoading && !connected) {
+      router.push("/");
     }
-  }, [user, isLoading, router]);
+  }, [connected, isLoading, router]);
 
   useEffect(() => {
     // Fetch the authenticated user's projects from the API
@@ -89,7 +91,7 @@ export default function DashboardPage() {
   }
 
   // Only proceed if user is authenticated (redirect handled in useEffect)
-  if (!user) return null;
+  if (!connected) return null;
 
   return (
     <div className="container mx-auto px-4 py-10">
@@ -97,7 +99,7 @@ export default function DashboardPage() {
         <div>
           <h1 className="text-3xl font-bold">Your Dashboard</h1>
           <p className="text-muted-foreground">Manage and monitor all your game projects</p>
-          {user.wallet && (
+          {user?.wallet && (
             <p className="mt-2 text-sm font-mono break-all">
               <span className="font-medium">Wallet:</span> {user.wallet}
             </p>
