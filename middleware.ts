@@ -1,68 +1,44 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
-// Set this to true to enable production mode restrictions
-const IS_PRODUCTION = false
-
-// List of public routes that don't require authentication
-const PUBLIC_ROUTES = [
-  '/',
-  '/games',
-  '/coming-soon',
-  '/terms',
-  '/privacy',
-  '/api/users',
-  '/api/games',
-]
+// Force production mode
+const IS_PRODUCTION = true
 
 export function middleware(request: NextRequest) {
-  console.log('Middleware executing...')
-  
-  if (IS_PRODUCTION) {
-    console.log('Production mode detected')
-    const path = request.nextUrl.pathname
-    console.log('Current path:', path)
+  // Get the pathname of the request
+  const path = request.nextUrl.pathname
 
-    // Allow access to public routes
-    if (PUBLIC_ROUTES.some(route => path.startsWith(route))) {
-      console.log('Allowing access to public route')
-      return NextResponse.next()
-    }
-
-    // Allow access to API routes
-    if (path.startsWith('/api')) {
-      console.log('Allowing access to API route')
-      return NextResponse.next()
-    }
-
-    // Allow access to static files and assets
-    if (
-      path.startsWith('/_next') ||
-      path.startsWith('/static') ||
-      path.includes('.')
-    ) {
-      console.log('Allowing access to static assets')
-      return NextResponse.next()
-    }
-
-    console.log('Redirecting to coming soon page')
-    // Redirect all other routes to coming soon page
-    return NextResponse.rewrite(new URL('/coming-soon', request.url))
+  // If not in production, allow all requests
+  if (!IS_PRODUCTION) {
+    return NextResponse.next()
   }
 
-  console.log('Not in production mode, allowing access')
-  return NextResponse.next()
+  // List of paths that are always allowed
+  const allowedPaths = [
+    '/coming-soon',
+    '/terms',
+    '/privacy',
+    '/_next',
+    '/api',
+    '/static',
+    '/favicon.ico'
+  ]
+
+  // Check if the current path should be allowed
+  const isAllowed = allowedPaths.some(allowedPath => 
+    path === allowedPath || path.startsWith(allowedPath + '/')
+  )
+
+  // If the path is allowed, proceed
+  if (isAllowed) {
+    return NextResponse.next()
+  }
+
+  // For all other paths, redirect to coming soon
+  return NextResponse.redirect(new URL('/coming-soon', request.url))
 }
 
+// Match all paths except the ones we want to exclude
 export const config = {
-  matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - api (API routes)
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     */
-    '/((?!api|_next/static|_next/image|favicon.ico).*)',
-  ],
+  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)']
 } 
