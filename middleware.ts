@@ -21,7 +21,9 @@ export function middleware(request: NextRequest) {
     '/_next',
     '/api',
     '/static',
-    '/favicon.ico'
+    '/favicon.ico',
+    '/sa-logo.svg',
+    '/test-logo.svg'
   ]
 
   // Check if the current path should be allowed
@@ -40,5 +42,5 @@ export function middleware(request: NextRequest) {
 
 // Match all paths except the ones we want to exclude
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)']
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|sa-logo.svg|test-logo.svg).*)']
 } 

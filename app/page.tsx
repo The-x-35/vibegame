@@ -45,14 +45,14 @@ export default function Home() {
 
               <div 
                 onClick={handleCopy}
-                className="inline-block p-2 px-3 rounded-full bg-blue-500/10 border border-blue-500/20 cursor-pointer hover:bg-blue-500/20 transition-colors group"
+                className="inline-block p-2 px-3 rounded-full bg-blue-500/10 border border-blue-500/20 cursor-pointer hover:bg-blue-500/20 transition-colors group relative"
               >
                 <span className="text-sm text-blue-400 flex items-center gap-2">
                   {ALPHA_GUI.SEND_TOKEN_CA}
                   <Copy className="h-4 w-4 text-blue-400 group-hover:scale-110 transition-transform" />
                 </span>
                 {copied && (
-                  <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-black/80 text-white px-2 py-1 rounded text-xs">
+                  <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-black/80 text-white px-2 py-1 rounded text-xs whitespace-nowrap">
                     Copied!
                   </span>
                 )}
