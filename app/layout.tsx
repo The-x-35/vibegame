@@ -1,11 +1,10 @@
 import './globals.css';
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
-import Navbar from '@/components/layout/navbar';
-import Footer from '@/components/layout/footer';
 import { ThemeProvider } from '@/components/theme-provider';
 import { PrivyProvider } from '@/components/privy-provider';
 import { WalletContextProvider } from '@/components/wallet-provider';
+import { NavbarWrapper } from '@/components/layout/navbar-wrapper';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -30,9 +29,9 @@ export default function RootLayout({
         >
           <WalletContextProvider>
             <PrivyProvider>
-              <Navbar />
-              <main className="flex-1 pt-16 overflow-auto pb-16">{children}</main>
-              <Footer />
+              <NavbarWrapper>
+                {children}
+              </NavbarWrapper>
             </PrivyProvider>
           </WalletContextProvider>
         </ThemeProvider>
