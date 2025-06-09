@@ -23,7 +23,8 @@ export function middleware(request: NextRequest) {
     '/static',
     '/favicon.ico',
     '/sa-logo.svg',
-    '/test-logo.svg'
+    '/test-logo.svg',
+    '/games'
   ]
 
   // Check if the current path should be allowed
