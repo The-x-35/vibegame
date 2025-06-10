@@ -5,43 +5,36 @@ import type { NextRequest } from 'next/server'
 const IS_PRODUCTION = false
 
 export function middleware(request: NextRequest) {
-  // Get the pathname of the request
-  const path = request.nextUrl.pathname
-
-  // If not in production, allow all requests
-  if (!IS_PRODUCTION) {
-    return NextResponse.next()
+  const url = request.nextUrl;
+  const hostname = request.headers.get('host') || '';
+  
+  // Extract the subdomain and check if we're on localhost or vibegame.fun
+  const [subdomain, ...rest] = hostname.split('.');
+  const isLocalhost = rest.includes('localhost');
+  const isVibegameFun = rest.includes('vibegame.fun');
+  
+  // Only handle subdomain routing if we're on a subdomain and it's not 'www' or 'app'
+  if (subdomain && subdomain !== 'www' && subdomain !== 'app' && (isLocalhost || isVibegameFun)) {
+    // If the path is just '/' or empty, route to the game page
+    if (url.pathname === '/' || url.pathname === '') {
+      url.pathname = `/games/${subdomain}`;
+      return NextResponse.rewrite(url);
+    }
   }
-
-  // List of paths that are always allowed
-  const allowedPaths = [
-    '/coming-soon',
-    '/terms',
-    '/privacy',
-    '/_next',
-    '/api',
-    '/static',
-    '/favicon.ico',
-    '/sa-logo.svg',
-    '/test-logo.svg',
-    '/games'
-  ]
-
-  // Check if the current path should be allowed
-  const isAllowed = allowedPaths.some(allowedPath => 
-    path === allowedPath || path.startsWith(allowedPath + '/')
-  )
-
-  // If the path is allowed, proceed
-  if (isAllowed) {
-    return NextResponse.next()
-  }
-
-  // For all other paths, redirect to coming soon
-  return NextResponse.redirect(new URL('/coming-soon', request.url))
+  
+  return NextResponse.next();
 }
 
 // Match all paths except the ones we want to exclude
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico|sa-logo.svg|test-logo.svg).*)']
-} 
+  matcher: [
+    /*
+     * Match all request paths except for the ones starting with:
+     * - api (API routes)
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
+     */
+    '/((?!api|_next/static|_next/image|favicon.ico).*)',
+  ],
+}; 

@@ -12,14 +12,38 @@ const nextConfig = {
     },
     responseLimit: '500mb',
   },
-  webpack: (config, { isServer }) => {
-    // Enable webpack caching
-    config.cache = {
-      type: 'filesystem',
-      buildDependencies: {
-        config: [__filename]
-      }
+  typescript: {
+    ignoreDuringBuilds: true,
+  },
+  async rewrites() {
+    return {
+      beforeFiles: [
+        {
+          source: '/',
+          has: [
+            {
+              type: 'host',
+              value: '(?<subdomain>[^.]+).vibegame.fun',
+            },
+          ],
+          destination: '/games/:subdomain',
+        },
+        {
+          source: '/',
+          has: [
+            {
+              type: 'host',
+              value: '(?<subdomain>[^.]+).localhost(:\\d+)?',
+            },
+          ],
+          destination: '/games/:subdomain',
+        },
+      ],
     };
+  },
+  webpack: (config, { isServer }) => {
+    // Disable all webpack caching
+    config.cache = false;
     
     // Handle Node.js modules
     if (!isServer) {

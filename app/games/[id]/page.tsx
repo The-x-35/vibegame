@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import Navbar from "@/components/layout/navbar";
 import { ALPHA_GUI } from '@/global/constant';
 import { Button } from "@/components/ui/button";
@@ -16,6 +16,7 @@ import { CommentsSection } from '@/components/comments-section';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { VersionedTransaction } from '@solana/web3.js';
 import { JUP_ULTRA_API } from '@/global/constant';
+import { getGameUrl } from '@/lib/utils';
 
 interface Game {
   id: string;
@@ -38,6 +39,7 @@ interface AppTokenPayload {
 
 export default function GameDetailPage() {
   const params = useParams();
+  const router = useRouter();
   const gameId = params.id as string;
   const { toast } = useToast();
   const [game, setGame] = useState<Game | null>(null);
@@ -167,6 +169,7 @@ export default function GameDetailPage() {
 
   const handleCopyCA = () => {
     const ca = game?.ca || ALPHA_GUI.SEND_TOKEN_CA;
+    const gameUrl = getGameUrl(gameId);
     navigator.clipboard.writeText(ca);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
