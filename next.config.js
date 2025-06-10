@@ -13,15 +13,14 @@ const nextConfig = {
     responseLimit: '500mb',
   },
   webpack: (config, { isServer }) => {
-    // Disable all webpack caching
-    config.cache = false;
-    
-    // Clear module cache
-    config.module = {
-      ...config.module,
-      unsafeCache: false
+    // Enable webpack caching
+    config.cache = {
+      type: 'filesystem',
+      buildDependencies: {
+        config: [__filename]
+      }
     };
-
+    
     // Handle Node.js modules
     if (!isServer) {
       config.resolve.fallback = {
@@ -49,10 +48,6 @@ const nextConfig = {
     }
     
     return config;
-  },
-  // Disable general build cache
-  generateBuildId: async () => {
-    return `build-${Date.now()}`
   }
 };
 
