@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Navbar from "@/components/layout/navbar";
 import { ALPHA_GUI } from '@/global/constant';
@@ -59,7 +59,7 @@ export default function GameDetailPage() {
 
   const { signTransaction, connected, publicKey } = useWallet();
 
-  const fetchTokenBalance = async () => {
+  const fetchTokenBalance = useCallback(async () => {
     try {
       if (!connected || !publicKey) return;
 
@@ -89,7 +89,7 @@ export default function GameDetailPage() {
       console.error('Error fetching token balance:', error);
       setTokenBalance(0);
     }
-  };
+  }, [connected, publicKey, game?.ca]);
 
   useEffect(() => {
     const fetchGame = async () => {
@@ -165,7 +165,7 @@ export default function GameDetailPage() {
     }, 30000);
     
     return () => clearInterval(interval);
-  }, [gameId, game?.ca, connected, publicKey]);
+  }, [gameId, game?.ca, connected, publicKey, fetchTokenBalance]);
 
   const handleCopyCA = () => {
     const ca = game?.ca || ALPHA_GUI.SEND_TOKEN_CA;
