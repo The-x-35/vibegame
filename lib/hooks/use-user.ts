@@ -19,20 +19,29 @@ export function useUser() {
 
   useEffect(() => {
     const fetchUser = async () => {
+      console.log('useUser hook - Current state:', {
+        connected,
+        publicKey: publicKey?.toString()
+      });
+
       if (connected && publicKey) {
         try {
+          console.log('Fetching user data for wallet:', publicKey.toString());
           const response = await fetch(`/api/users?wallet=${publicKey.toString()}`);
           if (response.ok) {
             const data = await response.json();
+            console.log('User data fetched successfully:', data.user);
             setUser(data.user);
           } else {
+            console.log('Failed to fetch user data:', response.status);
             setUser(null);
           }
         } catch (err) {
-          console.error('Failed to fetch user:', err);
+          console.error('Error fetching user:', err);
           setUser(null);
         }
       } else {
+        console.log('Wallet not connected or no public key');
         setUser(null);
       }
       setIsLoading(false);

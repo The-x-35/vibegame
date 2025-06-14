@@ -33,26 +33,14 @@ export default function DeleteTemplateDialog({
   useEffect(() => {
     if (isUserLoading) return;
     
-    if (!user) {
-      router.push('/login');
-      return;
-    }
-    
-    const token = localStorage.getItem('appToken');
-    if (!token) {
-      router.push('/login');
+    if (!user || !user.wallet) {
+      router.push('/');
       return;
     }
 
-    try {
-      const decoded = jwtDecode<{ sub: string }>(token);
-      if (decoded.sub !== 'arpit.k3note@gmail.com') {
-        router.push('/');
-        return;
-      }
-    } catch (error) {
-      console.error('Error decoding token:', error);
-      router.push('/login');
+    // Check if the connected wallet matches the allowed address
+    if (user.wallet !== 'AidmVBuszvzCJ6cWrBQfKNwgNPU4KCvXBcrWh91vitm8') {
+      router.push('/');
       return;
     }
   }, [user, isUserLoading, router]);

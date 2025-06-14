@@ -47,29 +47,35 @@ export default function TemplatesPage() {
 
   // Auth check effect
   useEffect(() => {
-    if (isUserLoading) return;
-    
-    if (!user) {
-      router.push('/login');
-      return;
-    }
-    
-    const token = localStorage.getItem('appToken');
-    if (!token) {
-      router.push('/login');
+    console.log('Auth check - Current state:', {
+      isUserLoading,
+      user,
+      wallet: user?.wallet
+    });
+
+    // Don't do anything while loading
+    if (isUserLoading) {
+      console.log('Still loading user data...');
       return;
     }
 
-    try {
-      const decoded = jwtDecode<{ sub: string }>(token);
-      if (decoded.sub !== 'arpit.k3note@gmail.com') {
+    // If we have user data and it's loaded
+    if (user && user.wallet) {
+      console.log('Checking wallet address:', {
+        userWallet: user.wallet,
+        allowedWallet: 'AidmVBuszvzCJ6cWrBQfKNwgNPU4KCvXBcrWh91vitm8',
+        matches: user.wallet === 'AidmVBuszvzCJ6cWrBQfKNwgNPU4KCvXBcrWh91vitm8'
+      });
+
+      if (user.wallet !== 'AidmVBuszvzCJ6cWrBQfKNwgNPU4KCvXBcrWh91vitm8') {
+        console.log('Wallet address mismatch, redirecting to home');
         router.push('/');
         return;
       }
-    } catch (error) {
-      console.error('Error decoding token:', error);
-      router.push('/login');
-      return;
+
+      console.log('Auth check passed, user can access templates');
+    } else {
+      console.log('No user data yet, waiting for wallet connection...');
     }
   }, [user, isUserLoading, router]);
 
