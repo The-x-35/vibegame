@@ -8,11 +8,13 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Rocket, ExternalLink } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
-import launchPumpFunToken from "../lib/launchPumpFunToken";
+import launchMeteoraToken from "../lib/launchMeteoraToken";
 import { useRouter } from "next/navigation";
 import { ALPHA_GUI } from "@/global/constant";
 import Link from "next/link";
 import { getGameUrl } from '@/lib/utils';
+import { useWallet } from '@solana/wallet-adapter-react';
+import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 
 interface LaunchTokenDialogProps {
   projectId: string;
@@ -30,6 +32,7 @@ export default function LaunchTokenDialog({
   ca,
 }: LaunchTokenDialogProps) {
   const router = useRouter();
+  const { connected, publicKey } = useWallet();
   const [isOpen, setIsOpen] = useState(false);
   const [name, setName] = useState(projectName);
   const [description, setDescription] = useState(projectDescription);
@@ -43,8 +46,6 @@ export default function LaunchTokenDialog({
   const [tokenAmount, setTokenAmount] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [imageUrl, setImageUrl] = useState<string>("");
-  const [connected, setConnected] = useState(false);
-  const [publicKey, setPublicKey] = useState<string | null>(null);
 
   useEffect(() => {
     if (isOpen) {
@@ -67,7 +68,7 @@ export default function LaunchTokenDialog({
         if (!tokenAmount || isNaN(Number(tokenAmount)) || Number(tokenAmount) <= 0) {
           throw new Error('Please enter a valid token amount');
         }
-        ca = await launchPumpFunToken({
+        ca = await launchMeteoraToken({
           imageUrl,
           tokenName,
           tokenTicker,
@@ -153,100 +154,108 @@ export default function LaunchTokenDialog({
           )}
           {!useSendToken && (
             <>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="token-name" className="text-right">Token Name</Label>
-                <Input
-                  id="token-name"
-                  className="col-span-3"
-                  placeholder="Token Name"
-                  value={tokenName}
-                  onChange={(e) => setTokenName(e.target.value)}
-                  required
-                />
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="token-ticker" className="text-right">Token Ticker</Label>
-                <Input
-                  id="token-ticker"
-                  className="col-span-3"
-                  placeholder="Ticker (e.g. ABC)"
-                  value={tokenTicker}
-                  onChange={(e) => setTokenTicker(e.target.value)}
-                  required
-                />
-              </div>
-              <div className="grid grid-cols-4 items-start gap-4">
-                <Label htmlFor="token-description" className="text-right pt-2">Token Description</Label>
-                <Textarea
-                  id="token-description"
-                  className="col-span-3"
-                  placeholder="Description"
-                  value={tokenDescription}
-                  onChange={(e) => setTokenDescription(e.target.value)}
-                  required
-                />
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="token-amount" className="text-right">Token Amount</Label>
-                <Input
-                  id="token-amount"
-                  type="number"
-                  className="col-span-3"
-                  placeholder="Amount of tokens to mint"
-                  value={tokenAmount}
-                  onChange={(e) => setTokenAmount(e.target.value)}
-                  required
-                />
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="token-telegram" className="text-right">Telegram</Label>
-                <Input
-                  id="token-telegram"
-                  className="col-span-3"
-                  placeholder="Telegram (optional)"
-                  value={tokenTelegram}
-                  onChange={(e) => setTokenTelegram(e.target.value)}
-                />
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="token-twitter" className="text-right">Twitter</Label>
-                <Input
-                  id="token-twitter"
-                  className="col-span-3"
-                  placeholder="Twitter (optional)"
-                  value={tokenTwitter}
-                  onChange={(e) => setTokenTwitter(e.target.value)}
-                />
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="token-website" className="text-right">Website</Label>
-                <Input
-                  id="token-website"
-                  className="col-span-3"
-                  placeholder="Website (optional)"
-                  value={tokenWebsite}
-                  onChange={(e) => setTokenWebsite(e.target.value)}
-                />
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="token-image" className="text-right">Token Image URL</Label>
-                <Input
-                  id="token-image"
-                  className="col-span-3"
-                  type="url"
-                  placeholder="https://example.com/image.png"
-                  value={imageUrl}
-                  onChange={e => setImageUrl(e.target.value)}
-                  required
-                />
-              </div>
+              {!connected ? (
+                <div className="col-span-4 flex justify-center">
+                  <WalletMultiButton />
+                </div>
+              ) : (
+                <>
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="token-name" className="text-right">Token Name</Label>
+                    <Input
+                      id="token-name"
+                      className="col-span-3"
+                      placeholder="Token Name"
+                      value={tokenName}
+                      onChange={(e) => setTokenName(e.target.value)}
+                      required
+                    />
+                  </div>
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="token-ticker" className="text-right">Token Ticker</Label>
+                    <Input
+                      id="token-ticker"
+                      className="col-span-3"
+                      placeholder="Ticker (e.g. ABC)"
+                      value={tokenTicker}
+                      onChange={(e) => setTokenTicker(e.target.value)}
+                      required
+                    />
+                  </div>
+                  <div className="grid grid-cols-4 items-start gap-4">
+                    <Label htmlFor="token-description" className="text-right pt-2">Token Description</Label>
+                    <Textarea
+                      id="token-description"
+                      className="col-span-3"
+                      placeholder="Description"
+                      value={tokenDescription}
+                      onChange={(e) => setTokenDescription(e.target.value)}
+                      required
+                    />
+                  </div>
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="token-amount" className="text-right">Token Amount</Label>
+                    <Input
+                      id="token-amount"
+                      type="number"
+                      className="col-span-3"
+                      placeholder="Amount of tokens to mint"
+                      value={tokenAmount}
+                      onChange={(e) => setTokenAmount(e.target.value)}
+                      required
+                    />
+                  </div>
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="token-telegram" className="text-right">Telegram</Label>
+                    <Input
+                      id="token-telegram"
+                      className="col-span-3"
+                      placeholder="Telegram (optional)"
+                      value={tokenTelegram}
+                      onChange={(e) => setTokenTelegram(e.target.value)}
+                    />
+                  </div>
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="token-twitter" className="text-right">Twitter</Label>
+                    <Input
+                      id="token-twitter"
+                      className="col-span-3"
+                      placeholder="Twitter (optional)"
+                      value={tokenTwitter}
+                      onChange={(e) => setTokenTwitter(e.target.value)}
+                    />
+                  </div>
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="token-website" className="text-right">Website</Label>
+                    <Input
+                      id="token-website"
+                      className="col-span-3"
+                      placeholder="Website (optional)"
+                      value={tokenWebsite}
+                      onChange={(e) => setTokenWebsite(e.target.value)}
+                    />
+                  </div>
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="token-image" className="text-right">Token Image URL</Label>
+                    <Input
+                      id="token-image"
+                      className="col-span-3"
+                      type="url"
+                      placeholder="https://example.com/image.png"
+                      value={imageUrl}
+                      onChange={e => setImageUrl(e.target.value)}
+                      required
+                    />
+                  </div>
+                </>
+              )}
             </>
           )}
           <DialogFooter>
             <DialogClose asChild>
               <Button variant="outline">Cancel</Button>
             </DialogClose>
-            <Button type="submit" disabled={isLoading}>
+            <Button type="submit" disabled={isLoading || (!useSendToken && !connected)}>
               {isLoading ? "Launching..." : "Launch Token"}
             </Button>
           </DialogFooter>
