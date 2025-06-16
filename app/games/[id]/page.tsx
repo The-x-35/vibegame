@@ -445,29 +445,25 @@ export default function GameDetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="h-screen bg-background flex flex-col">
       <Navbar />
-      <div className="flex-1 container mx-auto px-4 py-6">
-        <div className="mb-4">
-          <div className="flex items-center justify-between mb-4">
-            <h1 className="text-2xl font-bold">{game.name}</h1>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={handleLike}
-              disabled={isLiking}
-              className={`h-10 w-10 ${isLiked ? 'text-red-500' : 'text-muted-foreground'}`}
-            >
-              <Heart className={`h-5 w-5 ${isLiked ? 'fill-current' : ''}`} />
-              <span className="ml-2">{likesCount}</span>
-            </Button>
-          </div>
-          <p className="text-muted-foreground mb-4">{game.description}</p>
-          
-          <div className="flex flex-col gap-4 mb-4">
+      <div className="flex-1 w-full h-full relative">
+        <iframe
+          src={`${ALPHA_GUI.EMBED_URL}?project_url=${encodeURIComponent(game.url)}`}
+          className="w-full h-full"
+          style={{ position: 'absolute', top: 0, left: 0, zIndex: 0 }}
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowFullScreen
+        />
+        <div className="grid grid-cols-12 gap-6 mb-4 relative z-10">
+          {/* Left Column */}
+          <div className="col-span-12 md:col-span-2 flex flex-col gap-4 ml-10 mt-5">
+            <div className="text-2xl font-bold">{game.name}</div>
+            <p className="text-muted-foreground">{game.description}</p>
+            {/* Contract Address */}
             <div className="flex items-center gap-2">
-              <p className="text-sm text-muted-foreground">Contract Address:</p>
-              <code className="text-sm bg-muted px-2 py-1 rounded">
+              <p className="text-sm text-muted-foreground">Contract:</p>
+              <code className="text-xs break-all bg-muted px-2 py-1 rounded">
                 {game.ca || ALPHA_GUI.SEND_TOKEN_CA}
               </code>
               <Button
@@ -478,11 +474,11 @@ export default function GameDetailPage() {
               >
                 <Copy className="h-4 w-4" />
               </Button>
-              {copied && (
-                <span className="text-sm text-green-500">Copied!</span>
-              )}
+              {copied && <span className="text-xs text-green-500">Copied!</span>}
             </div>
-            <div className="flex items-center gap-4">
+
+            {/* Price / Market / Balance */}
+            <div className="flex flex-wrap items-center gap-4">
               <div className="flex items-center gap-2">
                 <p className="text-sm text-muted-foreground">Price:</p>
                 <span className="text-lg font-semibold">
@@ -496,104 +492,109 @@ export default function GameDetailPage() {
                 </span>
               </div>
               <div className="flex items-center gap-2">
-                <p className="text-sm text-muted-foreground">Your Token Balance:</p>
-                <span className="text-lg font-semibold">
-                  {tokenBalance.toFixed(4)}
-                </span>
+                <p className="text-sm text-muted-foreground">Balance:</p>
+                <span className="text-lg font-semibold">{tokenBalance.toFixed(4)}</span>
               </div>
-              <div className="flex gap-2">
-                {showBuyInput ? (
-                  <div className="flex gap-2">
-                    <Input
-                      type="number"
-                      placeholder="Amount in SOL"
-                      value={buyAmount}
-                      onChange={(e) => setBuyAmount(e.target.value)}
-                      className="w-32"
-                      min="0"
-                      step="0.01"
-                    />
-                    <Button
-                      onClick={handleBuy}
-                      disabled={isBuying}
-                      className="bg-green-500 hover:bg-green-600 text-white"
-                    >
-                      {isBuying ? 'Buying...' : 'Confirm Buy'}
-                    </Button>
-                    <Button
-                      variant="outline"
-                      onClick={() => {
-                        setShowBuyInput(false);
-                        setBuyAmount('');
-                      }}
-                    >
-                      Cancel
-                    </Button>
-                  </div>
-                ) : (
+            </div>
+
+            {/* Buy / Sell */}
+            <div className="flex flex-wrap gap-2">
+              {showBuyInput ? (
+                <div className="flex gap-2">
+                  <Input
+                    type="number"
+                    placeholder="Amount in SOL"
+                    value={buyAmount}
+                    onChange={(e) => setBuyAmount(e.target.value)}
+                    className="w-32"
+                    min="0"
+                    step="0.01"
+                  />
                   <Button
                     onClick={handleBuy}
                     disabled={isBuying}
                     className="bg-green-500 hover:bg-green-600 text-white"
                   >
-                    <TrendingUp className="h-4 w-4 mr-2" />
-                    Buy
+                    {isBuying ? 'Buying...' : 'Confirm Buy'}
                   </Button>
-                )}
-                {showSellInput ? (
-                  <div className="flex gap-2">
-                    <Input
-                      type="number"
-                      placeholder="Amount to sell"
-                      value={sellAmount}
-                      onChange={(e) => setSellAmount(e.target.value)}
-                      className="w-32"
-                      min="0"
-                      max={tokenBalance}
-                      step="0.01"
-                    />
-                    <Button
-                      onClick={handleSell}
-                      disabled={isSelling}
-                      className="bg-red-500 hover:bg-red-600 text-white"
-                    >
-                      {isSelling ? 'Selling...' : 'Confirm Sell'}
-                    </Button>
-                    <Button
-                      variant="outline"
-                      onClick={() => {
-                        setShowSellInput(false);
-                        setSellAmount('');
-                      }}
-                    >
-                      Cancel
-                    </Button>
-                  </div>
-                ) : (
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setShowBuyInput(false);
+                      setBuyAmount('');
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              ) : (
+                <Button
+                  onClick={handleBuy}
+                  disabled={isBuying}
+                  className="bg-green-500 hover:bg-green-600 text-white"
+                >
+                  <TrendingUp className="h-4 w-4 mr-2" />
+                  Buy
+                </Button>
+              )}
+              {showSellInput ? (
+                <div className="flex gap-2">
+                  <Input
+                    type="number"
+                    placeholder="Amount to sell"
+                    value={sellAmount}
+                    onChange={(e) => setSellAmount(e.target.value)}
+                    className="w-32"
+                    min="0"
+                    max={tokenBalance}
+                    step="0.01"
+                  />
                   <Button
                     onClick={handleSell}
-                    disabled={isSelling || tokenBalance <= 0}
+                    disabled={isSelling}
                     className="bg-red-500 hover:bg-red-600 text-white"
                   >
-                    <TrendingDown className="h-4 w-4 mr-2" />
-                    Sell
+                    {isSelling ? 'Selling...' : 'Confirm Sell'}
                   </Button>
-                )}
-              </div>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setShowSellInput(false);
+                      setSellAmount('');
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              ) : (
+                <Button
+                  onClick={handleSell}
+                  disabled={isSelling || tokenBalance <= 0}
+                  className="bg-red-500 hover:bg-red-600 text-white"
+                >
+                  <TrendingDown className="h-4 w-4 mr-2" />
+                  Sell
+                </Button>
+              )}
             </div>
           </div>
-          <div className="w-full h-[calc(100vh-250px)] rounded-lg overflow-hidden border border-border/50">
-            <iframe
-              src={`${ALPHA_GUI.EMBED_URL}?project_url=${encodeURIComponent(game.url)}`}
-              className="w-full h-full"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-            />
-          </div>
 
-          <div className="mt-8">
-            <h2 className="text-xl font-semibold mb-4">Comments</h2>
-            <CommentsSection projectId={gameId} />
+          {/* Right Column */}
+          <div className="col-span-12 md:col-span-2 flex flex-col gap-4 mr-4 justify-end absolute right-0 top-5">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleLike}
+              disabled={isLiking}
+              className={`h-10 w-10 self-start ${isLiked ? 'text-red-500' : 'text-muted-foreground'}`}
+            >
+              <Heart className={`h-5 w-5 ${isLiked ? 'fill-current' : ''}`} />
+              <span className="ml-2">{likesCount}</span>
+            </Button>
+            <h2 className="text-xl font-semibold">Comments</h2>
+            <div className="flex-1 overflow-y-auto pr-2">
+              <CommentsSection projectId={gameId} />
+            </div>
           </div>
         </div>
       </div>
