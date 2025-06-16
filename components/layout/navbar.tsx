@@ -108,7 +108,7 @@ export default function Navbar() {
 
   return (
     <header 
-      className={`w-full z-50 transition-all duration-300 ${
+      className={`w-full z-50 transition-all duration-300 font-['Matrix_Sans_Video'] ${
         isScrolled 
           ? "bg-background/80 backdrop-blur-md border-b" 
           : "bg-transparent"
@@ -116,7 +116,7 @@ export default function Navbar() {
     >
       <div className="container mx-auto px-4 py-3">
         <nav className="flex items-center justify-between">
-          <Link href="/" className="z-50">
+          <Link href="/" className="z-50 font-['Matrix_Sans_Video']">
             <Logo />
           </Link>
 
@@ -125,7 +125,7 @@ export default function Navbar() {
             <div className="flex items-center space-x-1">
               {navLinks.map((link) => (
                 <Button key={link.href} variant="ghost" asChild>
-                  <Link href={link.href} className="flex items-center">
+                  <Link href={link.href} className="flex items-center font-['Matrix_Sans_Video']">
                     {link.icon}
                     {link.label}
                   </Link>
@@ -134,7 +134,7 @@ export default function Navbar() {
               
               {connected && authenticatedLinks.map((link) => (
                 <Button key={link.href} variant="ghost" asChild>
-                  <Link href={link.href} className="flex items-center">
+                  <Link href={link.href} className="flex items-center font-['Matrix_Sans_Video']">
                     {link.icon}
                     {link.label}
                   </Link>
@@ -197,7 +197,7 @@ export default function Navbar() {
                 asChild
                 onClick={() => setIsOpen(false)}
               >
-                <Link href={link.href} className="flex items-center">
+                <Link href={link.href} className="flex items-center font-['Matrix_Sans_Video']">
                   {link.icon}
                   {link.label}
                 </Link>
@@ -212,7 +212,7 @@ export default function Navbar() {
                 asChild
                 onClick={() => setIsOpen(false)}
               >
-                <Link href={link.href} className="flex items-center">
+                <Link href={link.href} className="flex items-center font-['Matrix_Sans_Video']">
                   {link.icon}
                   {link.label}
                 </Link>
@@ -238,7 +238,7 @@ export default function Navbar() {
                     </AvatarFallback>
                   </Avatar>
                   <span
-                    className="text-sm font-mono cursor-pointer select-all"
+                    className="font-mono cursor-pointer select-all !text-[5px] leading-none"
                     onClick={handleCopy}
                     title={copied ? 'Copied!' : 'Click to copy'}
                   >

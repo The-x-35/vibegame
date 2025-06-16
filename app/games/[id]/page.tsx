@@ -2,7 +2,6 @@
 
 import React, { useEffect, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
-import Navbar from "@/components/layout/navbar";
 import { ALPHA_GUI } from '@/global/constant';
 import { Button } from "@/components/ui/button";
 import { Copy, TrendingUp, TrendingDown, Heart } from "lucide-react";
@@ -423,7 +422,6 @@ export default function GameDetailPage() {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background">
-        <Navbar />
         <div className="container mx-auto px-4 py-10">
           <div className="h-[calc(100vh-200px)] bg-muted animate-pulse rounded-lg" />
         </div>
@@ -434,7 +432,6 @@ export default function GameDetailPage() {
   if (!game) {
     return (
       <div className="min-h-screen bg-background">
-        <Navbar />
         <div className="container mx-auto px-4 py-10">
           <div className="text-center">
             <h1 className="text-2xl font-bold text-red-500">Game not found</h1>
@@ -463,7 +460,7 @@ export default function GameDetailPage() {
           <div className="flex flex-col gap-1">
             <p className="text-sm text-muted-foreground">Contract Address</p>
             <div className="flex items-center gap-2">
-              <code className="text-xs whitespace-nowrap bg-muted px-2 py-1 rounded text-[6px]">
+              <code className=" whitespace-nowrap bg-muted px-2 py-1 rounded text-[6.5px]">
                 {game.ca || ALPHA_GUI.SEND_TOKEN_CA}
               </code>
               <Button
