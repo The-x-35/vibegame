@@ -8,13 +8,13 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Rocket, ExternalLink } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
-import launchMeteoraToken from "../lib/launchMeteoraToken";
 import { useRouter } from "next/navigation";
 import { ALPHA_GUI } from "@/global/constant";
 import Link from "next/link";
 import { getGameUrl } from '@/lib/utils';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
+import { Transaction, VersionedTransaction } from '@solana/web3.js';
 
 interface LaunchTokenDialogProps {
   projectId: string;
@@ -32,7 +32,7 @@ export default function LaunchTokenDialog({
   ca,
 }: LaunchTokenDialogProps) {
   const router = useRouter();
-  const { connected, publicKey } = useWallet();
+  const { connected, publicKey, signTransaction } = useWallet();
   const [isOpen, setIsOpen] = useState(false);
   const [name, setName] = useState(projectName);
   const [description, setDescription] = useState(projectDescription);
@@ -58,18 +58,24 @@ export default function LaunchTokenDialog({
     e.preventDefault();
     setIsLoading(true);
     try {
+      console.log('Starting token launch process...');
+      console.log('API Key from env:', process.env.NEXT_PUBLIC_MINTER_API_KEY ? 'Present' : 'Missing');
+      console.log('API Key length:', process.env.NEXT_PUBLIC_MINTER_API_KEY?.length);
+      
       let ca: string;
       if (useSendToken) {
+        console.log('Using SEND token...');
         ca = ALPHA_GUI.SEND_TOKEN_CA;
       } else {
+        console.log('Launching new token...');
         if (!connected || !publicKey) {
           throw new Error('Please connect your wallet to launch a token');
         }
-        if (!tokenAmount || isNaN(Number(tokenAmount)) || Number(tokenAmount) <= 0) {
+        if (!tokenAmount || isNaN(Number(tokenAmount)) || Number(tokenAmount) < 0) {
           throw new Error('Please enter a valid token amount');
         }
-        ca = await launchMeteoraToken({
-          imageUrl,
+        
+        console.log('Token launch parameters:', {
           tokenName,
           tokenTicker,
           tokenDescription,
@@ -77,12 +83,94 @@ export default function LaunchTokenDialog({
           tokenTwitter,
           tokenWebsite,
           wallet: publicKey.toString(),
-          amount: Number(tokenAmount),
+          initialBuyAmount: Number(tokenAmount),
+          image: imageUrl
         });
+
+        // Build request body expected by /api/launch
+        const requestBody: any = {
+          user: publicKey.toString(),
+          tokenName,
+          tokenTicker,
+          description: tokenDescription,
+          image: imageUrl,
+          initialBuyAmount: Number(tokenAmount),
+          twitter: tokenTwitter?.trim() || undefined,
+          telegram: tokenTelegram?.trim() || undefined,
+          website: tokenWebsite?.trim() || undefined,
+          apiKey: process.env.NEXT_PUBLIC_MINTER_API_KEY || ""
+        };
+
+        const launchRes = await fetch('/api/launch', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(requestBody)
+        });
+
+        const launchResult = await launchRes.json();
+
+        if (!launchRes.ok || !launchResult.success) {
+          console.error('Launch API failed:', launchResult);
+          throw new Error(launchResult.message || 'Launch failed');
+        }
+
+        const txBase64: string | undefined = launchResult.data?.tx;
+        const tokenAddress: string | undefined = launchResult.data?.tokenAddress || launchResult.data?.mint;
+
+        if (!tokenAddress) {
+          throw new Error('No token address returned from launch API');
+        }
+
+        if (!txBase64) {
+          throw new Error('No transaction returned from launch API');
+        }
+
+        if (!signTransaction) {
+          throw new Error('Wallet does not support signing transactions');
+        }
+
+        console.log('📝 Deserialising transaction for signing ...');
+        const txBuffer = Buffer.from(txBase64, 'base64');
+        let transaction: Transaction | VersionedTransaction;
+        try {
+          transaction = VersionedTransaction.deserialize(Uint8Array.from(txBuffer));
+        } catch (e) {
+          console.warn('Falling back to legacy Transaction deserialisation');
+          transaction = Transaction.from(txBuffer);
+        }
+
+        // Sign using the connected wallet
+        const signedTx = await signTransaction(transaction);
+        const signedTxBase64 = Buffer.from(signedTx.serialize() as Uint8Array).toString('base64');
+
+        console.log('✅ Transaction signed, forwarding to /api/sign ...');
+        const signRes = await fetch('/api/sign', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            mintAddress: tokenAddress,
+            tx: signedTxBase64,
+            tokenTicker,
+            username: publicKey.toString(),
+          }),
+        });
+
+        const signResult = await signRes.json();
+        if (!signRes.ok || !signResult.success) {
+          console.error('Sign API failed:', signResult);
+          throw new Error(signResult.message || 'Failed to broadcast signed transaction');
+        }
+
+        console.log('📬 Transaction submitted successfully');
+
+        ca = tokenAddress;
       }
 
       // Update project with CA
-      await fetch(`/api/projects/${projectId}`, {
+      console.log('Updating project with CA:', ca);
+      const updateResponse = await fetch(`/api/projects/${projectId}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -94,7 +182,14 @@ export default function LaunchTokenDialog({
           is_public: true
         }),
       });
-
+      
+      if (!updateResponse.ok) {
+        const errorData = await updateResponse.json();
+        console.error('Failed to update project:', errorData);
+        throw new Error('Failed to update project with token information');
+      }
+      
+      console.log('Project updated successfully');
       setIsOpen(false);
       router.refresh(); // Refresh the page to show the new CA
     } catch (err) {
