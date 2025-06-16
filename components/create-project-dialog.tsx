@@ -9,7 +9,6 @@ import { Button } from "@/components/ui/button";
 import { PlusCircle } from "lucide-react";
 import { Project } from "@/components/project-card";
 import { Switch } from "@/components/ui/switch";
-import launchMeteoraToken from "../lib/launchMeteoraToken";
 import { API_ENDPOINTS, ALPHA_GUI } from '@/global/constant';
 
 interface LaunchProjectDialogProps {

@@ -17,8 +17,8 @@ export const API_ENDPOINTS = {
 
 // Alpha GUI URLs
 export const ALPHA_GUI = {
-    BASE_URL: 'https://alpha-gui.vercel.app',
-    EMBED_URL: 'https://alpha-gui.vercel.app/embed.html',
+    BASE_URL: 'https://alpha.vibegame.fun',
+    EMBED_URL: 'https://alpha.vibegame.fun/embed.html',
     SEND_TOKEN_CA: 'SENDdRQtYMWaQrBroBrJ2Q53fgVuq95CV9UPGEvpCxa'
 } as const;
 
