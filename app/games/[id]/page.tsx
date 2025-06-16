@@ -16,6 +16,8 @@ import { useWallet } from '@solana/wallet-adapter-react';
 import { VersionedTransaction } from '@solana/web3.js';
 import { JUP_ULTRA_API } from '@/global/constant';
 import { getGameUrl } from '@/lib/utils';
+import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
+import { useWalletModal } from '@solana/wallet-adapter-react-ui';
 
 interface Game {
   id: string;
@@ -56,7 +58,16 @@ export default function GameDetailPage() {
   const [likesCount, setLikesCount] = useState(0);
   const [isLiking, setIsLiking] = useState(false);
 
-  const { signTransaction, connected, publicKey } = useWallet();
+  const { signTransaction, connected, publicKey, select, connect, wallet } = useWallet();
+  const { setVisible } = useWalletModal();
+
+  const handleConnectWallet = async () => {
+    try {
+      setVisible(true);
+    } catch (error) {
+      console.error('Failed to connect wallet:', error);
+    }
+  };
 
   const fetchTokenBalance = useCallback(async () => {
     try {
@@ -190,11 +201,7 @@ export default function GameDetailPage() {
     }
 
     if (!connected || !publicKey) {
-      toast({
-        title: "Wallet not connected",
-        description: "Please connect your wallet to continue",
-        variant: "destructive",
-      });
+      await handleConnectWallet();
       return;
     }
 
@@ -218,7 +225,7 @@ export default function GameDetailPage() {
         body: JSON.stringify({
           amount: Number(buyAmount),
           outputMint: game?.ca || ALPHA_GUI.SEND_TOKEN_CA,
-          wallet: publicKey.toString(),
+          wallet: publicKey!.toString(),
         }),
       });
       const data = await res.json();
@@ -285,11 +292,7 @@ export default function GameDetailPage() {
     }
 
     if (!connected || !publicKey) {
-      toast({
-        title: "Wallet not connected",
-        description: "Please connect your wallet to continue",
-        variant: "destructive",
-      });
+      await handleConnectWallet();
       return;
     }
 
@@ -313,7 +316,7 @@ export default function GameDetailPage() {
         body: JSON.stringify({
           amount: Number(sellAmount),
           inputMint: game?.ca || ALPHA_GUI.SEND_TOKEN_CA,
-          wallet: publicKey.toString(),
+          wallet: publicKey!.toString(),
         }),
       });
       const data = await response.json();
