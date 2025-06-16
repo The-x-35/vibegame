@@ -18,7 +18,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
 import { ALPHA_GUI } from '@/global/constant';
 
 interface BuildInputProps {
@@ -240,10 +239,6 @@ export function BuildInput({ placeholder = "What do you want to build?", classNa
             <div className="grid grid-cols-4 items-start gap-4">
               <Label htmlFor="clone-description" className="text-right pt-2">Description</Label>
               <Textarea id="clone-description" className="col-span-3" value={cloneDescription} onChange={(e) => setCloneDescription(e.target.value)} required />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="clone-public" className="text-right">Public</Label>
-              <Switch id="clone-public" checked={clonePublic} onCheckedChange={setClonePublic} className="col-span-3" />
             </div>
             <DialogFooter>
               <DialogClose asChild>

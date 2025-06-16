@@ -18,7 +18,6 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
 import { ALPHA_GUI } from '@/global/constant';
 import DeleteTemplateDialog from '@/components/delete-template-dialog';
 import { Trash2 } from 'lucide-react';
@@ -244,14 +243,6 @@ export default function TemplatesPage() {
                       onChange={(e) => setCloneDescription(e.target.value)}
                       required
                     />
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Switch
-                      id="public"
-                      checked={clonePublic}
-                      onCheckedChange={setClonePublic}
-                    />
-                    <Label htmlFor="public">Make Public</Label>
                   </div>
                   <DialogFooter>
                     <DialogClose asChild>
