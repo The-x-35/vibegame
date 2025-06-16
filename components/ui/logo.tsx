@@ -1,4 +1,4 @@
-import { Gamepad2 } from "lucide-react";
+import Image from "next/image";
 
 interface LogoProps {
   size?: "sm" | "md" | "lg";
@@ -6,19 +6,21 @@ interface LogoProps {
 
 export function Logo({ size = "md" }: LogoProps) {
   const sizeClasses = {
-    sm: "text-xl",
-    md: "text-2xl",
-    lg: "text-3xl"
+    sm: "w-48",
+    md: "w-72",
+    lg: "w-96"
   };
 
   return (
-    <div className="flex items-center gap-2">
-      <div className={`text-primary ${sizeClasses[size]} font-bold flex items-center`}>
-        <Gamepad2 className="w-8 h-8 mr-2 text-blue-500" />
-        <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-500 to-purple-500">
-          VibeGame
-        </span>
-      </div>
+    <div className="flex items-center">
+      <Image
+        src="/vibegame-logo.svg"
+        alt="VibeGame Logo"
+        width={201}
+        height={42}
+        className={sizeClasses[size]}
+        priority
+      />
     </div>
   );
 }
