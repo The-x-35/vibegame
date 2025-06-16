@@ -445,25 +445,25 @@ export default function GameDetailPage() {
   }
 
   return (
-    <div className="h-screen bg-background flex flex-col">
-      <Navbar />
+    <div className="h-screen bg-background flex flex-col" style={{ fontFamily: 'Matrix Sans Video' }}>
       <div className="flex-1 w-full h-full relative">
         <iframe
           src={`${ALPHA_GUI.EMBED_URL}?project_url=${encodeURIComponent(game.url)}`}
           className="w-full h-full"
-          style={{ position: 'absolute', top: 0, left: 0, zIndex: 0 }}
+          style={{ position: 'absolute', top: 0, left: 0 }}
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
           allowFullScreen
         />
-        <div className="grid grid-cols-12 gap-6 mb-4 relative z-10">
-          {/* Left Column */}
-          <div className="col-span-12 md:col-span-2 flex flex-col gap-4 ml-10 mt-5">
-            <div className="text-2xl font-bold">{game.name}</div>
-            <p className="text-muted-foreground">{game.description}</p>
-            {/* Contract Address */}
+        
+        {/* Left Column */}
+        <div className="absolute left-0 top-0 h-full w-[15%] flex flex-col gap-4 ml-4 mt-5 z-20">
+          <div className="text-2xl font-bold" style={{ fontFamily: 'Matrix Sans Video', background: 'linear-gradient(to right, #EE00FF, #EE5705)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>{game.name}</div>
+          <p className="text-muted-foreground break-words whitespace-normal w-full pr-4">{game.description}</p>
+          {/* Contract Address */}
+          <div className="flex flex-col gap-1">
+            <p className="text-sm text-muted-foreground">Contract Address</p>
             <div className="flex items-center gap-2">
-              <p className="text-sm text-muted-foreground">Contract:</p>
-              <code className="text-xs break-all bg-muted px-2 py-1 rounded">
+              <code className="text-xs whitespace-nowrap bg-muted px-2 py-1 rounded text-[6px]">
                 {game.ca || ALPHA_GUI.SEND_TOKEN_CA}
               </code>
               <Button
@@ -476,29 +476,37 @@ export default function GameDetailPage() {
               </Button>
               {copied && <span className="text-xs text-green-500">Copied!</span>}
             </div>
+          </div>
 
-            {/* Price / Market / Balance */}
-            <div className="flex flex-wrap items-center gap-4">
-              <div className="flex items-center gap-2">
-                <p className="text-sm text-muted-foreground">Price:</p>
-                <span className="text-lg font-semibold">
-                  ${price?.price.toFixed(4) || '0.0000'}
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
-                <p className="text-sm text-muted-foreground">Market Cap:</p>
-                <span className="text-lg font-semibold">
-                  {price?.marketCap ? formatNumber(price.marketCap) : '$0.00'}
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
-                <p className="text-sm text-muted-foreground">Balance:</p>
-                <span className="text-lg font-semibold">{tokenBalance.toFixed(4)}</span>
-              </div>
+          {/* Spacer to push content to bottom */}
+          <div className="flex-1" />
+
+          {/* Price / Market / Balance */}
+          <div className="flex flex-col gap-4 mt-auto mb-28">
+            {/* Price */}
+            <div className="flex items-center gap-2">
+              <p className="text-sm text-muted-foreground">Price:</p>
+              <span className="text-lg font-semibold">
+                ${price?.price.toFixed(4) || '0.0000'}
+              </span>
             </div>
 
-            {/* Buy / Sell */}
-            <div className="flex flex-wrap gap-2">
+            {/* Market Cap */}
+            <div className="flex items-center gap-2">
+              <p className="text-sm text-muted-foreground">Market Cap:</p>
+              <span className="text-lg font-semibold">
+                {price?.marketCap ? formatNumber(price.marketCap) : '$0.00'}
+              </span>
+            </div>
+
+            {/* Token Balance */}
+            <div className="flex items-center gap-2">
+              <p className="text-sm text-muted-foreground">Balance:</p>
+              <span className="text-lg font-semibold">{tokenBalance.toFixed(4)}</span>
+            </div>
+
+            {/* Buy/Sell buttons */}
+            <div className="flex flex-col gap-2">
               {showBuyInput ? (
                 <div className="flex gap-2">
                   <Input
@@ -531,9 +539,9 @@ export default function GameDetailPage() {
                 <Button
                   onClick={handleBuy}
                   disabled={isBuying}
-                  className="bg-green-500 hover:bg-green-600 text-white"
+                  className="bg-green-500 hover:bg-green-600 text-white w-full py-1 h-8 text-sm"
                 >
-                  <TrendingUp className="h-4 w-4 mr-2" />
+                  <TrendingUp className="h-3 w-3 mr-1" />
                   Buy
                 </Button>
               )}
@@ -570,29 +578,36 @@ export default function GameDetailPage() {
                 <Button
                   onClick={handleSell}
                   disabled={isSelling || tokenBalance <= 0}
-                  className="bg-red-500 hover:bg-red-600 text-white"
+                  className="bg-red-500 hover:bg-red-600 text-white w-full py-1 h-8 text-sm"
                 >
-                  <TrendingDown className="h-4 w-4 mr-2" />
+                  <TrendingDown className="h-3 w-3 mr-1" />
                   Sell
                 </Button>
               )}
             </div>
           </div>
+        </div>
 
-          {/* Right Column */}
-          <div className="col-span-12 md:col-span-2 flex flex-col gap-4 mr-4 justify-end absolute right-0 top-5">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={handleLike}
-              disabled={isLiking}
-              className={`h-10 w-10 self-start ${isLiked ? 'text-red-500' : 'text-muted-foreground'}`}
-            >
-              <Heart className={`h-5 w-5 ${isLiked ? 'fill-current' : ''}`} />
-              <span className="ml-2">{likesCount}</span>
-            </Button>
-            <h2 className="text-xl font-semibold">Comments</h2>
-            <div className="flex-1 overflow-y-auto pr-2">
+        {/* Right Column */}
+        <div className="absolute right-0 top-0 h-full w-[15%] flex flex-col gap-4 mr-6 mt-5 z-20">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={handleLike}
+            disabled={isLiking}
+            className={`h-10 w-10 self-start ${isLiked ? 'text-red-500' : 'text-muted-foreground'}`}
+          >
+            <Heart className={`h-5 w-5 ${isLiked ? 'fill-current' : ''}`} />
+            <span className="ml-2">{likesCount}</span>
+          </Button>
+
+          {/* Spacer to push comments to bottom */}
+          <div className="flex-1" />
+
+          {/* Comments section at bottom */}
+          <div className="mt-auto">
+            <h2 className="text-xl font-semibold mb-4">Comments</h2>
+            <div className="overflow-y-auto max-h-[calc(100vh-300px)] mb-5">
               <CommentsSection projectId={gameId} />
             </div>
           </div>
