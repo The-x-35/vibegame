@@ -445,170 +445,178 @@ export default function GameDetailPage() {
   }
 
   return (
-    <div className="h-screen bg-background flex flex-col" style={{ fontFamily: 'Matrix Sans Video' }}>
-      <div className="flex-1 w-full h-full relative">
-        <iframe
-          src={`${ALPHA_GUI.EMBED_URL}?project_url=${encodeURIComponent(game.url)}`}
-          className="w-full h-full"
-          style={{ position: 'absolute', top: 0, left: 0 }}
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-          allowFullScreen
-        />
-        
-        {/* Left Column */}
-        <div className="absolute left-0 top-0 h-full w-[15%] flex flex-col gap-4 ml-4 mt-5 z-20">
-          <div className="text-2xl font-bold" style={{ fontFamily: 'Matrix Sans Video', background: 'linear-gradient(to right, #EE00FF, #EE5705)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>{game.name}</div>
-          <p className="text-muted-foreground break-words whitespace-normal w-full pr-4">{game.description}</p>
-          {/* Contract Address */}
-          <div className="flex flex-col gap-1">
-            <p className="text-sm text-muted-foreground">Contract Address</p>
-            <div className="flex items-center gap-2">
-              <code className=" whitespace-nowrap bg-muted px-2 py-1 rounded text-[6.5px]">
-                {game.ca || ALPHA_GUI.SEND_TOKEN_CA}
-              </code>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={handleCopyCA}
-                className="h-8 w-8"
-              >
-                <Copy className="h-4 w-4" />
-              </Button>
-              {copied && <span className="text-xs text-green-500">Copied!</span>}
-            </div>
-          </div>
-
-          {/* Spacer to push content to bottom */}
-          <div className="flex-1" />
-
-          {/* Price / Market / Balance */}
-          <div className="flex flex-col gap-4 mt-auto mb-28">
-            {/* Price */}
-            <div className="flex items-center gap-2">
-              <p className="text-sm text-muted-foreground">Price:</p>
-              <span className="text-lg font-semibold">
-                ${price?.price.toFixed(4) || '0.0000'}
-              </span>
+    <div className="min-h-screen bg-background flex flex-col" style={{ fontFamily: 'Matrix Sans Video' }}>
+      <div className="flex-1 w-full relative">
+        {/* Main container with aspect ratio */}
+        <div className="relative w-[85%] sm:w-[80%] md:w-[75%] mx-auto" style={{ paddingTop: '56.25%' }}> {/* 16:9 aspect ratio */}
+          <iframe
+            src={`${ALPHA_GUI.EMBED_URL}?project_url=${encodeURIComponent(game.url)}`}
+            className="absolute top-0 left-0 w-full h-full"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowFullScreen
+          />
+          
+          {/* Left Column */}
+          <div className="fixed left-0 top-0 h-full w-[200px] sm:w-[240px] md:w-[15%] max-w-[300px] flex flex-col gap-2 sm:gap-3 md:gap-4 pl-1 sm:pl-2 md:pl-3 mt-3 sm:mt-4 md:mt-5 z-20">
+            <div className="text-lg sm:text-xl md:text-2xl font-bold" style={{ fontFamily: 'Matrix Sans Video', background: 'linear-gradient(to right, #EE00FF, #EE5705)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>{game.name}</div>
+            <p className="text-xs sm:text-sm md:text-base text-muted-foreground break-words whitespace-normal w-full pr-1 sm:pr-2 md:pr-4">{game.description}</p>
+            {/* Contract Address */}
+            <div className="flex flex-col gap-1">
+              <p className="text-[10px] sm:text-xs md:text-sm text-muted-foreground">Contract Address</p>
+              <div className="flex items-center gap-1 sm:gap-2">
+                <code className="whitespace-nowrap bg-muted px-1 sm:px-2 py-0.5 sm:py-1 rounded text-[5px] sm:text-[6px] md:text-[6.5px] overflow-x-auto max-w-[120px] sm:max-w-[150px] md:max-w-none">
+                  {game.ca || ALPHA_GUI.SEND_TOKEN_CA}
+                </code>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={handleCopyCA}
+                  className="h-5 w-5 sm:h-6 sm:w-6 md:h-8 md:w-8"
+                >
+                  <Copy className="h-2.5 w-2.5 sm:h-3 sm:w-3 md:h-4 md:w-4" />
+                </Button>
+                {copied && <span className="text-[8px] sm:text-[10px] md:text-xs text-green-500">Copied!</span>}
+              </div>
             </div>
 
-            {/* Market Cap */}
-            <div className="flex items-center gap-2">
-              <p className="text-sm text-muted-foreground">Market Cap:</p>
-              <span className="text-lg font-semibold">
-                {price?.marketCap ? formatNumber(price.marketCap) : '$0.00'}
-              </span>
-            </div>
+            {/* Spacer to push content to bottom */}
+            <div className="flex-1" />
 
-            {/* Token Balance */}
-            <div className="flex items-center gap-2">
-              <p className="text-sm text-muted-foreground">Balance:</p>
-              <span className="text-lg font-semibold">{tokenBalance.toFixed(4)}</span>
-            </div>
+            {/* Price / Market / Balance */}
+            <div className="flex flex-col gap-2 sm:gap-3 md:gap-4 mt-auto mb-16 sm:mb-20 md:mb-28">
+              {/* Price */}
+              <div className="flex items-center gap-1 sm:gap-2">
+                <p className="text-[10px] sm:text-xs md:text-sm text-muted-foreground">Price:</p>
+                <span className="text-sm sm:text-base md:text-lg font-semibold">
+                  ${price?.price.toFixed(4) || '0.0000'}
+                </span>
+              </div>
 
-            {/* Buy/Sell buttons */}
-            <div className="flex flex-col gap-2">
-              {showBuyInput ? (
-                <div className="flex gap-2">
-                  <Input
-                    type="number"
-                    placeholder="Amount in SOL"
-                    value={buyAmount}
-                    onChange={(e) => setBuyAmount(e.target.value)}
-                    className="w-32"
-                    min="0"
-                    step="0.01"
-                  />
+              {/* Market Cap */}
+              <div className="flex items-center gap-1 sm:gap-2">
+                <p className="text-[10px] sm:text-xs md:text-sm text-muted-foreground">Market Cap:</p>
+                <span className="text-sm sm:text-base md:text-lg font-semibold">
+                  {price?.marketCap ? formatNumber(price.marketCap) : '$0.00'}
+                </span>
+              </div>
+
+              {/* Token Balance */}
+              <div className="flex items-center gap-1 sm:gap-2">
+                <p className="text-[10px] sm:text-xs md:text-sm text-muted-foreground">Balance:</p>
+                <span className="text-sm sm:text-base md:text-lg font-semibold">{tokenBalance.toFixed(4)}</span>
+              </div>
+
+              {/* Buy/Sell buttons */}
+              <div className="flex flex-col gap-1.5 sm:gap-2">
+                {showBuyInput ? (
+                  <div className="flex flex-col sm:flex-row gap-1.5 sm:gap-2">
+                    <Input
+                      type="number"
+                      placeholder="Amount in SOL"
+                      value={buyAmount}
+                      onChange={(e) => setBuyAmount(e.target.value)}
+                      className="w-full sm:w-28 md:w-32 text-xs sm:text-sm"
+                      min="0"
+                      step="0.01"
+                    />
+                    <div className="flex gap-1.5 sm:gap-2">
+                      <Button
+                        onClick={handleBuy}
+                        disabled={isBuying}
+                        className="flex-1 bg-green-500 hover:bg-green-600 text-white text-xs sm:text-sm h-7 sm:h-8"
+                      >
+                        {isBuying ? 'Buying...' : 'Confirm Buy'}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          setShowBuyInput(false);
+                          setBuyAmount('');
+                        }}
+                        className="text-xs sm:text-sm h-7 sm:h-8"
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
                   <Button
                     onClick={handleBuy}
                     disabled={isBuying}
-                    className="bg-green-500 hover:bg-green-600 text-white"
+                    className="bg-green-500 hover:bg-green-600 text-white w-full py-0.5 sm:py-1 h-7 sm:h-8 text-xs sm:text-sm"
                   >
-                    {isBuying ? 'Buying...' : 'Confirm Buy'}
+                    <TrendingUp className="h-2.5 w-2.5 sm:h-3 sm:w-3 mr-1" />
+                    Buy
                   </Button>
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      setShowBuyInput(false);
-                      setBuyAmount('');
-                    }}
-                  >
-                    Cancel
-                  </Button>
-                </div>
-              ) : (
-                <Button
-                  onClick={handleBuy}
-                  disabled={isBuying}
-                  className="bg-green-500 hover:bg-green-600 text-white w-full py-1 h-8 text-sm"
-                >
-                  <TrendingUp className="h-3 w-3 mr-1" />
-                  Buy
-                </Button>
-              )}
-              {showSellInput ? (
-                <div className="flex gap-2">
-                  <Input
-                    type="number"
-                    placeholder="Amount to sell"
-                    value={sellAmount}
-                    onChange={(e) => setSellAmount(e.target.value)}
-                    className="w-32"
-                    min="0"
-                    max={tokenBalance}
-                    step="0.01"
-                  />
+                )}
+                {showSellInput ? (
+                  <div className="flex flex-col sm:flex-row gap-1.5 sm:gap-2">
+                    <Input
+                      type="number"
+                      placeholder="Amount to sell"
+                      value={sellAmount}
+                      onChange={(e) => setSellAmount(e.target.value)}
+                      className="w-full sm:w-28 md:w-32 text-xs sm:text-sm"
+                      min="0"
+                      max={tokenBalance}
+                      step="0.01"
+                    />
+                    <div className="flex gap-1.5 sm:gap-2">
+                      <Button
+                        onClick={handleSell}
+                        disabled={isSelling}
+                        className="flex-1 bg-red-500 hover:bg-red-600 text-white text-xs sm:text-sm h-7 sm:h-8"
+                      >
+                        {isSelling ? 'Selling...' : 'Confirm Sell'}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          setShowSellInput(false);
+                          setSellAmount('');
+                        }}
+                        className="text-xs sm:text-sm h-7 sm:h-8"
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
                   <Button
                     onClick={handleSell}
-                    disabled={isSelling}
-                    className="bg-red-500 hover:bg-red-600 text-white"
+                    disabled={isSelling || tokenBalance <= 0}
+                    className="bg-red-500 hover:bg-red-600 text-white w-full py-0.5 sm:py-1 h-7 sm:h-8 text-xs sm:text-sm"
                   >
-                    {isSelling ? 'Selling...' : 'Confirm Sell'}
+                    <TrendingDown className="h-2.5 w-2.5 sm:h-3 sm:w-3 mr-1" />
+                    Sell
                   </Button>
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      setShowSellInput(false);
-                      setSellAmount('');
-                    }}
-                  >
-                    Cancel
-                  </Button>
-                </div>
-              ) : (
-                <Button
-                  onClick={handleSell}
-                  disabled={isSelling || tokenBalance <= 0}
-                  className="bg-red-500 hover:bg-red-600 text-white w-full py-1 h-8 text-sm"
-                >
-                  <TrendingDown className="h-3 w-3 mr-1" />
-                  Sell
-                </Button>
-              )}
+                )}
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* Right Column */}
-        <div className="absolute right-0 top-0 h-full w-[15%] flex flex-col gap-4 mr-6 mt-5 z-20">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={handleLike}
-            disabled={isLiking}
-            className={`h-10 w-10 self-start ${isLiked ? 'text-red-500' : 'text-muted-foreground'}`}
-          >
-            <Heart className={`h-5 w-5 ${isLiked ? 'fill-current' : ''}`} />
-            <span className="ml-2">{likesCount}</span>
-          </Button>
+          {/* Right Column */}
+          <div className="fixed right-0 top-0 h-full w-[200px] sm:w-[240px] md:w-[15%] max-w-[300px] flex flex-col gap-2 sm:gap-3 md:gap-4 pr-1 sm:pr-2 md:pr-3 mt-3 sm:mt-4 md:mt-5 z-20">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleLike}
+              disabled={isLiking}
+              className={`h-6 w-6 sm:h-8 sm:w-8 md:h-10 md:w-10 self-start ${isLiked ? 'text-red-500' : 'text-muted-foreground'}`}
+            >
+              <Heart className={`h-3 w-3 sm:h-4 sm:w-4 md:h-5 md:w-5 ${isLiked ? 'fill-current' : ''}`} />
+              <span className="ml-0.5 sm:ml-1 md:ml-2 text-xs sm:text-sm md:text-base">{likesCount}</span>
+            </Button>
 
-          {/* Spacer to push comments to bottom */}
-          <div className="flex-1" />
+            {/* Spacer to push comments to bottom */}
+            <div className="flex-1" />
 
-          {/* Comments section at bottom */}
-          <div className="mt-auto">
-            <h2 className="text-xl font-semibold mb-4">Comments</h2>
-            <div className="overflow-y-auto max-h-[calc(100vh-300px)] mb-5">
-              <CommentsSection projectId={gameId} />
+            {/* Comments section at bottom */}
+            <div className="mt-auto">
+              <h2 className="text-base sm:text-lg md:text-xl font-semibold mb-2 sm:mb-3 md:mb-4">Comments</h2>
+              <div className="overflow-y-auto max-h-[calc(100vh-200px)] sm:max-h-[calc(100vh-250px)] md:max-h-[calc(100vh-300px)] mb-4 sm:mb-5">
+                <CommentsSection projectId={gameId} />
+              </div>
             </div>
           </div>
         </div>
