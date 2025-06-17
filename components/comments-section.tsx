@@ -103,6 +103,12 @@ export function CommentsSection({ projectId }: CommentsSectionProps) {
     return `https://api.dicebear.com/9.x/pixel-art/svg?seed=${wallet}`;
   };
 
+  const shortenWallet = (wallet: string) => {
+    if (!wallet) return '';
+    if (wallet.length <= 7) return wallet; // already short enough
+    return `${wallet.slice(0, 4)}...${wallet.slice(-3)}`;
+  };
+
   const formatDate = (dateString: string | undefined | null) => {
     if (!dateString) return 'recently';
     try {
@@ -119,18 +125,20 @@ export function CommentsSection({ projectId }: CommentsSectionProps) {
       <div className="flex-1 overflow-y-auto space-y-4 pr-2">
         {comments.map((comment) => (
           <div key={comment.id} className="flex gap-4 p-4 rounded-lg border">
-            <Avatar>
-              <AvatarImage src={getAvatarUrl(comment.wallet)} alt={comment.wallet} />
-              <AvatarFallback>{getInitials(comment.wallet)}</AvatarFallback>
+            <Avatar className="h-8 w-8">
+              <AvatarImage src={getAvatarUrl(comment.wallet)} alt={comment.wallet} className="h-8 w-8" />
+              <AvatarFallback className="text-xs">{getInitials(comment.wallet)}</AvatarFallback>
             </Avatar>
             <div className="flex-1 space-y-1">
-              <div className="flex items-center gap-2">
-                <span className="font-medium">{comment.wallet}</span>
-                <span className="text-sm text-muted-foreground">
+              {/* Name and timestamp */}
+              <div className="flex flex-col">
+                <span className="font-medium leading-tight">{shortenWallet(comment.wallet)}</span>
+                <span className="text-xs text-muted-foreground leading-tight">
                   {formatDate(comment.created_at)}
                 </span>
               </div>
-              <p className="text-sm">{comment.content}</p>
+              {/* Comment text */}
+              <p className="text-sm break-words whitespace-pre-line">{comment.content}</p>
             </div>
           </div>
         ))}
