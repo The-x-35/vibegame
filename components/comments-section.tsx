@@ -114,20 +114,9 @@ export function CommentsSection({ projectId }: CommentsSectionProps) {
   };
 
   return (
-    <div className="space-y-6">
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <Textarea
-          placeholder="Write a comment..."
-          value={newComment}
-          onChange={(e) => setNewComment(e.target.value)}
-          className="min-h-[100px]"
-        />
-        <Button type="submit" disabled={isSubmitting || !newComment.trim()}>
-          {isSubmitting ? 'Posting...' : 'Post Comment'}
-        </Button>
-      </form>
-
-      <div className="space-y-4">
+    <div className="flex flex-col h-full">
+      {/* Comments list */}
+      <div className="flex-1 overflow-y-auto space-y-4 pr-2">
         {comments.map((comment) => (
           <div key={comment.id} className="flex gap-4 p-4 rounded-lg border">
             <Avatar>
@@ -145,6 +134,25 @@ export function CommentsSection({ projectId }: CommentsSectionProps) {
             </div>
           </div>
         ))}
+      </div>
+
+      {/* Comment input form at bottom */}
+      <div className="mt-4 pt-4 border-t">
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <Textarea
+            placeholder="Send it to the..."
+            value={newComment}
+            onChange={(e) => setNewComment(e.target.value)}
+            className="min-h-[100px] resize-none focus:outline-none focus-visible:ring-0 focus-visible:ring-offset-0"
+          />
+          <Button 
+            type="submit" 
+            className='w-full bg-[#3405EE] hover:bg-[#2804cc] text-white' 
+            disabled={isSubmitting || !newComment.trim()}
+          >
+            {isSubmitting ? 'Posting...' : 'Post'}
+          </Button>
+        </form>
       </div>
     </div>
   );
