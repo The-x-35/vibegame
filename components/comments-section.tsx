@@ -7,6 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useToast } from '@/components/ui/use-toast';
 import { formatDistanceToNow, parseISO } from 'date-fns';
 import { useWallet } from '@solana/wallet-adapter-react';
+import { useWalletModal } from '@solana/wallet-adapter-react-ui';
 
 interface Comment {
   id: number;
@@ -25,6 +26,7 @@ export function CommentsSection({ projectId }: CommentsSectionProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
   const { connected, publicKey } = useWallet();
+  const { setVisible } = useWalletModal();
 
   const fetchComments = async () => {
     try {
@@ -53,11 +55,7 @@ export function CommentsSection({ projectId }: CommentsSectionProps) {
     if (!newComment.trim()) return;
 
     if (!connected || !publicKey) {
-      toast({
-        title: 'Wallet not connected',
-        description: 'Please connect your wallet to comment',
-        variant: 'destructive',
-      });
+      setVisible(true);
       return;
     }
 

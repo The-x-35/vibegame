@@ -370,11 +370,7 @@ export default function GameDetailPage() {
 
   const handleLike = async () => {
     if (!connected || !publicKey) {
-      toast({
-        title: "Wallet not connected",
-        description: "Please connect your wallet to like games",
-        variant: "destructive",
-      });
+      await handleConnectWallet();
       return;
     }
 
