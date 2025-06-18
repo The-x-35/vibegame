@@ -18,6 +18,7 @@ import { JUP_ULTRA_API } from '@/global/constant';
 import { getGameUrl } from '@/lib/utils';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 import { useWalletModal } from '@solana/wallet-adapter-react-ui';
+import { getAuthToken, loginWithWallet } from '@/lib/auth-utils';
 
 interface Game {
   id: string;
@@ -27,6 +28,7 @@ interface Game {
   ca?: string;
   likesCount?: number;
   viewsCount?: number;
+  commentsCount?: number;
 }
 
 interface PriceData {
@@ -60,17 +62,26 @@ export default function GameDetailPage() {
   const [isLiking, setIsLiking] = useState(false);
   const [viewsCount, setViewsCount] = useState(0);
   const [playsCount, setPlaysCount] = useState(0);
+  const [commentsCount, setCommentsCount] = useState(0);
 
   const { signTransaction, connected, publicKey, select, connect, wallet } = useWallet();
   const { setVisible } = useWalletModal();
 
-  const handleConnectWallet = async () => {
-    try {
-      setVisible(true);
-    } catch (error) {
-      console.error('Failed to connect wallet:', error);
-    }
-  };
+  // Auto-login when wallet connects
+  useEffect(() => {
+    const handleWalletLogin = async () => {
+      if (connected && publicKey && !getAuthToken()) {
+        try {
+          await loginWithWallet(publicKey.toString());
+          console.log('Auto-login successful');
+        } catch (error) {
+          console.error('Auto-login failed:', error);
+        }
+      }
+    };
+
+    handleWalletLogin();
+  }, [connected, publicKey]);
 
   const fetchTokenBalance = useCallback(async () => {
     try {
@@ -120,6 +131,18 @@ export default function GameDetailPage() {
     }
   }, []);
 
+  const refreshCommentsCount = useCallback(async () => {
+    try {
+      const response = await fetch(`/api/games/${gameId}`);
+      if (response.ok) {
+        const data = await response.json();
+        setCommentsCount(data.commentsCount || 0);
+      }
+    } catch (error) {
+      console.error('Error refreshing comments count:', error);
+    }
+  }, [gameId]);
+
   useEffect(() => {
     const fetchGame = async () => {
       try {
@@ -134,6 +157,7 @@ export default function GameDetailPage() {
         setLikesCount(data.likesCount || 0);
         setViewsCount(data.viewsCount || 0);
         console.log('Set views count to:', data.viewsCount || 0);
+        setCommentsCount(data.commentsCount || 0);
       } catch (error) {
         console.error(error);
       } finally {
@@ -423,15 +447,54 @@ export default function GameDetailPage() {
 
     try {
       setIsLiking(true);
+      
+      // Get JWT token using the utility function
+      const token = getAuthToken();
+      
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+      };
+      
+      // Add JWT token if available
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
       const response = await fetch(`/api/games/${gameId}/like`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers,
         body: JSON.stringify({
           wallet: publicKey.toString(),
         }),
       });
+
+      if (response.status === 401) {
+        const errorData = await response.json();
+        if (errorData.error?.includes('connect your wallet')) {
+          toast({
+            title: "Wallet Required",
+            description: "Please connect your wallet to like games",
+            variant: "destructive",
+          });
+        } else {
+          toast({
+            title: "Authentication failed",
+            description: "Please connect your wallet again",
+            variant: "destructive",
+          });
+        }
+        return;
+      }
+
+      if (response.status === 429) {
+        const data = await response.json();
+        toast({
+          title: "Rate limit exceeded",
+          description: `Please wait ${data.retryAfter} seconds before trying again`,
+          variant: "destructive",
+        });
+        return;
+      }
 
       if (!response.ok) {
         throw new Error(`Failed to update like: ${response.statusText}`);
@@ -439,7 +502,7 @@ export default function GameDetailPage() {
 
       const data = await response.json();
       setIsLiked(data.liked);
-      setLikesCount(prev => data.liked ? prev + 1 : prev - 1);
+      setLikesCount(data.likesCount);
     } catch (error) {
       console.error('Error updating like:', error);
       toast({
@@ -468,6 +531,14 @@ export default function GameDetailPage() {
   const formatContractAddress = (address: string): string => {
     if (!address) return '';
     return `${address.slice(0, 4)}...${address.slice(-3)}`;
+  };
+
+  const handleConnectWallet = async () => {
+    try {
+      setVisible(true);
+    } catch (error) {
+      console.error('Failed to connect wallet:', error);
+    }
   };
 
   if (isLoading) {
@@ -514,12 +585,12 @@ export default function GameDetailPage() {
             <div className="flex-1" />
 
             {/* Views Count */}
-            <div className="flex flex-col gap-1">
+            {/* <div className="flex flex-col gap-1">
               <p className="text-muted-foreground text-sm">Views</p>
               <span className="font-semibold text-lg">
                 {viewsCount.toLocaleString()}
               </span>
-            </div>
+            </div> */}
 
             {/* Plays Count */}
             <div className="flex flex-col gap-1">
@@ -768,14 +839,14 @@ export default function GameDetailPage() {
                 <Heart className={`h-3 w-3 sm:h-4 sm:w-4 md:h-5 md:w-5 ${isLiked ? 'fill-current' : ''}`} />
                 <span className="ml-0.5 sm:ml-1 md:ml-2 text-xs sm:text-md md:text-base">{likesCount}</span>
               </Button>
-              <h2 className="text-base sm:text-lg md:text-xl font-semibold">Comments</h2>
+              <h2 className="text-base sm:text-lg md:text-xl font-semibold">Comments ({commentsCount})</h2>
             </div>
 
             {/* Comments section with flex layout */}
             <div className="flex flex-col flex-1 min-h-0">
               {/* Scrollable comments list */}
               <div className="flex-1 overflow-y-auto">
-                <CommentsSection projectId={gameId} />
+                <CommentsSection projectId={gameId} onCommentAdded={refreshCommentsCount} />
               </div>
             </div>
           </div>

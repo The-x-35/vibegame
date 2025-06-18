@@ -8,6 +8,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { formatDistanceToNow, parseISO } from 'date-fns';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { useWalletModal } from '@solana/wallet-adapter-react-ui';
+import { getAuthToken, loginWithWallet } from '@/lib/auth-utils';
 
 interface Comment {
   id: number;
@@ -18,15 +19,32 @@ interface Comment {
 
 interface CommentsSectionProps {
   projectId: string;
+  onCommentAdded?: () => void;
 }
 
-export function CommentsSection({ projectId }: CommentsSectionProps) {
+export function CommentsSection({ projectId, onCommentAdded }: CommentsSectionProps) {
   const [comments, setComments] = useState<Comment[]>([]);
   const [newComment, setNewComment] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
   const { connected, publicKey } = useWallet();
   const { setVisible } = useWalletModal();
+
+  // Auto-login when wallet connects
+  useEffect(() => {
+    const handleWalletLogin = async () => {
+      if (connected && publicKey && !getAuthToken()) {
+        try {
+          await loginWithWallet(publicKey.toString());
+          console.log('Auto-login successful in comments');
+        } catch (error) {
+          console.error('Auto-login failed in comments:', error);
+        }
+      }
+    };
+
+    handleWalletLogin();
+  }, [connected, publicKey]);
 
   const fetchComments = async () => {
     try {
@@ -61,19 +79,58 @@ export function CommentsSection({ projectId }: CommentsSectionProps) {
 
     setIsSubmitting(true);
     try {
+      // Get JWT token using the utility function
+      const token = getAuthToken();
+      
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+      };
+      
+      // Add JWT token if available
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
       const response = await fetch(`/api/games/${projectId}/comment`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers,
         body: JSON.stringify({ 
           content: newComment,
           wallet: publicKey.toString()
         })
       });
 
+      if (response.status === 401) {
+        const errorData = await response.json();
+        if (errorData.error?.includes('connect your wallet')) {
+          toast({
+            title: "Wallet Required",
+            description: "Please connect your wallet to post comments",
+            variant: "destructive",
+          });
+        } else {
+          toast({
+            title: "Authentication failed",
+            description: "Please connect your wallet again",
+            variant: "destructive",
+          });
+        }
+        return;
+      }
+
+      if (response.status === 429) {
+        const data = await response.json();
+        toast({
+          title: "Rate limit exceeded",
+          description: `Please wait ${data.retryAfter} seconds before posting again`,
+          variant: "destructive",
+        });
+        return;
+      }
+
       if (!response.ok) {
-        throw new Error('Failed to post comment');
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to post comment');
       }
 
       const data = await response.json();
@@ -83,11 +140,14 @@ export function CommentsSection({ projectId }: CommentsSectionProps) {
         title: 'Success',
         description: 'Comment posted successfully',
       });
+      if (onCommentAdded) {
+        onCommentAdded();
+      }
     } catch (error) {
       console.error('Error posting comment:', error);
       toast({
         title: 'Error',
-        description: 'Failed to post comment',
+        description: error instanceof Error ? error.message : 'Failed to post comment',
         variant: 'destructive',
       });
     } finally {
