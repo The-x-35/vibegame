@@ -198,7 +198,7 @@ export function CommentsSection({ projectId, onCommentAdded }: CommentsSectionPr
                 </span>
               </div>
               {/* Comment text */}
-              <p className="text-sm break-words whitespace-pre-line">{comment.content}</p>
+              <p className="text-sm break-words break-all whitespace-pre-line overflow-wrap-anywhere">{comment.content}</p>
             </div>
           </div>
         ))}
