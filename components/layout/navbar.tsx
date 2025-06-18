@@ -173,9 +173,7 @@ export default function Navbar() {
                     </span>
                   </div>
                 </>
-              ) : (
-                <WalletMultiButton />
-              )}
+              ) : null}
             </div>
           </div>
 
@@ -254,11 +252,7 @@ export default function Navbar() {
                   </span>
                 </div>
               </div>
-            ) : (
-              <div className="flex justify-center">
-                <WalletMultiButton />
-              </div>
-            )}
+            ) : null}
           </div>
         </div>
       )}
