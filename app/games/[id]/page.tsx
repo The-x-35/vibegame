@@ -59,6 +59,7 @@ export default function GameDetailPage() {
   const [likesCount, setLikesCount] = useState(0);
   const [isLiking, setIsLiking] = useState(false);
   const [viewsCount, setViewsCount] = useState(0);
+  const [playsCount, setPlaysCount] = useState(0);
 
   const { signTransaction, connected, publicKey, select, connect, wallet } = useWallet();
   const { setVisible } = useWalletModal();
@@ -102,6 +103,22 @@ export default function GameDetailPage() {
       setTokenBalance(0);
     }
   }, [connected, publicKey, game?.ca]);
+
+  const fetchPlaysCount = useCallback(async () => {
+    try {
+      const connection = new Connection(API_ENDPOINTS.SOLANA_RPC_ENDPOINT, 'confirmed');
+      const playsAccountPublicKey = new PublicKey('7rtHJuXdP36q1Y4QjcqCLGFGZkDhvik77zAjPePfjjzw');
+      
+      const balance = await connection.getBalance(playsAccountPublicKey);
+      const balanceInSol = balance / Math.pow(10, 9); // Convert lamports to SOL
+      const plays = Math.floor(balanceInSol / 0.0001); // Divide by 0.0001 to get plays count
+      
+      setPlaysCount(plays);
+    } catch (error) {
+      console.error('Error fetching plays count:', error);
+      setPlaysCount(0);
+    }
+  }, []);
 
   useEffect(() => {
     const fetchGame = async () => {
@@ -194,16 +211,18 @@ export default function GameDetailPage() {
     fetchTokenBalance();
     fetchLikeStatus();
     incrementViews();
+    fetchPlaysCount();
     
     // Refresh price and balance every 30 seconds
     const interval = setInterval(() => {
       fetchPrice();
       fetchTokenBalance();
       fetchLikeStatus(); // This will also update the likes count
+      fetchPlaysCount();
     }, 30000);
     
     return () => clearInterval(interval);
-  }, [gameId, game?.ca, connected, publicKey, fetchTokenBalance]);
+  }, [gameId, game?.ca, connected, publicKey, fetchTokenBalance, fetchPlaysCount]);
 
   const handleCopyCA = () => {
     const ca = game?.ca || ALPHA_GUI.SEND_TOKEN_CA;
@@ -499,6 +518,14 @@ export default function GameDetailPage() {
               <p className="text-muted-foreground text-sm">Views</p>
               <span className="font-semibold text-lg">
                 {viewsCount.toLocaleString()}
+              </span>
+            </div>
+
+            {/* Plays Count */}
+            <div className="flex flex-col gap-1">
+              <p className="text-muted-foreground text-sm">Plays</p>
+              <span className="font-semibold text-lg">
+                {playsCount.toLocaleString()}
               </span>
             </div>
 
