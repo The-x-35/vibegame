@@ -77,12 +77,12 @@ export default function Navbar() {
   }, [publicKey]);
 
   const navLinks = [
-    { href: "/", label: "Home", icon: <Code className="w-4 h-4 mr-2" /> },
+    { href: "/", label: "Game Builder", icon: <Code className="w-4 h-4 mr-2" /> },
     { href: "/games", label: "Games", icon: <GamepadIcon className="w-4 h-4 mr-2" /> },
   ];
 
-  const authenticatedLinks = [
-    { href: "/dashboard", label: "Dashboard", icon: <DashboardIcon className="w-4 h-4 mr-2" /> },
+  const authenticatedLinks: { href: string; label: string; icon: JSX.Element }[] = [
+    // { href: "/dashboard", label: "Dashboard", icon: <DashboardIcon className="w-4 h-4 mr-2" /> },
   ];
 
   // Handler to copy wallet address to clipboard and show feedback
@@ -122,14 +122,19 @@ export default function Navbar() {
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-1">
-            <div className="flex items-center space-x-1">
+            <div className="flex items-center">
               {navLinks.map((link) => (
-                <Button key={link.href} variant="ghost" asChild>
-                  <Link href={link.href} className="flex items-center font-['Matrix_Sans_Video']">
-                    {link.icon}
-                    {link.label}
-                  </Link>
-                </Button>
+                <div key={link.href} className="flex items-center space-x-0.5 mr-4">
+                  <Button variant="ghost" disabled className="opacity-50 cursor-not-allowed">
+                    <div className="flex items-center font-['Matrix_Sans_Video']">
+                      {link.icon}
+                      {link.label}
+                    </div>
+                  </Button>
+                  <span className="text-[10px] bg-gray-500/20 text-gray-500 px-2 py-0.5 rounded-full font-matrix-sans-regular">
+                    Coming Soon
+                  </span>
+                </div>
               ))}
               
               {connected && authenticatedLinks.map((link) => (
@@ -190,18 +195,21 @@ export default function Navbar() {
         <div className="fixed inset-0 bg-background/95 backdrop-blur-sm flex flex-col pt-20 pb-6 px-4 md:hidden">
           <div className="flex flex-col space-y-3">
             {navLinks.map((link) => (
-              <Button 
-                key={link.href} 
-                variant="ghost" 
-                className="justify-start" 
-                asChild
-                onClick={() => setIsOpen(false)}
-              >
-                <Link href={link.href} className="flex items-center font-['Matrix_Sans_Video']">
-                  {link.icon}
-                  {link.label}
-                </Link>
-              </Button>
+              <div key={link.href} className="flex items-center space-x-0.5">
+                <Button 
+                  variant="ghost" 
+                  className="justify-start opacity-50 cursor-not-allowed" 
+                  disabled
+                >
+                  <div className="flex items-center font-['Matrix_Sans_Video']">
+                    {link.icon}
+                    {link.label}
+                  </div>
+                </Button>
+                <span className="text-[10px] bg-gray-500/20 text-gray-500 px-2 py-0.5 rounded-full font-matrix-sans-regular">
+                  Coming Soon
+                </span>
+              </div>
             ))}
             
             {connected && authenticatedLinks.map((link) => (

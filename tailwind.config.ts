@@ -9,6 +9,12 @@ const config: Config = {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        'matrix-sans-regular': ['Matrix Sans Regular', 'sans-serif'],
+        'matrix-sans-print': ['Matrix Sans Print', 'sans-serif'],
+        'matrix-sans-screen': ['Matrix Sans Screen', 'sans-serif'],
+        'matrix-sans-video': ['Matrix Sans Video', 'sans-serif'],
+      },
       backgroundImage: {
         'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
         'gradient-conic':
