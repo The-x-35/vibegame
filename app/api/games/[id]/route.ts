@@ -8,9 +8,9 @@ export async function GET(
   try {
     const { id } = await params;
     
-    // Query the projects table with likes count
+    // Query the projects table with likes count and views count
     const result = await query(
-      'SELECT id, name, url, description, ca, likes_count FROM projects WHERE id = $1',
+      'SELECT id, name, url, description, ca, likes_count, views_count FROM projects WHERE id = $1',
       [id]
     );
 
@@ -18,7 +18,18 @@ export async function GET(
       return new NextResponse('Game not found', { status: 404 });
     }
 
-    return NextResponse.json(result.rows[0]);
+    const game = result.rows[0];
+    
+    // Return with camelCase field names
+    return NextResponse.json({
+      id: game.id,
+      name: game.name,
+      url: game.url,
+      description: game.description,
+      ca: game.ca,
+      likesCount: game.likes_count,
+      viewsCount: game.views_count
+    });
   } catch (error) {
     console.error('[GAME_GET]', error);
     return new NextResponse('Internal error', { status: 500 });

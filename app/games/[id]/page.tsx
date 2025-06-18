@@ -26,6 +26,7 @@ interface Game {
   description: string;
   ca?: string;
   likesCount?: number;
+  viewsCount?: number;
 }
 
 interface PriceData {
@@ -57,6 +58,7 @@ export default function GameDetailPage() {
   const [isLiked, setIsLiked] = useState(false);
   const [likesCount, setLikesCount] = useState(0);
   const [isLiking, setIsLiking] = useState(false);
+  const [viewsCount, setViewsCount] = useState(0);
 
   const { signTransaction, connected, publicKey, select, connect, wallet } = useWallet();
   const { setVisible } = useWalletModal();
@@ -109,9 +111,12 @@ export default function GameDetailPage() {
           throw new Error(`Failed to fetch game: ${response.statusText}`);
         }
         const data = await response.json();
+        console.log('Game data from API:', data);
         setGame(data);
-        // Set initial likes count from game data
+        // Set initial likes count and views count from game data
         setLikesCount(data.likesCount || 0);
+        setViewsCount(data.viewsCount || 0);
+        console.log('Set views count to:', data.viewsCount || 0);
       } catch (error) {
         console.error(error);
       } finally {
@@ -162,10 +167,33 @@ export default function GameDetailPage() {
       }
     };
 
+    const incrementViews = async () => {
+      try {
+        console.log('Incrementing views for game:', gameId);
+        const response = await fetch(`/api/games/${gameId}/view`, {
+          method: 'POST',
+        });
+        console.log('View API response status:', response.status);
+        
+        if (response.ok) {
+          const data = await response.json();
+          console.log('View API response data:', data);
+          setViewsCount(data.viewsCount);
+        } else {
+          const errorData = await response.json();
+          console.error('View API error:', errorData);
+        }
+      } catch (error) {
+        console.error('Error incrementing views:', error);
+        // Don't throw the error, just log it
+      }
+    };
+
     fetchGame();
     fetchPrice();
     fetchTokenBalance();
     fetchLikeStatus();
+    incrementViews();
     
     // Refresh price and balance every 30 seconds
     const interval = setInterval(() => {
@@ -465,6 +493,14 @@ export default function GameDetailPage() {
 
             {/* Spacer to push content to bottom */}
             <div className="flex-1" />
+
+            {/* Views Count */}
+            <div className="flex flex-col gap-1">
+              <p className="text-muted-foreground text-sm">Views</p>
+              <span className="font-semibold text-lg">
+                {viewsCount.toLocaleString()}
+              </span>
+            </div>
 
             {/* Contract Address */}
             <div className="flex flex-col gap-1">
