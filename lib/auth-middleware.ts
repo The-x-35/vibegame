@@ -102,13 +102,35 @@ export function validateCSRFToken(request: NextRequest): boolean {
       'https://app.vibegame.fun'
     ];
     
-    if (origin && !allowedDomains.includes(origin)) {
+    // Allow any subdomain of vibegame.fun (e.g., mario.vibegame.fun, alpha.vibegame.fun, etc.)
+    const vibegameSubdomainPattern = /^https:\/\/([^.]+\.)*vibegame\.fun$/;
+    
+    if (origin) {
+      // Check exact matches first
+      if (allowedDomains.includes(origin)) {
+        return true;
+      }
+      // Check if it's any subdomain of vibegame.fun
+      if (vibegameSubdomainPattern.test(origin)) {
+        return true;
+      }
       return false;
     }
     
-    if (referer && !allowedDomains.some(domain => referer.startsWith(domain))) {
+    if (referer) {
+      // Check exact matches first
+      if (allowedDomains.some(domain => referer.startsWith(domain))) {
+        return true;
+      }
+      // Check if it's any subdomain of vibegame.fun
+      if (vibegameSubdomainPattern.test(new URL(referer).origin)) {
+        return true;
+      }
       return false;
     }
+    
+    // If no origin or referer, allow the request (for API calls from same origin)
+    return true;
   }
   
   return true;
