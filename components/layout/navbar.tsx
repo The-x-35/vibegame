@@ -114,7 +114,7 @@ export default function Navbar() {
           : "bg-transparent"
       }`}
     >
-      <div className="container mx-auto px-4 py-3">
+      <div className="container px-4 py-3">
         <nav className="flex items-center justify-between">
           <Link href="/" className="z-50 font-['Matrix_Sans_Video']">
             <Logo />
