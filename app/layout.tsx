@@ -9,8 +9,8 @@ import { NavbarWrapper } from '@/components/layout/navbar-wrapper';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'VibeGame - Gamecoin SZN on Solana',
-  description: 'Build and share blockchain games using our low-code platform.',
+  title: 'VibeGame - Gamecoin szn on Solana',
+  description: 'Build and share games using blocks on Solana.',
   icons: {
     icon: '/favicon.svg',
   },
