@@ -585,20 +585,20 @@ export default function GameDetailPage() {
             <div className="flex-1" />
 
             {/* Views Count */}
-            {/* <div className="flex flex-col gap-1">
-              <p className="text-muted-foreground text-sm">Views</p>
+            <div className="flex flex-col gap-1">
+              <p className="text-muted-foreground text-sm">Plays</p>
               <span className="font-semibold text-lg">
                 {viewsCount.toLocaleString()}
               </span>
-            </div> */}
+            </div>
 
             {/* Plays Count */}
-            <div className="flex flex-col gap-1">
+            {/* <div className="flex flex-col gap-1">
               <p className="text-muted-foreground text-sm">Plays</p>
               <span className="font-semibold text-lg">
                 {playsCount.toLocaleString()}
               </span>
-            </div>
+            </div> */}
 
             {/* Contract Address */}
             <div className="flex flex-col gap-1">
