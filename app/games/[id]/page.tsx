@@ -41,6 +41,29 @@ interface AppTokenPayload {
   wallet: string;
 }
 
+function useOrientation() {
+  const [isLandscape, setIsLandscape] = useState(false);
+
+  useEffect(() => {
+    const checkOrientation = () => {
+      if (typeof window !== 'undefined') {
+        setIsLandscape(window.innerWidth > window.innerHeight);
+      }
+    };
+
+    checkOrientation();
+    window.addEventListener('resize', checkOrientation);
+    window.addEventListener('orientationchange', checkOrientation);
+
+    return () => {
+      window.removeEventListener('resize', checkOrientation);
+      window.removeEventListener('orientationchange', checkOrientation);
+    };
+  }, []);
+
+  return isLandscape;
+}
+
 export default function GameDetailPage() {
   const params = useParams();
   const router = useRouter();
@@ -66,6 +89,8 @@ export default function GameDetailPage() {
 
   const { signTransaction, connected, publicKey, select, connect, wallet } = useWallet();
   const { setVisible } = useWalletModal();
+
+  const isLandscape = useOrientation();
 
   // Auto-login when wallet connects
   useEffect(() => {
@@ -637,26 +662,59 @@ export default function GameDetailPage() {
 
   return (
     <>
-      {/* Mobile placeholder */}
-      <div className="flex md:hidden items-center justify-center min-h-screen bg-background px-4">
-        <p className="text-center text-lg font-semibold text-muted-foreground">
-          Please visit on a desktop device to play this game.
-        </p>
+      {/* Mobile Views */}
+      <div className="md:hidden">
+        {!isLandscape ? (
+          // Portrait mode - show warning
+          <div className="flex items-center justify-center min-h-screen bg-background px-4">
+            <div className="text-center space-y-4">
+              <svg 
+                className="w-16 h-16 mx-auto text-muted-foreground mb-4" 
+                fill="none" 
+                stroke="currentColor" 
+                viewBox="0 0 24 24"
+              >
+                <path 
+                  strokeLinecap="round" 
+                  strokeLinejoin="round" 
+                  strokeWidth={2} 
+                  d="M4 5a1 1 0 011-1h14a1 1 0 011 1v14a1 1 0 01-1 1H5a1 1 0 01-1-1V5z"
+                />
+                <path 
+                  strokeLinecap="round" 
+                  strokeLinejoin="round" 
+                  strokeWidth={2} 
+                  d="M12 9v6m0 0l-3-3m3 3l3-3"
+                />
+              </svg>
+              <p className="text-center text-lg font-semibold text-muted-foreground">
+                Please rotate your device to landscape mode to play this game.
+              </p>
+            </div>
+          </div>
+        ) : (
+          // Landscape mode - show only the game
+          <div className="w-full h-screen bg-background">
+            <iframe
+              src={`${ALPHA_GUI.EMBED_URL}?project_url=${encodeURIComponent(game.url)}`}
+              className="w-full h-full"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+            />
+          </div>
+        )}
       </div>
 
       {/* Desktop layout */}
       <div className="hidden md:block min-h-screen bg-background" style={{ fontFamily: 'Matrix Sans Video' }}>
-        {/* Main flex container */}
         <div className="flex w-full h-screen">
           {/* Left Column */}
           <div className="w-[24%] min-w-[280px] flex flex-col gap-2 sm:gap-3 md:gap-4 p-3 sm:p-4 md:p-5 border-r border-border">
             <div className="text-2xl sm:text-3xl md:text-4xl font-bold" style={{ fontFamily: 'Matrix Sans Video', background: 'linear-gradient(to right, #EE00FF, #EE5705)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>{game.name}</div>
             <p className="text-lg text-muted-foreground break-words whitespace-normal w-full">{game.description}</p>
 
-            {/* Spacer to push content to bottom */}
             <div className="flex-1" />
 
-            {/* Views Count */}
             <div className="flex flex-col gap-1">
               <p className="text-muted-foreground text-sm">Plays</p>
               <span className="font-semibold text-lg">
@@ -664,15 +722,6 @@ export default function GameDetailPage() {
               </span>
             </div>
 
-            {/* Plays Count */}
-            {/* <div className="flex flex-col gap-1">
-              <p className="text-muted-foreground text-sm">Plays</p>
-              <span className="font-semibold text-lg">
-                {playsCount.toLocaleString()}
-              </span>
-            </div> */}
-
-            {/* Contract Address */}
             <div className="flex flex-col gap-1">
               <p className="text-muted-foreground text-sm">Contract Address</p>
               <div className="flex items-center gap-1 sm:gap-2">
@@ -709,12 +758,9 @@ export default function GameDetailPage() {
               </div>
             </div>
 
-            {/* Separator */}
             <div className="w-full h-px bg-border my-2" />
 
-            {/* Price / Market / Balance */}
             <div className="flex flex-wrap gap-2 sm:gap-3 md:gap-4">
-              {/* Price */}
               <div className="flex flex-col gap-0.5">
                 <p className="text-muted-foreground text-sm">Price</p>
                 <span className="font-semibold text-lg">
@@ -722,7 +768,6 @@ export default function GameDetailPage() {
                 </span>
               </div>
 
-              {/* Market Cap */}
               <div className="flex flex-col gap-0.5">
                 <p className="text-muted-foreground text-sm">Mkt. Cap</p>
                 <span className="font-semibold text-lg">
@@ -730,7 +775,6 @@ export default function GameDetailPage() {
                 </span>
               </div>
 
-              {/* Token Balance */}
               <div className="flex flex-col gap-0.5">
                 <p className="text-muted-foreground text-sm">Balance</p>
                 <span className="font-semibold text-lg">
@@ -739,12 +783,9 @@ export default function GameDetailPage() {
               </div>
             </div>
 
-            {/* Separator */}
             <div className="w-full h-px bg-border my-2" />
 
-            {/* Buy/Sell section */}
             <div className="flex flex-col">
-              {/* Buy Input Drawer */}
               <div className={`mt-0 overflow-hidden transition-[height,opacity] duration-300 ease-in-out ${showBuyInput ? 'h-[160px] opacity-100' : 'h-0 opacity-0'}`}>
                 <div className="w-full bg-background/95 backdrop-blur-sm border border-border/50 rounded-lg p-2 shadow-lg">
                   <div className="flex flex-col gap-2">
@@ -805,7 +846,6 @@ export default function GameDetailPage() {
                 </div>
               </div>
 
-              {/* Sell Input Drawer */}
               <div className={`overflow-hidden transition-[height,opacity] duration-300 ease-in-out ${showSellInput ? 'h-[120px] opacity-100' : 'h-0 opacity-0'}`}>
                 <div className="w-full bg-background/95 backdrop-blur-sm border border-border/50 rounded-lg p-3 shadow-lg">
                   <div className="flex flex-col gap-2">
@@ -819,32 +859,6 @@ export default function GameDetailPage() {
                       max={tokenBalance}
                       step="0.01"
                     />
-                    <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setSellAmount("0.1")}
-                        className="flex-1 text-xs h-7"
-                      >
-                        0.1 SOL
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setSellAmount("0.5")}
-                        className="flex-1 text-xs h-7"
-                      >
-                        0.5 SOL
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setSellAmount("1")}
-                        className="flex-1 text-xs h-7"
-                      >
-                        1 SOL
-                      </Button>
-                    </div>
                     <div className="flex gap-2">
                       <Button
                         onClick={handleSell}
@@ -867,7 +881,6 @@ export default function GameDetailPage() {
                 </div>
               </div>
 
-              {/* Buy/Sell buttons */}
               <div className="flex gap-2 w-full">
                 <Button
                   onClick={handleBuy}
@@ -899,7 +912,6 @@ export default function GameDetailPage() {
 
           {/* Right Column */}
           <div className="w-[24%] min-w-[240px] flex flex-col h-screen p-3 sm:p-4 md:p-5 border-l border-border">
-            {/* Heart button at top */}
             <div className="flex items-center justify-between mb-4">
               <Button
                 variant="ghost"
@@ -914,9 +926,7 @@ export default function GameDetailPage() {
               <h2 className="text-base sm:text-lg md:text-xl font-semibold">Comments ({commentsCount})</h2>
             </div>
 
-            {/* Comments section with flex layout */}
             <div className="flex flex-col flex-1 min-h-0">
-              {/* Scrollable comments list */}
               <div className="flex-1 overflow-y-auto">
                 <CommentsSection projectId={gameId} onCommentAdded={refreshCommentsCount} />
               </div>
@@ -927,4 +937,4 @@ export default function GameDetailPage() {
       <Toaster />
     </>
   );
-} 
+}
