@@ -16,7 +16,7 @@ export async function GET(request: Request) {
 
   try {
     const response = await fetch(
-      `https://api.jup.ag/price/v2?ids=${tokenId}`,
+      `https://lite-api.jup.ag/price/v3?ids=${tokenId}`,
     );
 
     if (!response.ok) {
@@ -24,11 +24,13 @@ export async function GET(request: Request) {
     }
 
     const data = await response.json();
-    const price = data.data[tokenId]?.price;
+    const tokenData = data[tokenId];
 
-    if (!price) {
+    if (!tokenData || !tokenData.usdPrice) {
       throw new Error("Price data not available for the given token.");
     }
+
+    const price = tokenData.usdPrice;
 
     // Get token supply for market cap calculation
     const connection = new Connection(API_ENDPOINTS.SOLANA_RPC_ENDPOINT, 'confirmed');
@@ -36,8 +38,22 @@ export async function GET(request: Request) {
     const supply = Number(mintInfo.supply) / Math.pow(10, mintInfo.decimals);
     const marketCap = supply * parseFloat(price);
 
+    // Format price to show more decimal places for very small numbers
+    const formatPrice = (price: number) => {
+      if (price < 0.0001) {
+        return price.toFixed(12); // Show up to 12 decimal places for very small numbers
+      } else if (price < 0.01) {
+        return price.toFixed(8); // Show up to 8 decimal places for small numbers
+      } else if (price < 1) {
+        return price.toFixed(6); // Show up to 6 decimal places for numbers < 1
+      } else {
+        return price.toFixed(4); // Show up to 4 decimal places for larger numbers
+      }
+    };
+
     return NextResponse.json({
       price: parseFloat(price),
+      priceFormatted: formatPrice(parseFloat(price)),
       lastUpdated: new Date().toISOString(),
       marketCap
     });

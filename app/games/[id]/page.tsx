@@ -528,6 +528,78 @@ export default function GameDetailPage() {
     return `$${num.toFixed(2)}`;
   };
 
+  // Add helper function for price formatting with subscript
+  const formatPriceWithSubscript = (price: number): JSX.Element => {
+    if (price === 0) return <>$0</>;
+    
+    const priceStr = price.toString();
+    
+    // If price is in scientific notation, convert it to decimal
+    if (priceStr.includes('e')) {
+      const [mantissa, exponent] = priceStr.split('e');
+      const exp = parseInt(exponent);
+      const decimalStr = price.toFixed(Math.abs(exp));
+      return formatPriceWithSubscript(parseFloat(decimalStr));
+    }
+
+    // Handle regular decimal numbers
+    if (priceStr.includes('.')) {
+      const [whole, decimal] = priceStr.split('.');
+      let leadingZeros = 0;
+      let significantPart = '';
+      
+      // Count leading zeros in decimal part
+      for (let i = 0; i < decimal.length; i++) {
+        if (decimal[i] === '0') {
+          leadingZeros++;
+        } else {
+          // Take only first 3 significant digits after zeros
+          significantPart = decimal.slice(i, i + 3);
+          break;
+        }
+      }
+      
+      if (leadingZeros > 0) {
+        return (
+          <span className="whitespace-nowrap">
+            $0.0<sub className="text-[0.7em]">{leadingZeros}</sub>{significantPart}
+          </span>
+        );
+      }
+      
+      // For regular decimals without leading zeros, show 4 significant digits
+      return <>${parseFloat(priceStr).toPrecision(4)}</>;
+    }
+    
+    // For whole numbers, show 4 significant digits
+    return <>${parseFloat(priceStr).toPrecision(4)}</>;
+  };
+
+  // Add helper function for market cap formatting
+  const formatMarketCap = (marketCap: string | number): string => {
+    // If marketCap is already a formatted string, return as is
+    if (typeof marketCap === 'string' && (marketCap.includes('K') || marketCap.includes('M') || marketCap.includes('B') || marketCap.includes('T'))) {
+      return marketCap.startsWith('$') ? marketCap : `$${marketCap}`;
+    }
+    
+    // Convert to number if it's a string
+    const num = typeof marketCap === 'string' ? parseFloat(marketCap.replace(/[$,]/g, '')) : marketCap;
+    
+    if (isNaN(num)) return 'N/A';
+    
+    if (num >= 1e12) {
+      return `$${(num / 1e12).toFixed(1)}T`;
+    } else if (num >= 1e9) {
+      return `$${(num / 1e9).toFixed(1)}B`;
+    } else if (num >= 1e6) {
+      return `$${(num / 1e6).toFixed(1)}M`;
+    } else if (num >= 1e3) {
+      return `$${(num / 1e3).toFixed(1)}K`;
+    } else {
+      return `$${num.toFixed(0)}`;
+    }
+  };
+
   const formatContractAddress = (address: string): string => {
     if (!address) return '';
     return `${address.slice(0, 4)}...${address.slice(-3)}`;
@@ -646,7 +718,7 @@ export default function GameDetailPage() {
               <div className="flex flex-col gap-0.5">
                 <p className="text-muted-foreground text-sm">Price</p>
                 <span className="font-semibold text-lg">
-                  ${price?.price.toFixed(4) || '0.0000'}
+                  {price?.price ? formatPriceWithSubscript(price.price) : '$0.0000'}
                 </span>
               </div>
 
@@ -654,7 +726,7 @@ export default function GameDetailPage() {
               <div className="flex flex-col gap-0.5">
                 <p className="text-muted-foreground text-sm">Mkt. Cap</p>
                 <span className="font-semibold text-lg">
-                  {price?.marketCap ? formatNumber(price.marketCap) : '$0.00'}
+                  {price?.marketCap ? formatMarketCap(price.marketCap) : '$0.00'}
                 </span>
               </div>
 
