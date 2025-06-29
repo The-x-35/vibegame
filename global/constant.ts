@@ -1,6 +1,9 @@
 import { PublicKey } from "@solana/web3.js";
 import { WalletAdapterNetwork } from '@solana/wallet-adapter-base';
 
+// Production flag - should match middleware.ts
+const IS_PRODUCTION = true;
+
 // Wallet
 export const WALLET = new PublicKey("AidmVBuszvzCJ6cWrBQfKNwgNPU4KCvXBcrWh91vitm8");
 
@@ -15,16 +18,11 @@ export const API_ENDPOINTS = {
     SOLANA_RPC_ENDPOINT: SOLANA_CONFIG.RPC_ENDPOINT,
 } as const;
 
-// Alpha GUI URLs
+// Alpha GUI URLs - conditional based on production flag
 export const ALPHA_GUI = {
-    BASE_URL: 'https://alpha.vibegame.fun',
-    EMBED_URL: 'https://alpha.vibegame.fun/embed.html',
+    BASE_URL: IS_PRODUCTION ? 'https://alpha.vibegame.fun' : 'http://localhost:8601',
+    EMBED_URL: IS_PRODUCTION ? 'https://alpha.vibegame.fun/embed.html' : 'http://localhost:8601/embed.html',
     SEND_TOKEN_CA: 'SENDdRQtYMWaQrBroBrJ2Q53fgVuq95CV9UPGEvpCxa'
-} as const;
-
-// Website URLs
-export const WEBSITE_URLS = {
-    VIBE_GAME: 'https://vibegame.fun',
 } as const;
 
 // S3 Bucket Information
