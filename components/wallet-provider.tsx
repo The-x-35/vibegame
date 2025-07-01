@@ -6,6 +6,7 @@ import { PhantomWalletAdapter, SolflareWalletAdapter } from '@solana/wallet-adap
 import { WalletModalProvider } from '@solana/wallet-adapter-react-ui';
 import { clusterApiUrl } from '@solana/web3.js';
 import { SOLANA_CONFIG } from '@/global/constant';
+import { SolanaIframeProvider } from './solana-iframe-provider';
 import '@solana/wallet-adapter-react-ui/styles.css';
 
 interface Props {
@@ -29,7 +30,9 @@ export const WalletContextProvider: FC<Props> = ({ children }) => {
     <ConnectionProvider endpoint={endpoint}>
       <WalletProvider wallets={wallets} autoConnect>
         <WalletModalProvider>
-          {children}
+          <SolanaIframeProvider>
+            {children}
+          </SolanaIframeProvider>
         </WalletModalProvider>
       </WalletProvider>
     </ConnectionProvider>

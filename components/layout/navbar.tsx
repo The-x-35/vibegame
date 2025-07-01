@@ -114,7 +114,7 @@ export default function Navbar() {
           : "bg-transparent"
       }`}
     >
-      <div className="container px-4 py-3">
+      <div className="w-full px-4 py-3">
         <nav className="flex items-center justify-between">
           <Link href="/" className="z-50 font-['Matrix_Sans_Video']">
             <Logo />
@@ -147,7 +147,8 @@ export default function Navbar() {
               ))}
             </div>
 
-            <div className="pl-4 ml-4 border-l flex items-center space-x-2">
+            {/* Wallet / user section */}
+            <div className="pl-4 ml-auto border-l flex items-center space-x-2">
               {isLoading ? (
                 <div className="h-8 w-8 rounded-full bg-muted animate-pulse" />
               ) : connected ? (
@@ -173,7 +174,9 @@ export default function Navbar() {
                     </span>
                   </div>
                 </>
-              ) : null}
+              ) : (
+                <WalletMultiButton className="!h-8 !px-3 !py-1 text-sm" />
+              )}
             </div>
           </div>
 
@@ -252,7 +255,9 @@ export default function Navbar() {
                   </span>
                 </div>
               </div>
-            ) : null}
+            ) : (
+              <WalletMultiButton className="w-full !h-10" />
+            )}
           </div>
         </div>
       )}
