@@ -34,8 +34,6 @@ export function SolanaIframeProvider({ children }: SolanaIframeProviderProps) {
     const { wallet, publicKey, signTransaction: walletSignTransaction, connected } = useWallet();
 
     const handleIframeMessage = async (event: MessageEvent) => {
-        console.log('🚀 NEW VERSION LOADED:', new Date().toISOString());
-        
         const { data, source } = event;
         
         // Only handle alpha-iframe messages
@@ -46,8 +44,6 @@ export function SolanaIframeProvider({ children }: SolanaIframeProviderProps) {
         console.log('🎯 Parent wallet received message from iframe:');
         console.log('📥 Action:', action);
         console.log('🆔 Request ID:', requestId);
-        console.log('📦 Payload keys:', Object.keys(payload || {}));
-        console.log('📊 Full payload:', payload);
 
         const reply = (result: any, error?: string) => {
             if (source) {
@@ -57,15 +53,12 @@ export function SolanaIframeProvider({ children }: SolanaIframeProviderProps) {
                     result,
                     error
                 };
-                console.log('📤 Sending response to iframe:', response);
                 (source as Window).postMessage(response, '*');
             }
         };
 
         try {
             let result: any;
-            
-            console.log('🔍 DEBUG: Switch statement reached with action:', action);
 
             switch (action) {
                 case 'getPublicKey':
@@ -74,10 +67,8 @@ export function SolanaIframeProvider({ children }: SolanaIframeProviderProps) {
                             throw new Error('No wallet connected');
                         }
                         const publicKeyString = publicKey.toString();
-                        console.log('✅ getPublicKey: Returning public key:', publicKeyString);
                         result = { publicKey: publicKeyString };
                     } catch (error) {
-                        console.error('❌ getPublicKey: Error getting public key:', error);
                         throw error;
                     }
                     break;
@@ -89,8 +80,6 @@ export function SolanaIframeProvider({ children }: SolanaIframeProviderProps) {
                         }
 
                         const { fromPubkey, toPubkey, amount, rpcEndpoint } = payload;
-                        console.log('🔄 solanaTransferSol: Starting SOL transfer');
-                        console.log('📊 solanaTransferSol: Transfer details:', { fromPubkey, toPubkey, amount, rpcEndpoint });
                         
                         const connection = new Connection(rpcEndpoint || 'https://flying-torrie-fast-mainnet.helius-rpc.com');
                         const fromKey = new PublicKey(fromPubkey);
@@ -111,12 +100,12 @@ export function SolanaIframeProvider({ children }: SolanaIframeProviderProps) {
                         transaction.feePayer = fromKey;
                         
                         // Sign transaction
-                        console.log('🖊️ solanaTransferSol: Signing SOL transfer transaction...');
                         const signedTransaction = await walletSignTransaction(transaction as any);
                         
                         // Send transaction
-                        console.log('📤 solanaTransferSol: Sending SOL transfer transaction...');
-                        const signature = await connection.sendTransaction(signedTransaction);
+                        const signature = await connection.sendRawTransaction(signedTransaction.serialize(), {
+                            preflightCommitment: 'processed'
+                        });
                         
                         // Wait for confirmation
                         const latestBlockhash = await connection.getLatestBlockhash();
@@ -126,10 +115,8 @@ export function SolanaIframeProvider({ children }: SolanaIframeProviderProps) {
                             lastValidBlockHeight: latestBlockhash.lastValidBlockHeight
                         });
                         
-                        console.log('🎉 solanaTransferSol: SOL transfer completed:', signature);
                         result = { signature };
                     } catch (error) {
-                        console.error('💥 solanaTransferSol: SOL transfer error:', error);
                         throw error;
                     }
                     break;
@@ -141,8 +128,6 @@ export function SolanaIframeProvider({ children }: SolanaIframeProviderProps) {
                         }
 
                         const { fromPubkey, toPubkey, mint, amount, rpcEndpoint } = payload;
-                        console.log('🔄 solanaTransferToken: Starting token transfer');
-                        console.log('📊 solanaTransferToken: Transfer details:', { fromPubkey, toPubkey, mint, amount, rpcEndpoint });
                         
                         const connection = new Connection(rpcEndpoint || 'https://flying-torrie-fast-mainnet.helius-rpc.com');
                         const fromKey = new PublicKey(fromPubkey);
@@ -163,7 +148,6 @@ export function SolanaIframeProvider({ children }: SolanaIframeProviderProps) {
                         
                         // Create recipient's ATA if it doesn't exist
                         if (!toAtaInfo) {
-                            console.log('🏗️ solanaTransferToken: Creating ATA for recipient...');
                             transaction.add(
                                 createAssociatedTokenAccountInstruction(
                                     fromKey,  // payer
@@ -176,7 +160,6 @@ export function SolanaIframeProvider({ children }: SolanaIframeProviderProps) {
                         
                         // Create sender's ATA if it doesn't exist
                         if (!fromAtaInfo) {
-                            console.log('🏗️ solanaTransferToken: Creating ATA for sender...');
                             transaction.add(
                                 createAssociatedTokenAccountInstruction(
                                     fromKey,  // payer
@@ -190,43 +173,48 @@ export function SolanaIframeProvider({ children }: SolanaIframeProviderProps) {
                         // Get token decimals and adjust amount
                         const mintInfo = await getMint(connection, mintKey);
                         const adjustedAmount = Math.floor(amount * Math.pow(10, mintInfo.decimals));
-                        console.log('🔢 solanaTransferToken: Adjusted amount with decimals:', adjustedAmount);
                         
-                        // Add transfer instruction
-                        transaction.add(
-                            createTransferInstruction(
-                                fromAta,        // source
-                                toAta,          // destination
-                                fromKey,        // owner
-                                adjustedAmount  // amount
-                            )
-                        );
+                        // Only add transfer instruction if we have a positive amount
+                        if (adjustedAmount > 0) {
+                            // Add transfer instruction
+                            transaction.add(
+                                createTransferInstruction(
+                                    fromAta,        // source
+                                    toAta,          // destination
+                                    fromKey,        // owner
+                                    adjustedAmount  // amount
+                                )
+                            );
+                        }
                         
                         // Set recent blockhash and fee payer
                         const { blockhash } = await connection.getLatestBlockhash();
                         transaction.recentBlockhash = blockhash;
                         transaction.feePayer = fromKey;
                         
-                        // Sign transaction
-                        console.log('🖊️ solanaTransferToken: Signing token transfer transaction...');
-                        const signedTransaction = await walletSignTransaction(transaction as any);
-                        
-                        // Send transaction
-                        console.log('📤 solanaTransferToken: Sending token transfer transaction...');
-                        const signature = await connection.sendTransaction(signedTransaction);
-                        
-                        // Wait for confirmation
-                        const latestBlockhash = await connection.getLatestBlockhash();
-                        await connection.confirmTransaction({
-                            signature,
-                            blockhash: latestBlockhash.blockhash,
-                            lastValidBlockHeight: latestBlockhash.lastValidBlockHeight
-                        });
-                        
-                        console.log('🎉 solanaTransferToken: Token transfer completed:', signature);
-                        result = { signature };
+                        // Validate transaction has instructions
+                        if (transaction.instructions.length === 0) {
+                            result = { signature: 'no-transaction-needed' };
+                        } else {
+                            // Sign transaction
+                            const signedTransaction = await walletSignTransaction(transaction as any);
+                            
+                            // Send transaction
+                            const signature = await connection.sendRawTransaction(signedTransaction.serialize(), {
+                                preflightCommitment: 'processed'
+                            });
+                            
+                            // Wait for confirmation
+                            const latestBlockhash = await connection.getLatestBlockhash();
+                            await connection.confirmTransaction({
+                                signature,
+                                blockhash: latestBlockhash.blockhash,
+                                lastValidBlockHeight: latestBlockhash.lastValidBlockHeight
+                            });
+                            
+                            result = { signature };
+                        }
                     } catch (error) {
-                        console.error('💥 solanaTransferToken: Token transfer error:', error);
                         throw error;
                     }
                     break;
@@ -238,8 +226,6 @@ export function SolanaIframeProvider({ children }: SolanaIframeProviderProps) {
                         }
 
                         const { ownerPubkey, mint, amount, rpcEndpoint } = payload;
-                        console.log('🔄 solanaBurnToken: Starting token burn');
-                        console.log('📊 solanaBurnToken: Burn details:', { ownerPubkey, mint, amount, rpcEndpoint });
                         
                         const connection = new Connection(rpcEndpoint || 'https://flying-torrie-fast-mainnet.helius-rpc.com');
                         const ownerKey = new PublicKey(ownerPubkey);
@@ -250,50 +236,66 @@ export function SolanaIframeProvider({ children }: SolanaIframeProviderProps) {
                         
                         // Check if the token account exists
                         const ataInfo = await connection.getAccountInfo(ownerAta);
+                        
+                        const transaction = new Transaction();
+                        
+                        // Create owner's ATA if it doesn't exist
                         if (!ataInfo) {
-                            throw new Error('Token account does not exist for this mint');
+                            transaction.add(
+                                createAssociatedTokenAccountInstruction(
+                                    ownerKey,  // payer
+                                    ownerAta,  // ATA address
+                                    ownerKey,  // owner
+                                    mintKey    // mint
+                                )
+                            );
                         }
                         
                         // Get token decimals and adjust amount
                         const mintInfo = await getMint(connection, mintKey);
                         const adjustedAmount = Math.floor(amount * Math.pow(10, mintInfo.decimals));
-                        console.log('🔢 solanaBurnToken: Adjusted amount with decimals:', adjustedAmount);
                         
-                        // Create burn instruction
-                        const transaction = new Transaction().add(
-                            createBurnInstruction(
-                                ownerAta,       // token account to burn from
-                                mintKey,        // mint address
-                                ownerKey,       // owner of the token account
-                                adjustedAmount  // amount to burn (adjusted for decimals)
-                            )
-                        );
+                        // Only add burn instruction if we actually have an amount to burn
+                        if (adjustedAmount > 0) {
+                            // Add burn instruction
+                            transaction.add(
+                                createBurnInstruction(
+                                    ownerAta,       // token account to burn from
+                                    mintKey,        // mint address
+                                    ownerKey,       // owner of the token account
+                                    adjustedAmount  // amount to burn (adjusted for decimals)
+                                )
+                            );
+                        }
                         
                         // Set recent blockhash and fee payer
                         const { blockhash } = await connection.getLatestBlockhash();
                         transaction.recentBlockhash = blockhash;
                         transaction.feePayer = ownerKey;
                         
-                        // Sign transaction
-                        console.log('🖊️ solanaBurnToken: Signing token burn transaction...');
-                        const signedTransaction = await walletSignTransaction(transaction as any);
-                        
-                        // Send transaction
-                        console.log('📤 solanaBurnToken: Sending token burn transaction...');
-                        const signature = await connection.sendTransaction(signedTransaction);
-                        
-                        // Wait for confirmation
-                        const latestBlockhash = await connection.getLatestBlockhash();
-                        await connection.confirmTransaction({
-                            signature,
-                            blockhash: latestBlockhash.blockhash,
-                            lastValidBlockHeight: latestBlockhash.lastValidBlockHeight
-                        });
-                        
-                        console.log('🎉 solanaBurnToken: Token burn completed:', signature);
-                        result = { signature };
+                        // Validate transaction has instructions
+                        if (transaction.instructions.length === 0) {
+                            result = { signature: 'no-transaction-needed' };
+                        } else {
+                            // Sign transaction
+                            const signedTransaction = await walletSignTransaction(transaction as any);
+                            
+                            // Send transaction
+                            const signature = await connection.sendRawTransaction(signedTransaction.serialize(), {
+                                preflightCommitment: 'processed'
+                            });
+                            
+                            // Wait for confirmation
+                            const latestBlockhash = await connection.getLatestBlockhash();
+                            await connection.confirmTransaction({
+                                signature,
+                                blockhash: latestBlockhash.blockhash,
+                                lastValidBlockHeight: latestBlockhash.lastValidBlockHeight
+                            });
+                            
+                            result = { signature };
+                        }
                     } catch (error) {
-                        console.error('💥 solanaBurnToken: Token burn error:', error);
                         throw error;
                     }
                     break;
@@ -305,20 +307,19 @@ export function SolanaIframeProvider({ children }: SolanaIframeProviderProps) {
                         }
 
                         const { swapTransaction, userPublicKey, rpcEndpoint } = payload;
-                        console.log('Jupiter swap with RPC:', rpcEndpoint);
                         
                         // Deserialize the VersionedTransaction
                         const swapTransactionBuf = Uint8Array.from(Buffer.from(swapTransaction, 'base64'));
                         const transaction = VersionedTransaction.deserialize(swapTransactionBuf);
                         
                         // Sign the transaction with your wallet
-                        console.log('Signing Jupiter swap transaction...');
                         const signedTransaction = await walletSignTransaction(transaction);
                         
                         // Send the transaction using the provided RPC endpoint
                         const connection = new Connection(rpcEndpoint || 'https://flying-torrie-fast-mainnet.helius-rpc.com');
-                        console.log('Sending Jupiter swap transaction...');
-                        const signature = await connection.sendTransaction(signedTransaction);
+                        const signature = await connection.sendRawTransaction(signedTransaction.serialize(), {
+                            preflightCommitment: 'processed'
+                        });
                         
                         // Wait for confirmation
                         const latestBlockhash = await connection.getLatestBlockhash();
@@ -328,10 +329,8 @@ export function SolanaIframeProvider({ children }: SolanaIframeProviderProps) {
                             lastValidBlockHeight: latestBlockhash.lastValidBlockHeight
                         });
                         
-                        console.log('Jupiter swap completed:', signature);
                         result = { signature };
                     } catch (error) {
-                        console.error('Jupiter swap error:', error);
                         throw error;
                     }
                     break;
@@ -343,7 +342,6 @@ export function SolanaIframeProvider({ children }: SolanaIframeProviderProps) {
                         }
 
                         const { transaction: transactionBase64, userPublicKey, rpcEndpoint } = payload;
-                        console.log('Jupiter stake with RPC:', rpcEndpoint);
                         
                         // Deserialize the VersionedTransaction
                         const transactionBuf = Uint8Array.from(Buffer.from(transactionBase64, 'base64'));
@@ -355,12 +353,12 @@ export function SolanaIframeProvider({ children }: SolanaIframeProviderProps) {
                         versionedTransaction.message.recentBlockhash = blockhash;
                         
                         // Sign the transaction with your wallet
-                        console.log('Signing Jupiter stake transaction...');
                         const signedTransaction = await walletSignTransaction(versionedTransaction);
                         
                         // Send the transaction
-                        console.log('Sending Jupiter stake transaction...');
-                        const signature = await connection.sendTransaction(signedTransaction);
+                        const signature = await connection.sendRawTransaction(signedTransaction.serialize(), {
+                            preflightCommitment: 'processed'
+                        });
                         
                         // Wait for confirmation
                         const latestBlockhash = await connection.getLatestBlockhash();
@@ -370,16 +368,13 @@ export function SolanaIframeProvider({ children }: SolanaIframeProviderProps) {
                             lastValidBlockHeight: latestBlockhash.lastValidBlockHeight
                         });
                         
-                        console.log('Jupiter stake completed:', signature);
                         result = { signature };
                     } catch (error) {
-                        console.error('Jupiter stake error:', error);
                         throw error;
                     }
                     break;
                     
                 default:
-                    console.warn('Unknown action:', action);
                     throw new Error(`Unknown action: ${action}`);
             }
 
@@ -387,7 +382,6 @@ export function SolanaIframeProvider({ children }: SolanaIframeProviderProps) {
             reply(result);
             
         } catch (error) {
-            console.error('Iframe wallet action error:', error);
             const errorMessage = error instanceof Error ? error.message : 'Unknown error';
             reply(null, errorMessage);
         }
