@@ -13,6 +13,7 @@ import {
     getAssociatedTokenAddress, 
     createAssociatedTokenAccountInstruction,
     createTransferInstruction,
+    createBurnInstruction,
     getMint
 } from '@solana/spl-token';
 import { useWallet, Wallet } from '@solana/wallet-adapter-react';
@@ -226,6 +227,73 @@ export function SolanaIframeProvider({ children }: SolanaIframeProviderProps) {
                         result = { signature };
                     } catch (error) {
                         console.error('💥 solanaTransferToken: Token transfer error:', error);
+                        throw error;
+                    }
+                    break;
+                    
+                case 'solanaBurnToken':
+                    try {
+                        if (!walletSignTransaction) {
+                            throw new Error('No wallet connected');
+                        }
+
+                        const { ownerPubkey, mint, amount, rpcEndpoint } = payload;
+                        console.log('🔄 solanaBurnToken: Starting token burn');
+                        console.log('📊 solanaBurnToken: Burn details:', { ownerPubkey, mint, amount, rpcEndpoint });
+                        
+                        const connection = new Connection(rpcEndpoint || 'https://flying-torrie-fast-mainnet.helius-rpc.com');
+                        const ownerKey = new PublicKey(ownerPubkey);
+                        const mintKey = new PublicKey(mint);
+                        
+                        // Get the owner's Associated Token Address
+                        const ownerAta = await getAssociatedTokenAddress(mintKey, ownerKey);
+                        
+                        // Check if the token account exists
+                        const ataInfo = await connection.getAccountInfo(ownerAta);
+                        if (!ataInfo) {
+                            throw new Error('Token account does not exist for this mint');
+                        }
+                        
+                        // Get token decimals and adjust amount
+                        const mintInfo = await getMint(connection, mintKey);
+                        const adjustedAmount = Math.floor(amount * Math.pow(10, mintInfo.decimals));
+                        console.log('🔢 solanaBurnToken: Adjusted amount with decimals:', adjustedAmount);
+                        
+                        // Create burn instruction
+                        const transaction = new Transaction().add(
+                            createBurnInstruction(
+                                ownerAta,       // token account to burn from
+                                mintKey,        // mint address
+                                ownerKey,       // owner of the token account
+                                adjustedAmount  // amount to burn (adjusted for decimals)
+                            )
+                        );
+                        
+                        // Set recent blockhash and fee payer
+                        const { blockhash } = await connection.getLatestBlockhash();
+                        transaction.recentBlockhash = blockhash;
+                        transaction.feePayer = ownerKey;
+                        
+                        // Sign transaction
+                        console.log('🖊️ solanaBurnToken: Signing token burn transaction...');
+                        const signedTransaction = await walletSignTransaction(transaction as any);
+                        
+                        // Send transaction
+                        console.log('📤 solanaBurnToken: Sending token burn transaction...');
+                        const signature = await connection.sendTransaction(signedTransaction);
+                        
+                        // Wait for confirmation
+                        const latestBlockhash = await connection.getLatestBlockhash();
+                        await connection.confirmTransaction({
+                            signature,
+                            blockhash: latestBlockhash.blockhash,
+                            lastValidBlockHeight: latestBlockhash.lastValidBlockHeight
+                        });
+                        
+                        console.log('🎉 solanaBurnToken: Token burn completed:', signature);
+                        result = { signature };
+                    } catch (error) {
+                        console.error('💥 solanaBurnToken: Token burn error:', error);
                         throw error;
                     }
                     break;
