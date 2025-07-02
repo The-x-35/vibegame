@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
 // Force production mode
-const IS_PRODUCTION = true
+const IS_PRODUCTION = false
 
 export function middleware(request: NextRequest) {
   const url = request.nextUrl;
