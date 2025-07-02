@@ -375,7 +375,8 @@ export function SolanaIframeProvider({ children }: SolanaIframeProviderProps) {
                     break;
                     
                 default:
-                    throw new Error(`Unknown action: ${action}`);
+                    // Unknown action - let other providers handle it
+                    return;
             }
 
             // Send success response

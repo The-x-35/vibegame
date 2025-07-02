@@ -36,7 +36,6 @@ export async function POST(request: Request) {
     const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'fallback-secret');
     const token = await new SignJWT({ 
       wallet: user.wallet,
-      userId: user.id,
       sub: user.wallet 
     })
       .setProtectedHeader({ alg: 'HS256' })
@@ -47,7 +46,6 @@ export async function POST(request: Request) {
     return NextResponse.json({
       token,
       user: {
-        id: user.id,
         wallet: user.wallet,
         name: user.name
       },

@@ -5,7 +5,6 @@ import { verifyWallet } from './auth';
 export interface AuthenticatedRequest extends NextRequest {
   user?: {
     wallet: string;
-    userId: string;
   };
 }
 
@@ -27,8 +26,7 @@ export async function authenticateRequest(request: NextRequest): Promise<Authent
   // Add user info to request
   const authenticatedRequest = request as AuthenticatedRequest;
   authenticatedRequest.user = {
-    wallet: payload.wallet,
-    userId: payload.userId
+    wallet: payload.wallet
   };
 
   return authenticatedRequest;

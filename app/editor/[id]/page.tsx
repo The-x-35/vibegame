@@ -5,6 +5,7 @@ import { ALPHA_GUI } from '@/global/constant';
 import { Button } from '@/components/ui/button';
 import { Rocket } from 'lucide-react';
 import Link from 'next/link';
+import { S3IframeHandler } from '@/components/s3-iframe-handler';
 
 interface ProjectRow {
   id: string;
@@ -34,6 +35,8 @@ export default async function EditorPage({
 
   return (
     <div className="container mx-auto py-8">
+      <S3IframeHandler currentProjectUrl={project.url} />
+      
       <div className="flex justify-end mb-4">
         <Button asChild>
           <Link href={`/projects/${project.id}`}>

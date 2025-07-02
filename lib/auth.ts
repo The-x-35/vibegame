@@ -73,7 +73,7 @@ export async function verifyToken(token: string): Promise<AppTokenPayload | null
             const verifiedPayload = (payloadResult as unknown) as AppTokenPayload;
 
             // Check if the required fields are present
-            if (!verifiedPayload.wallet || !verifiedPayload.userId) {
+            if (!verifiedPayload.wallet) {
                 return null; // Missing required fields
             }
 
