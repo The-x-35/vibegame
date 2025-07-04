@@ -25,7 +25,7 @@ interface BuildInputProps {
   className?: string;
 }
 
-export function BuildInput({ placeholder = "What do you want to build?", className = "" }: BuildInputProps) {
+export function BuildInput({ placeholder = "Find with AI", className = "" }: BuildInputProps) {
   const [focused, setFocused] = useState(false);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);

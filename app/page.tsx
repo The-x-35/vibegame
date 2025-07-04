@@ -6,14 +6,58 @@ import { ArrowRight, Code, Sparkles, Zap, Gamepad2, Star, Users, Copy } from "lu
 import Link from "next/link";
 import { ALPHA_GUI } from "@/global/constant";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useUser } from "@/lib/hooks/use-user";
 
 export default function Home() {
   const [copied, setCopied] = useState(false);
+  const [isCloning, setIsCloning] = useState(false);
+  const router = useRouter();
+  const { user } = useUser();
 
   const handleCopy = () => {
     navigator.clipboard.writeText(ALPHA_GUI.SEND_TOKEN_CA);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleCreateFreshGame = async () => {
+    // If user is not authenticated, redirect to login
+    if (!user) {
+      router.push('/login');
+      return;
+    }
+
+    setIsCloning(true);
+    try {
+      // Clone the "New" template (ID: 558aca0a-b28a-4ab1-baed-03cb966a4033)
+      const response = await fetch('/api/projects/clone', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          projectId: '558aca0a-b28a-4ab1-baed-03cb966a4033',
+          name: 'My VibeGame',
+          description: 'A fresh new game created with VibeGame',
+          isPublic: false,
+          wallet: user.wallet,
+        }),
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to create fresh game');
+      }
+
+      const projectId = data.project.id;
+      router.push(`/editor/${projectId}`);
+    } catch (err) {
+      console.error(err);
+      alert(err instanceof Error ? err.message : 'Error creating fresh game');
+    } finally {
+      setIsCloning(false);
+    }
   };
 
   return (
@@ -72,11 +116,15 @@ export default function Home() {
                   Explore Games
                 </Link>
               </Button>
-              <Button size="lg" variant="outline" className="group" asChild>
-                <Link href="/login">
-                  Get Started
-                  <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
-                </Link>
+              <Button 
+                size="lg" 
+                variant="outline" 
+                className="group" 
+                onClick={handleCreateFreshGame}
+                disabled={isCloning}
+              >
+                {isCloning ? 'Creating...' : 'Create Fresh VibeGame'}
+                <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
               </Button>
             </div>
           </div>
