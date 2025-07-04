@@ -5,13 +5,24 @@ import { Button } from "@/components/ui/button";
 import { ArrowRight, Code, Sparkles, Zap, Gamepad2, Star, Users, Copy } from "lucide-react";
 import Link from "next/link";
 import { ALPHA_GUI } from "@/global/constant";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useUser } from "@/lib/hooks/use-user";
+import SuggestionCard from "@/components/suggestion-card";
+
+// Template interface
+interface Template {
+  id: string;
+  name: string;
+  url: string;
+  description: string;
+}
 
 export default function Home() {
   const [copied, setCopied] = useState(false);
   const [isCloning, setIsCloning] = useState(false);
+  const [templates, setTemplates] = useState<Template[]>([]);
+  const [isTemplatesLoading, setIsTemplatesLoading] = useState(true);
   const router = useRouter();
   const { user } = useUser();
 
@@ -20,6 +31,26 @@ export default function Home() {
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
+
+  // Fetch templates on component mount
+  useEffect(() => {
+    const fetchTemplates = async () => {
+      try {
+        const response = await fetch('/api/templates');
+        if (!response.ok) {
+          throw new Error(`Failed to fetch templates: ${response.statusText}`);
+        }
+        const data: Template[] = await response.json();
+        setTemplates(data);
+      } catch (error) {
+        console.error('Error fetching templates:', error);
+      } finally {
+        setIsTemplatesLoading(false);
+      }
+    };
+
+    fetchTemplates();
+  }, []);
 
   const handleCreateFreshGame = async () => {
     // If user is not authenticated, redirect to login
@@ -55,6 +86,44 @@ export default function Home() {
     } catch (err) {
       console.error(err);
       alert(err instanceof Error ? err.message : 'Error creating fresh game');
+    } finally {
+      setIsCloning(false);
+    }
+  };
+
+  const handleCloneTemplate = async (template: Template) => {
+    // If user is not authenticated, redirect to login
+    if (!user) {
+      router.push('/login');
+      return;
+    }
+
+    setIsCloning(true);
+    try {
+      const response = await fetch('/api/projects/clone', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          projectId: template.id,
+          name: template.name,
+          description: template.description,
+          isPublic: false,
+          wallet: user.wallet,
+        }),
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to clone template');
+      }
+
+      const projectId = data.project.id;
+      router.push(`/editor/${projectId}`);
+    } catch (err) {
+      console.error(err);
+      alert(err instanceof Error ? err.message : 'Error cloning template');
     } finally {
       setIsCloning(false);
     }
@@ -129,6 +198,47 @@ export default function Home() {
             </div>
           </div>
           
+          {/* Templates Section */}
+          <div className="max-w-6xl mx-auto mt-16">
+            <div className="text-center mb-10">
+              <h2 className="text-3xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-blue-500 to-purple-500">
+                Game Templates
+              </h2>
+              <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+                Choose from our collection of game templates to start building your next masterpiece.
+              </p>
+            </div>
+            
+            {isTemplatesLoading ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {Array.from({ length: 6 }).map((_, idx) => (
+                  <div key={idx} className="rounded-lg overflow-hidden border border-border/50 shadow-sm">
+                    <div className="h-48 bg-muted animate-pulse" />
+                    <div className="p-4 space-y-3">
+                      <div className="h-5 bg-muted animate-pulse rounded-md w-3/4" />
+                      <div className="h-4 bg-muted animate-pulse rounded-md w-full" />
+                      <div className="h-8 bg-muted animate-pulse rounded-md w-full mt-4" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {templates.map((template) => (
+                  <SuggestionCard
+                    key={template.id}
+                    embedUrl={`${ALPHA_GUI.EMBED_URL}?project_url=${encodeURIComponent(template.url)}`}
+                    name={template.name}
+                    description={template.description}
+                    onOpen={() => handleCloneTemplate(template)}
+                    buttonText="Use Template"
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+          
+          {/* 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto">
             <div className="flex items-center justify-center gap-3 p-4 rounded-lg bg-card/50 backdrop-blur-sm border">
               <div className="h-12 w-12 rounded-full bg-blue-500/10 flex items-center justify-center">
@@ -163,7 +273,6 @@ export default function Home() {
         </div>
       </section>
       
-      {/* Features Section */}
       <section className="py-20 bg-gradient-to-b from-background to-secondary/20">
         <div className="container px-4 mx-auto">
           <div className="text-center mb-12">
@@ -204,6 +313,9 @@ export default function Home() {
               </p>
             </div>
           </div>
+        </div>
+      </section>
+      */}
         </div>
       </section>
     </div>
