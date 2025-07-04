@@ -2,7 +2,7 @@ import { PublicKey } from "@solana/web3.js";
 import { WalletAdapterNetwork } from '@solana/wallet-adapter-base';
 
 // Production flag - should match middleware.ts
-const IS_PRODUCTION = true;
+const IS_PRODUCTION = false;
 
 // Wallet
 export const WALLET = new PublicKey("AidmVBuszvzCJ6cWrBQfKNwgNPU4KCvXBcrWh91vitm8");

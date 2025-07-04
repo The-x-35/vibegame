@@ -42,7 +42,7 @@ const DeleteProjectDialog = ({ projectId }: DeleteProjectDialogProps) => {
       }
 
       setIsOpen(false);
-      router.push('/dashboard');
+      router.push('/profile');
       router.refresh();
     } catch (err) {
       console.error('Error deleting project:', err);

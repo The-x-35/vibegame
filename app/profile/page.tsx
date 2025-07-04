@@ -10,7 +10,7 @@ import { PlusCircle, Gamepad2 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import CreateProjectDialog from "@/components/create-project-dialog";
 
-export default function DashboardPage() {
+export default function ProfilePage() {
   const router = useRouter();
   const { user, isLoading } = useUser();
   const { connected } = useWallet();
@@ -97,7 +97,7 @@ export default function DashboardPage() {
     <div className="container mx-auto px-4 py-10">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
         <div>
-          <h1 className="text-3xl font-bold">Your Dashboard</h1>
+          <h1 className="text-3xl font-bold">Your Profile</h1>
           <p className="text-muted-foreground">Manage and monitor all your game projects</p>
           {user?.wallet && (
             <p className="mt-2 text-sm font-mono break-all">

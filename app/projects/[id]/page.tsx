@@ -49,9 +49,9 @@ function ProjectContent({ project }: { project: ProjectRow }) {
     <div className="container mx-auto px-4 py-10">
       <div className="mb-6">
         <Button variant="ghost" asChild>
-          <Link href="/dashboard" className="flex items-center text-muted-foreground hover:text-foreground">
+          <Link href="/profile" className="flex items-center text-muted-foreground hover:text-foreground">
             <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Dashboard
+                          Back to Profile
           </Link>
         </Button>
       </div>

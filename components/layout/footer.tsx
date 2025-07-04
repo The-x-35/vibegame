@@ -27,8 +27,8 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/dashboard" className="text-muted-foreground hover:text-foreground transition-colors">
-                  Dashboard
+                <Link href="/profile" className="text-muted-foreground hover:text-foreground transition-colors">
+                  Profile
                 </Link>
               </li>
             </ul>
