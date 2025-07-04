@@ -16,6 +16,7 @@ interface Game {
   description: string;
   likes_count: number;
   wallet: string;
+  thumbnail?: string;
 }
 
 export default function GamesPage() {
@@ -83,6 +84,7 @@ export default function GamesPage() {
                 description={game.description}
                 onOpen={() => handlePlayGame(game)}
                 buttonText="Play Game"
+                thumbnail={game.thumbnail}
               />
             ))}
           </div>

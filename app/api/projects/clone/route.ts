@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
 
     // Fetch template metadata from database
     const templateResult = await query(
-      'SELECT url, name, description FROM templates WHERE id = $1',
+      'SELECT url, name, description, thumbnail FROM templates WHERE id = $1',
       [projectId]
     );
     const templateRows = templateResult.rows;
@@ -46,6 +46,7 @@ export async function POST(request: NextRequest) {
     const sourceUrl = templateRows[0].url;
     const originalName = templateRows[0].name;
     const originalDescription = templateRows[0].description;
+    const originalThumbnail = templateRows[0].thumbnail || "/og/og1.png";
 
     // Extract S3 key and bucket from source URL
     let sourceKey: string;
@@ -95,10 +96,10 @@ export async function POST(request: NextRequest) {
 
     // Insert new project record into database
     const insertResult = await query(
-      `INSERT INTO projects (id, wallet, url, name, description, is_public, created_at, updated_at)
-       VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())
-       RETURNING id, wallet, url, name, description, is_public, created_at, updated_at;`,
-      [id, wallet, newUrl, newName || originalName, newDescription || originalDescription, isPublic ?? false]
+      `INSERT INTO projects (id, wallet, url, name, description, is_public, thumbnail, created_at, updated_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), NOW())
+       RETURNING id, wallet, url, name, description, is_public, thumbnail, created_at, updated_at;`,
+      [id, wallet, newUrl, newName || originalName, newDescription || originalDescription, isPublic ?? false, originalThumbnail]
     );
 
     const newProject = insertResult.rows[0];

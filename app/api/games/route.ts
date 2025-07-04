@@ -5,7 +5,7 @@ export async function GET() {
   try {
     // Query returns a result object with 'rows' containing the data
     const result = await query(
-      'SELECT id, name, url, description, likes_count, wallet FROM projects WHERE is_public = true ORDER BY created_at DESC',
+      'SELECT id, name, url, description, likes_count, wallet, thumbnail FROM projects WHERE is_public = true ORDER BY created_at DESC',
       []
     );
     const games = result.rows;

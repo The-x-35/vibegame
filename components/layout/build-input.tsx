@@ -30,12 +30,12 @@ export function BuildInput({ placeholder = "Find with AI", className = "" }: Bui
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [staticSuggestions, setStaticSuggestions] = useState<string[]>([]);
-  const [dynamicSuggestions, setDynamicSuggestions] = useState<Array<{ name: string; description: string; url: string; id: string }>>([]);
+  const [dynamicSuggestions, setDynamicSuggestions] = useState<Array<{ name: string; description: string; url: string; id: string; thumbnail?: string }>>([]);
   const [lastRequest, setLastRequest] = useState<string>("");
   const inputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
   const { user } = useUser();
-  const [selectedTemplate, setSelectedTemplate] = useState<{ name: string; description: string; url: string; id: string } | null>(null);
+  const [selectedTemplate, setSelectedTemplate] = useState<{ name: string; description: string; url: string; id: string; thumbnail?: string } | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [cloneName, setCloneName] = useState("");
   const [cloneDescription, setCloneDescription] = useState("");
@@ -113,7 +113,7 @@ export function BuildInput({ placeholder = "Find with AI", className = "" }: Bui
     }
   };
 
-  const handleCloneTemplate = (template: { name: string; description: string; url: string; id: string }) => {
+  const handleCloneTemplate = (template: { name: string; description: string; url: string; id: string; thumbnail?: string }) => {
     if (!user) {
       router.push('/login');
       return;
@@ -217,6 +217,7 @@ export function BuildInput({ placeholder = "Find with AI", className = "" }: Bui
                     name={sugg.name}
                     description={sugg.description}
                     onOpen={() => handleCloneTemplate(sugg)}
+                    thumbnail={sugg.thumbnail}
                   />
                 ))}
               </div>

@@ -14,7 +14,7 @@ export async function GET() {
   try {
     // Query returns a result object with 'rows' containing the data
     const result = await query(
-      'SELECT id, name, url, description FROM templates ORDER BY created_at',
+      'SELECT id, name, url, description, thumbnail FROM templates ORDER BY created_at',
       []
     );
     const templates = result.rows;
@@ -57,8 +57,8 @@ export async function POST(req: Request) {
 
     // Add template to database
     const result = await query(
-      'INSERT INTO templates (name, url, description) VALUES ($1, $2, $3) RETURNING id, name, url, description',
-      [name, url, description]
+      'INSERT INTO templates (name, url, description, thumbnail) VALUES ($1, $2, $3, $4) RETURNING id, name, url, description, thumbnail',
+              [name, url, description, '/og/og1.png']
     );
 
     return NextResponse.json(result.rows[0], { status: 201 });
@@ -79,7 +79,7 @@ export async function DELETE(req: Request) {
 
     // Get the template URL before deleting
     const templateResult = await query(
-      'SELECT url FROM templates WHERE id = $1',
+      'SELECT url, thumbnail FROM templates WHERE id = $1',
       [id]
     );
 

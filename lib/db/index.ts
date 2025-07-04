@@ -103,7 +103,7 @@ export async function getGameById(id: string) {
 // Add a function to get all game templates
 export async function getTemplates() {
   return query(
-    'SELECT id, name, url, description FROM templates ORDER BY created_at',
+    'SELECT id, name, url, description, thumbnail FROM templates ORDER BY created_at',
     []
   );
 }

@@ -29,6 +29,7 @@ interface GameTemplate {
   name: string;
   url: string;
   description: string;
+  thumbnail?: string;
 }
 
 export default function TemplatesPage() {
@@ -207,6 +208,7 @@ export default function TemplatesPage() {
                     name={t.name}
                     description={t.description}
                     onOpen={() => handleCloneTemplate(t)}
+                    thumbnail={t.thumbnail}
                   />
                   <Button
                     variant="destructive"

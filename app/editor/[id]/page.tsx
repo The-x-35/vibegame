@@ -50,6 +50,7 @@ export default async function EditorPage({
         name={project.name}
         description={project.description}
         heightClass="h-[90vh]"
+        showIframe={true}
       />
     </div>
   );
