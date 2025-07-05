@@ -76,7 +76,6 @@ export default function SuggestionCard({
             </div>
             <div>
               <h4 className="font-semibold text-lg mb-1">{name}</h4>
-              <p className="text-sm text-muted-foreground line-clamp-2">{description}</p>
             </div>
           </div>
         </CardContent>

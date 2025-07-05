@@ -5,18 +5,6 @@ import Navbar from "@/components/layout/navbar";
 import SuggestionCard from "@/components/suggestion-card";
 import { useRouter } from "next/navigation";
 import { useUser } from "@/lib/hooks/use-user";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogFooter,
-  DialogTitle,
-  DialogDescription,
-  DialogClose
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { ALPHA_GUI } from '@/global/constant';
 import DeleteTemplateDialog from '@/components/delete-template-dialog';
@@ -37,11 +25,6 @@ export default function TemplatesPage() {
   const [isLoading, setIsLoading] = useState(true);
   const { user, isLoading: isUserLoading } = useUser();
   const router = useRouter();
-  const [selectedTemplate, setSelectedTemplate] = useState<GameTemplate | null>(null);
-  const [isFormOpen, setIsFormOpen] = useState(false);
-  const [cloneName, setCloneName] = useState("");
-  const [cloneDescription, setCloneDescription] = useState("");
-  const [clonePublic, setClonePublic] = useState(false);
   const [templateToDelete, setTemplateToDelete] = useState<GameTemplate | null>(null);
   const [isCloning, setIsCloning] = useState(false);
 
@@ -100,15 +83,6 @@ export default function TemplatesPage() {
     })();
   }, [user, isUserLoading]);
 
-  // Clone form effect
-  useEffect(() => {
-    if (selectedTemplate) {
-      setCloneName(selectedTemplate.name);
-      setCloneDescription(selectedTemplate.description);
-      setClonePublic(false);
-    }
-  }, [selectedTemplate]);
-
   // Show loading state while checking user authentication
   if (isUserLoading) {
     return (
@@ -121,18 +95,12 @@ export default function TemplatesPage() {
   // Don't render anything if not authorized
   if (!user) return null;
 
-  const handleCloneTemplate = (template: GameTemplate) => {
+  const handleCloneTemplate = async (template: GameTemplate) => {
     if (!user) {
       router.push('/login');
       return;
     }
-    setSelectedTemplate(template);
-    setIsFormOpen(true);
-  };
 
-  const handleSubmitClone = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!user || !selectedTemplate) return;
     setIsCloning(true);
     try {
       const response = await fetch('/api/projects/clone', {
@@ -141,10 +109,10 @@ export default function TemplatesPage() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          projectId: selectedTemplate.id,
-          name: cloneName,
-          description: cloneDescription,
-          isPublic: clonePublic,
+          projectId: template.id,
+          name: template.name,
+          description: '',
+          isPublic: false,
           wallet: user.wallet,
         }),
       });
@@ -153,7 +121,6 @@ export default function TemplatesPage() {
         throw new Error(data.error || 'Failed to clone project');
       }
       const projectId = data.project.id;
-      setIsFormOpen(false);
       router.push(`/editor/${projectId}`);
     } catch (err) {
       console.error(err);
@@ -221,42 +188,6 @@ export default function TemplatesPage() {
                 </div>
               ))}
             </div>
-            <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Clone Game</DialogTitle>
-                  <DialogDescription>Customize your cloned game details</DialogDescription>
-                </DialogHeader>
-                <form onSubmit={handleSubmitClone} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="name">Game Name</Label>
-                    <Input
-                      id="name"
-                      value={cloneName}
-                      onChange={(e) => setCloneName(e.target.value)}
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="description">Description</Label>
-                    <Textarea
-                      id="description"
-                      value={cloneDescription}
-                      onChange={(e) => setCloneDescription(e.target.value)}
-                      required
-                    />
-                  </div>
-                  <DialogFooter>
-                    <DialogClose asChild>
-                      <Button type="button" variant="outline" disabled={isCloning}>Cancel</Button>
-                    </DialogClose>
-                    <Button type="submit" disabled={isCloning}>
-                      {isCloning ? "Cloning..." : "Clone Game"}
-                    </Button>
-                  </DialogFooter>
-                </form>
-              </DialogContent>
-            </Dialog>
             {templateToDelete && (
               <DeleteTemplateDialog
                 isOpen={!!templateToDelete}

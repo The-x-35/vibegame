@@ -6,18 +6,6 @@ import { Sparkles } from "lucide-react";
 import SuggestionCard from "@/components/suggestion-card";
 import { useRouter } from "next/navigation";
 import { useUser } from "@/lib/hooks/use-user";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogFooter,
-  DialogTitle,
-  DialogDescription,
-  DialogClose
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
 import { ALPHA_GUI } from '@/global/constant';
 
 interface BuildInputProps {
@@ -35,11 +23,6 @@ export function BuildInput({ placeholder = "Find with AI", className = "" }: Bui
   const inputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
   const { user } = useUser();
-  const [selectedTemplate, setSelectedTemplate] = useState<{ name: string; description: string; url: string; id: string; thumbnail?: string } | null>(null);
-  const [isFormOpen, setIsFormOpen] = useState(false);
-  const [cloneName, setCloneName] = useState("");
-  const [cloneDescription, setCloneDescription] = useState("");
-  const [clonePublic, setClonePublic] = useState(false);
   const [isCloning, setIsCloning] = useState(false);
 
   const gameTemplates = [
@@ -79,14 +62,6 @@ export function BuildInput({ placeholder = "Find with AI", className = "" }: Bui
     return () => clearTimeout(timer);
   }, []);
 
-  useEffect(() => {
-    if (selectedTemplate) {
-      setCloneName(selectedTemplate.name);
-      setCloneDescription(selectedTemplate.description);
-      setClonePublic(false);
-    }
-  }, [selectedTemplate]);
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!input.trim()) return;
@@ -113,18 +88,12 @@ export function BuildInput({ placeholder = "Find with AI", className = "" }: Bui
     }
   };
 
-  const handleCloneTemplate = (template: { name: string; description: string; url: string; id: string; thumbnail?: string }) => {
+  const handleCloneTemplate = async (template: { name: string; description: string; url: string; id: string; thumbnail?: string }) => {
     if (!user) {
       router.push('/login');
       return;
     }
-    setSelectedTemplate(template);
-    setIsFormOpen(true);
-  };
 
-  const handleSubmitClone = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!user || !selectedTemplate) return;
     setIsCloning(true);
     try {
       const response = await fetch('/api/projects/clone', {
@@ -133,10 +102,10 @@ export function BuildInput({ placeholder = "Find with AI", className = "" }: Bui
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          projectId: selectedTemplate.id,
-          name: cloneName,
-          description: cloneDescription,
-          isPublic: clonePublic,
+          projectId: template.id,
+          name: template.name,
+          description: '',
+          isPublic: false,
           wallet: user.wallet,
         }),
       });
@@ -145,7 +114,6 @@ export function BuildInput({ placeholder = "Find with AI", className = "" }: Bui
         throw new Error(data.error || 'Failed to clone project');
       }
       const projectId = data.project.id;
-      setIsFormOpen(false);
       router.push(`/editor/${projectId}`);
     } catch (err) {
       console.error(err);
@@ -225,33 +193,6 @@ export function BuildInput({ placeholder = "Find with AI", className = "" }: Bui
           )}
         </div>
       )}
-
-      <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Clone Game</DialogTitle>
-            <DialogDescription>Customize your cloned game details</DialogDescription>
-          </DialogHeader>
-          <form onSubmit={handleSubmitClone} className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="clone-name" className="text-right">Name</Label>
-              <Input id="clone-name" className="col-span-3" value={cloneName} onChange={(e) => setCloneName(e.target.value)} required />
-            </div>
-            <div className="grid grid-cols-4 items-start gap-4">
-              <Label htmlFor="clone-description" className="text-right pt-2">Description</Label>
-              <Textarea id="clone-description" className="col-span-3" value={cloneDescription} onChange={(e) => setCloneDescription(e.target.value)} required />
-            </div>
-            <DialogFooter>
-              <DialogClose asChild>
-                <Button variant="outline" disabled={isCloning}>Cancel</Button>
-              </DialogClose>
-              <Button type="submit" disabled={isCloning}>
-                {isCloning ? "Cloning..." : "Clone"}
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

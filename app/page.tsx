@@ -9,18 +9,6 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useUser } from "@/lib/hooks/use-user";
 import SuggestionCard from "@/components/suggestion-card";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogFooter,
-  DialogTitle,
-  DialogDescription,
-  DialogClose
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
 
 // Template interface
 interface Template {
@@ -36,11 +24,6 @@ export default function Home() {
   const [isCloning, setIsCloning] = useState(false);
   const [templates, setTemplates] = useState<Template[]>([]);
   const [isTemplatesLoading, setIsTemplatesLoading] = useState(true);
-  const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null);
-  const [isFormOpen, setIsFormOpen] = useState(false);
-  const [cloneName, setCloneName] = useState("");
-  const [cloneDescription, setCloneDescription] = useState("");
-  const [clonePublic, setClonePublic] = useState(false);
   const router = useRouter();
   const { user } = useUser();
 
@@ -69,15 +52,6 @@ export default function Home() {
 
     fetchTemplates();
   }, []);
-
-  // Clone form effect
-  useEffect(() => {
-    if (selectedTemplate) {
-      setCloneName(selectedTemplate.name);
-      setCloneDescription(selectedTemplate.description);
-      setClonePublic(false);
-    }
-  }, [selectedTemplate]);
 
   const handleCreateFreshGame = async () => {
     // If user is not authenticated, redirect to login
@@ -118,19 +92,13 @@ export default function Home() {
     }
   };
 
-  const handleCloneTemplate = (template: Template) => {
+  const handleCloneTemplate = async (template: Template) => {
     // If user is not authenticated, redirect to login
     if (!user) {
       router.push('/login');
       return;
     }
-    setSelectedTemplate(template);
-    setIsFormOpen(true);
-  };
 
-  const handleSubmitClone = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!user || !selectedTemplate) return;
     setIsCloning(true);
     try {
       const response = await fetch('/api/projects/clone', {
@@ -139,10 +107,10 @@ export default function Home() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          projectId: selectedTemplate.id,
-          name: cloneName,
-          description: cloneDescription,
-          isPublic: clonePublic,
+          projectId: template.id,
+          name: template.name,
+          description: '',
+          isPublic: false,
           wallet: user.wallet,
         }),
       });
@@ -153,7 +121,6 @@ export default function Home() {
       }
 
       const projectId = data.project.id;
-      setIsFormOpen(false);
       router.push(`/editor/${projectId}`);
     } catch (err) {
       console.error(err);
@@ -353,44 +320,6 @@ export default function Home() {
       */}
         </div>
       </section>
-
-      {/* Clone Template Dialog */}
-      <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Clone Game</DialogTitle>
-            <DialogDescription>Customize your cloned game details</DialogDescription>
-          </DialogHeader>
-          <form onSubmit={handleSubmitClone} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="name">Game Name</Label>
-              <Input
-                id="name"
-                value={cloneName}
-                onChange={(e) => setCloneName(e.target.value)}
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="description">Description</Label>
-              <Textarea
-                id="description"
-                value={cloneDescription}
-                onChange={(e) => setCloneDescription(e.target.value)}
-                required
-              />
-            </div>
-            <DialogFooter>
-              <DialogClose asChild>
-                <Button type="button" variant="outline" disabled={isCloning}>Cancel</Button>
-              </DialogClose>
-              <Button type="submit" disabled={isCloning}>
-                {isCloning ? "Cloning..." : "Clone Game"}
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
