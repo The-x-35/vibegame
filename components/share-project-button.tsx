@@ -16,10 +16,14 @@ interface ShareProjectButtonProps {
 }
 
 export default function ShareProjectButton({ projectId, projectName }: ShareProjectButtonProps) {
+  const getShareUrl = () => {
+    return `https://${projectId}.vibegame.fun`;
+  };
+
   const handleCopyLink = async () => {
     try {
-      const currentUrl = window.location.href;
-      await navigator.clipboard.writeText(currentUrl);
+      const shareUrl = getShareUrl();
+      await navigator.clipboard.writeText(shareUrl);
       toast.success('Link copied to clipboard!');
     } catch (err) {
       toast.error('Failed to copy link');
@@ -27,11 +31,11 @@ export default function ShareProjectButton({ projectId, projectName }: ShareProj
   };
 
   const handleShare = (platform: string) => {
-    const currentUrl = window.location.href;
+    const shareUrl = getShareUrl();
     const shareUrls = {
-      twitter: `https://twitter.com/intent/tweet?text=Check out ${encodeURIComponent(projectName)} on VibeGame!&url=${encodeURIComponent(currentUrl)}`,
-      facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(currentUrl)}`,
-      linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(currentUrl)}`,
+      twitter: `https://twitter.com/intent/tweet?text=Check out ${encodeURIComponent(projectName)} on VibeGame!&url=${encodeURIComponent(shareUrl)}`,
+      facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`,
+      linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareUrl)}`,
     };
 
     window.open(shareUrls[platform as keyof typeof shareUrls], '_blank');

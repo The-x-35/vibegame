@@ -1,9 +1,7 @@
 "use client";
 
-import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Share2, Lock as LockIcon, Edit, Eye } from "lucide-react";
-import Link from "next/link";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Lock as LockIcon, Eye } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { cn } from "@/lib/utils";
 import { ALPHA_GUI } from '@/global/constant';
@@ -26,9 +24,6 @@ interface ProjectCardProps {
 }
 
 export function ProjectCard({ project, onToggleVisibility, onClick }: ProjectCardProps) {
-  const handleToggle = () => {
-    onToggleVisibility?.(project.id, !project.isPublic);
-  };
 
   // Preview embed URL
   const embedUrl = `${ALPHA_GUI.EMBED_URL}?project_url=${encodeURIComponent(
@@ -56,12 +51,12 @@ export function ProjectCard({ project, onToggleVisibility, onClick }: ProjectCar
           {project.isPublic ? (
             <div className="bg-green-500/20 text-green-500 text-xs px-2 py-1 rounded-full flex items-center">
               <Eye className="w-3 h-3 mr-1" />
-              Public
+              Launched
             </div>
           ) : (
             <div className="bg-amber-500/20 text-amber-500 text-xs px-2 py-1 rounded-full flex items-center">
               <LockIcon className="w-3 h-3 mr-1" />
-              Private
+              Draft
             </div>
           )}
         </div>
@@ -82,38 +77,7 @@ export function ProjectCard({ project, onToggleVisibility, onClick }: ProjectCar
         <p className="text-sm text-muted-foreground line-clamp-2">{project.description}</p>
       </CardContent>
 
-      <CardFooter className="flex justify-between border-t pt-3 mt-2">
-        <Button size="sm" variant="outline" asChild onClick={(e) => e.stopPropagation()}>
-          <Link href={`/editor/${project.id}`}>
-            <Edit className="w-4 h-4 mr-1" />
-            Edit
-          </Link>
-        </Button>
 
-        <div className="flex gap-2">
-          <Button size="sm" variant="secondary" onClick={(e) => { e.stopPropagation(); handleToggle(); }}>
-            {project.isPublic ? (
-              <>
-                <LockIcon className="w-4 h-4 mr-1" />
-                Make Private
-              </>
-            ) : (
-              <>
-                <Eye className="w-4 h-4 mr-1" />
-                Make Public
-              </>
-            )}
-          </Button>
-
-          {project.isPublic && (
-            <Button size="sm" variant="outline" asChild onClick={(e) => e.stopPropagation()}>
-              <Link href={`/projects/${project.id}`}>
-                <Share2 className="w-4 h-4" />
-              </Link>
-            </Button>
-          )}
-        </div>
-      </CardFooter>
     </Card>
   );
 }

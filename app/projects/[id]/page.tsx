@@ -5,7 +5,8 @@ import { Button } from '@/components/ui/button';
 import { ArrowLeft, Edit, Trash2 } from 'lucide-react';
 import { ALPHA_GUI } from '@/global/constant';
 import { Suspense } from 'react';
-import LaunchTokenDialog from '@/components/launch-token-dialog';
+import AttachTokenDialog from '@/components/launch-token-dialog';
+import EditProjectDialog from '@/components/edit-project-dialog';
 import DeleteProjectDialog from '@/components/delete-project-dialog';
 import ShareProjectButton from '@/components/share-project-button';
 
@@ -14,7 +15,7 @@ interface ProjectRow {
   url: string;
   name: string;
   description: string;
-  creator: string;
+  wallet: string;
   ca: string | null;
   is_public: boolean;
 }
@@ -51,7 +52,7 @@ function ProjectContent({ project }: { project: ProjectRow }) {
         <Button variant="ghost" asChild>
           <Link href="/profile" className="flex items-center text-muted-foreground hover:text-foreground">
             <ArrowLeft className="mr-2 h-4 w-4" />
-                          Back to Profile
+            Back to Profile
           </Link>
         </Button>
       </div>
@@ -70,24 +71,27 @@ function ProjectContent({ project }: { project: ProjectRow }) {
               <div className="absolute inset-0 bg-black/10 group-hover:bg-black/0 transition-all duration-300" />
             </div>
           </div>
+          
+          <div className="mt-6">
+            <p className="text-muted-foreground">{project.description}</p>
+          </div>
         </div>
 
         <div className="lg:col-span-1 space-y-4">
           <h1 className="text-3xl font-bold">{project.name}</h1>
-          <p className="text-muted-foreground">{project.description}</p>
           <p className="text-sm text-muted-foreground">
-            <span className="font-medium">Created by:</span> {project.creator}
+            <span className="font-medium">Created by:</span> {project.wallet}
           </p>
           <p className="text-sm text-muted-foreground">
             <span className="font-medium">Contract Address:</span> {project.ca || 'Not launched yet'}
           </p>
           <p className="text-sm text-muted-foreground">
-            <span className="font-medium">Status:</span> {project.is_public ? 'Public' : 'Private'}
+            <span className="font-medium">Status:</span> {project.is_public ? 'Launched' : 'Draft'}
           </p>
 
           <div className="flex flex-col gap-4 mt-4">
             <div className="flex gap-4">
-              <LaunchTokenDialog
+              <AttachTokenDialog
                 projectId={project.id}
                 projectUrl={project.url}
                 projectName={project.name}
@@ -95,11 +99,19 @@ function ProjectContent({ project }: { project: ProjectRow }) {
                 ca={project.ca}
               />
               <Button size="lg" variant="outline" className="flex-1" asChild>
-                <Link href={`/editor/${project.id}`}>Edit Project</Link>
+                <Link href={`/editor/${project.id}`}>Edit Game</Link>
               </Button>
             </div>
             <div className="flex gap-4">
+              <EditProjectDialog
+                projectId={project.id}
+                projectName={project.name}
+                projectDescription={project.description}
+                projectCa={project.ca}
+              />
               <ShareProjectButton projectId={project.id} projectName={project.name} />
+            </div>
+            <div className="pt-4 border-t">
               <DeleteProjectDialog projectId={project.id} />
             </div>
           </div>

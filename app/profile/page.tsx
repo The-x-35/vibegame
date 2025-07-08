@@ -112,8 +112,8 @@ export default function ProfilePage() {
       <Tabs defaultValue="all" className="w-full">
         <TabsList className="mb-6">
           <TabsTrigger value="all">All Projects</TabsTrigger>
-          <TabsTrigger value="public">Public</TabsTrigger>
-          <TabsTrigger value="private">Private</TabsTrigger>
+          <TabsTrigger value="public">Launched</TabsTrigger>
+          <TabsTrigger value="private">Draft</TabsTrigger>
         </TabsList>
         
         <TabsContent value="all">
@@ -178,9 +178,9 @@ export default function ProfilePage() {
             </div>
           ) : (
             <div className="text-center py-16 bg-muted/20 rounded-lg border border-dashed">
-              <h3 className="text-lg font-medium mb-2">No public projects</h3>
+              <h3 className="text-lg font-medium mb-2">No launched projects</h3>
               <p className="text-muted-foreground mb-6">
-                Make one of your projects public to share it with the world.
+                Make one of your projects public to launch it and share it with the world.
               </p>
             </div>
           )}
@@ -213,9 +213,9 @@ export default function ProfilePage() {
             </div>
           ) : (
             <div className="text-center py-16 bg-muted/20 rounded-lg border border-dashed">
-              <h3 className="text-lg font-medium mb-2">No private projects</h3>
+              <h3 className="text-lg font-medium mb-2">No draft projects</h3>
               <p className="text-muted-foreground mb-6">
-                All your projects are currently set to public.
+                All your projects are currently launched. Create a new project to start drafting.
               </p>
             </div>
           )}
