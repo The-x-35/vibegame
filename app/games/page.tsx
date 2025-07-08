@@ -18,6 +18,7 @@ interface Game {
   wallet: string;
   thumbnail?: string;
   ca?: string;
+  views_count?: number;
 }
 
 export default function GamesPage() {
@@ -87,6 +88,7 @@ export default function GamesPage() {
                 buttonText="Play Game"
                 thumbnail={game.thumbnail}
                 ca={game.ca}
+                playsCount={game.views_count}
               />
             ))}
           </div>

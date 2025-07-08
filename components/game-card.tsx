@@ -20,6 +20,7 @@ type GameCardProps = {
   buttonText?: string;
   thumbnail?: string;
   ca?: string;
+  playsCount?: number;
 };
 
 export default function GameCard({ 
@@ -29,7 +30,8 @@ export default function GameCard({
   onOpen, 
   buttonText = "Play Game",
   thumbnail,
-  ca
+  ca,
+  playsCount = 0
 }: GameCardProps) {
   const [priceData, setPriceData] = useState<PriceData | null>(null);
   const [copied, setCopied] = useState(false);
@@ -79,6 +81,16 @@ export default function GameCard({
     return `${address.slice(0, 4)}...${address.slice(-4)}`;
   };
 
+  const formatPlaysCount = (plays: number): string => {
+    if (plays >= 1e6) {
+      return `${(plays / 1e6).toFixed(1)}M`;
+    } else if (plays >= 1e3) {
+      return `${(plays / 1e3).toFixed(1)}K`;
+    } else {
+      return plays.toString();
+    }
+  };
+
   const handleCopyCA = () => {
     if (contractAddress) {
       navigator.clipboard.writeText(contractAddress);
@@ -121,6 +133,13 @@ export default function GameCard({
 
         {/* Market Info */}
         <div className="space-y-2 border-t pt-3">
+          <div className="flex justify-between items-center">
+            <span className="text-xs text-muted-foreground">Plays</span>
+            <span className="text-sm font-semibold">
+              {formatPlaysCount(playsCount)}
+            </span>
+          </div>
+          
           <div className="flex justify-between items-center">
             <span className="text-xs text-muted-foreground">Market Cap</span>
             <span className="text-sm font-semibold">
