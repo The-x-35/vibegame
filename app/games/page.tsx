@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import Navbar from "@/components/layout/navbar";
-import SuggestionCard from "@/components/suggestion-card";
+import GameCard from "@/components/game-card";
 import { useRouter } from "next/navigation";
 import { useUser } from "@/lib/hooks/use-user";
 import { ALPHA_GUI } from '@/global/constant';
@@ -17,6 +17,7 @@ interface Game {
   likes_count: number;
   wallet: string;
   thumbnail?: string;
+  ca?: string;
 }
 
 export default function GamesPage() {
@@ -75,7 +76,7 @@ export default function GamesPage() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {games.map((game) => (
-              <SuggestionCard
+              <GameCard
                 key={game.id}
                 embedUrl={`${ALPHA_GUI.EMBED_URL}?project_url=${encodeURIComponent(
                   game.url
@@ -85,6 +86,7 @@ export default function GamesPage() {
                 onOpen={() => handlePlayGame(game)}
                 buttonText="Play Game"
                 thumbnail={game.thumbnail}
+                ca={game.ca}
               />
             ))}
           </div>
