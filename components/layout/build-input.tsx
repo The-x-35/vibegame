@@ -70,10 +70,10 @@ export function BuildInput({ placeholder = "Find with AI", className = "" }: Bui
     setLastRequest(input);
     setIsLoading(true);
     try {
-      const res = await fetch("/api/chat", {
+      const res = await fetch("/api/search", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: input }),
+        body: JSON.stringify({ query: input }),
       });
       if (!res.ok) throw new Error("Failed to fetch suggestions");
       const data = await res.json();
@@ -166,7 +166,7 @@ export function BuildInput({ placeholder = "Find with AI", className = "" }: Bui
         <div className="mt-6 p-4 bg-gray-900/50 rounded-lg border border-gray-700">
           {isLoading ? (
             <div className="flex items-center justify-center p-8">
-              <p className="text-white text-lg">Finding the best template for you...</p>
+              <p className="text-white text-lg">Searching templates...</p>
             </div>
           ) : (
             <>
