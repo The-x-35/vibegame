@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { query } from '@/lib/db';
+import { generateUniqueSlug } from '@/lib/utils/slug';
 
 export async function GET(
   request: Request,
@@ -90,20 +91,37 @@ export async function PATCH(
     const { id } = await props.params;
     const { name, description, ca, is_public } = await request.json();
 
+    // If name is being updated, generate a new unique ID
+    let newId = id;
+    if (name) {
+      newId = await generateUniqueSlug(name);
+    }
+
     const result = await query(
       `UPDATE projects 
-       SET name = COALESCE($1, name),
-           description = COALESCE($2, description),
-           ca = COALESCE($3, ca),
-           is_public = COALESCE($4, is_public),
+       SET id = $1,
+           name = COALESCE($2, name),
+           description = COALESCE($3, description),
+           ca = COALESCE($4, ca),
+           is_public = COALESCE($5, is_public),
            updated_at = NOW()
-       WHERE id = $5 
+       WHERE id = $6 
        RETURNING *`,
-      [name, description, ca, is_public, id]
+      [newId, name, description, ca, is_public, id]
     );
 
     if (result.rows.length === 0) {
       return NextResponse.json({ error: 'Project not found' }, { status: 404 });
+    }
+
+    // If the ID changed, return a redirect response
+    if (newId !== id) {
+      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+      const newUrl = `${baseUrl}/projects/${newId}`;
+      return NextResponse.json({ 
+        project: result.rows[0], 
+        redirect: newUrl 
+      });
     }
 
     return NextResponse.json({ project: result.rows[0] });

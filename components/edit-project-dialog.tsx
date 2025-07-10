@@ -61,9 +61,16 @@ export default function EditProjectDialog({
         throw new Error('Failed to update project details');
       }
       
+      const responseData = await updateResponse.json();
       console.log('Project updated successfully');
       setIsOpen(false);
-      router.refresh(); // Refresh the page to show the updated details
+      
+      // Handle redirect if the project ID changed
+      if (responseData.redirect) {
+        router.push(responseData.redirect);
+      } else {
+        router.refresh(); // Refresh the page to show the updated details
+      }
     } catch (err) {
       console.error('Project update error:', err);
       alert(`Project update failed: ${err instanceof Error ? err.message : err}`);
