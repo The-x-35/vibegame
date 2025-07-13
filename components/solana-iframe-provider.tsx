@@ -18,7 +18,7 @@ import {
 } from '@solana/spl-token';
 import { useWallet, Wallet } from '@solana/wallet-adapter-react';
 
-// Metaplex cNFT imports
+// Metaplex imports
 import { 
     createTree,
     mplBubblegum,
@@ -28,6 +28,7 @@ import {
     createNft,
     mplTokenMetadata,
 } from '@metaplex-foundation/mpl-token-metadata';
+
 import { createUmi } from '@metaplex-foundation/umi-bundle-defaults';
 import { walletAdapterIdentity } from '@metaplex-foundation/umi-signer-wallet-adapters';
 import { 
@@ -35,7 +36,19 @@ import {
     percentAmount,
     publicKey as umiPublicKey,
     none,
+    signerIdentity,
 } from '@metaplex-foundation/umi';
+import { create, mplCore } from '@metaplex-foundation/mpl-core';
+import { fetchCollection } from '@metaplex-foundation/mpl-core';
+import {
+    fromWeb3JsPublicKey,
+    toWeb3JsInstruction,
+    toWeb3JsKeypair,
+    toWeb3JsPublicKey,
+    fromWeb3JsTransaction,
+    toWeb3JsTransaction,
+} from '@metaplex-foundation/umi-web3js-adapters';
+import { base58 } from '@metaplex-foundation/umi/serializers';
 
 interface SolanaIframeContextType {
     wallet: Wallet | null;
@@ -49,144 +62,111 @@ interface SolanaIframeProviderProps {
     children: ReactNode;
 }
 
-// cNFT Helper Functions
-async function createCnftCollection({ 
-    payer, 
+// Metaplex NFT Helper Functions
+async function mintStandaloneNFT({ 
     name, 
-    symbol, 
     uri, 
-    maxDepth, 
-    maxBufferSize, 
+    owner, 
     rpcEndpoint,
-    wallet
+    walletSignTransaction,
+    publicKey
 }: {
-    payer: string;
     name: string;
-    symbol: string;
     uri: string;
-    maxDepth: number;
-    maxBufferSize: number;
-    rpcEndpoint: string;
-    wallet: any;
+    owner: string;
+    rpcEndpoint?: string;
+    walletSignTransaction: any;
+    publicKey: any;
 }) {
-    // Ensure wallet is connected
-    if (!wallet.connected) {
-        await wallet.connect();
-    }
-
-    const umi = createUmi(rpcEndpoint)
-        .use(mplBubblegum())
-        .use(mplTokenMetadata())
-        .use(walletAdapterIdentity(wallet));
-
-    // Generate signers for tree and collection
-    const merkleTree = generateSigner(umi);
-    const collectionMint = generateSigner(umi);
-
-    // Create the collection NFT first
-    const createCollectionTx = await createNft(umi, {
-        mint: collectionMint,
-        name,
-        symbol,
-        uri,
-        sellerFeeBasisPoints: percentAmount(0), // 0% royalty
-        isCollection: true,
-        creators: [
-            {
-                address: umi.identity.publicKey,
-                verified: true,
-                share: 100,
-            },
-        ],
-    });
-
-    await createCollectionTx.sendAndConfirm(umi);
-
-    // Create the Merkle tree
-    const createTreeTx = await createTree(umi, {
-        merkleTree,
-        maxDepth,
-        maxBufferSize,
-        canopyDepth: Math.min(maxDepth - 3, 17), // Recommended canopy depth
-    });
-
-    const treeResult = await createTreeTx.sendAndConfirm(umi);
-
+    const connection = new Connection(rpcEndpoint || 'https://flying-torrie-fast-mainnet.helius-rpc.com');
+    
+    // Create UMI instance with proper setup
+    const umi = createUmi(connection.rpcEndpoint).use(mplCore());
+    
+    // Use the user's wallet directly instead of creating a new keypair
+    umi.use(walletAdapterIdentity({
+        publicKey: fromWeb3JsPublicKey(publicKey),
+        signTransaction: walletSignTransaction,
+        signAllTransactions: async (transactions:any) => {
+            const signedTransactions = [];
+            for (const transaction of transactions) {
+                const signed = await walletSignTransaction(toWeb3JsTransaction(transaction) as any);
+                signedTransactions.push(fromWeb3JsTransaction(signed));
+            }
+            return signedTransactions;
+        }
+    } as any));
+    
+    // Create the NFT using the user's wallet
+    const assetSigner = generateSigner(umi);
+    const tx = await create(umi, {
+        asset: assetSigner,
+        name: name,
+        uri: uri,
+        owner: fromWeb3JsPublicKey(new PublicKey(owner)),
+    }).sendAndConfirm(umi);
+    
     return {
-        treeAddress: merkleTree.publicKey.toString(),
-        collectionMint: collectionMint.publicKey.toString(),
-        signature: treeResult.signature.toString(),
+        signature: base58.deserialize(tx.signature)[0],
+        mint: toWeb3JsPublicKey(assetSigner.publicKey).toString()
     };
 }
 
-async function mintCnft({ 
-    payer, 
-    recipient, 
+async function mintCollectionNFT({ 
     name, 
-    symbol, 
     uri, 
-    treeAddress, 
+    owner, 
     collectionMint, 
     rpcEndpoint,
-    wallet
+    walletSignTransaction,
+    publicKey
 }: {
-    payer: string;
-    recipient: string;
     name: string;
-    symbol: string;
     uri: string;
-    treeAddress: string;
-    collectionMint?: string;
-    rpcEndpoint: string;
-    wallet: any;
+    owner: string;
+    collectionMint: string;
+    rpcEndpoint?: string;
+    walletSignTransaction: any;
+    publicKey: any;
 }) {
-    // Ensure wallet is connected
-    if (!wallet.connected) {
-        await wallet.connect();
-    }
-
-    const umi = createUmi(rpcEndpoint)
-        .use(mplBubblegum())
-        .use(walletAdapterIdentity(wallet));
-
-    const leafOwner = umiPublicKey(recipient);
-    const merkleTree = umiPublicKey(treeAddress);
+    const connection = new Connection(rpcEndpoint || 'https://flying-torrie-fast-mainnet.helius-rpc.com');
     
-    let result;
+    // Create UMI instance with proper setup
+    const umi = createUmi(connection.rpcEndpoint).use(mplCore());
     
-    if (collectionMint) {
-        // Mint to collection using the correct Metaplex pattern
-        const mintTx = await mintToCollectionV1(umi, {
-            leafOwner,
-            merkleTree,
-            collectionMint: umiPublicKey(collectionMint),
-            metadata: {
-                name,
-                symbol,
-                uri,
-                sellerFeeBasisPoints: 500, // 5%
-                collection: { key: umiPublicKey(collectionMint), verified: false },
-                creators: [
-                    {
-                        address: umi.identity.publicKey,
-                        verified: true,
-                        share: 100,
-                    },
-                ],
-            },
-        });
-
-        result = await mintTx.sendAndConfirm(umi);
-    } else {
-        throw new Error('Collection minting is required for this implementation');
-    }
-
-    // Generate a placeholder asset ID (in practice, you'd use parseLeafFromMintToCollectionV1Transaction)
-    const assetId = generateSigner(umi).publicKey.toString();
-
+    // Use the user's wallet directly instead of creating a new keypair
+    umi.use(walletAdapterIdentity({
+        publicKey: fromWeb3JsPublicKey(publicKey),
+        signTransaction: walletSignTransaction,
+        signAllTransactions: async (transactions:any) => {
+            const signedTransactions = [];
+            for (const transaction of transactions) {
+                const signed = await walletSignTransaction(toWeb3JsTransaction(transaction) as any);
+                signedTransactions.push(fromWeb3JsTransaction(signed));
+            }
+            return signedTransactions;
+        }
+    } as any));
+    
+    // Convert collection mint to UMI format
+    const umiCollectionMint = fromWeb3JsPublicKey(new PublicKey(collectionMint));
+    
+    // Fetch the existing collection
+    const collection = await fetchCollection(umi, umiCollectionMint);
+    
+    // Create the NFT using the user's wallet
+    const assetSigner = generateSigner(umi);
+    const tx = await create(umi, {
+        asset: assetSigner,
+        collection: collection,
+        name: name,
+        uri: uri,
+        owner: fromWeb3JsPublicKey(new PublicKey(owner)),
+    }).sendAndConfirm(umi);
+    
     return {
-        signature: result.signature.toString(),
-        assetId,
+        signature: base58.deserialize(tx.signature)[0],
+        mint: toWeb3JsPublicKey(assetSigner.publicKey).toString()
     };
 }
 
@@ -460,53 +440,6 @@ export function SolanaIframeProvider({ children }: SolanaIframeProviderProps) {
                     }
                     break;
                     
-                case 'solanaCreateCnftCollection':
-                    try {
-                        if (!wallet || !connected || !publicKey) {
-                            throw new Error('Wallet not connected. Please connect your wallet first.');
-                        }
-
-                        const { payerPubkey, name, symbol, uri, maxDepth, maxBufferSize, rpcEndpoint } = payload;
-                        
-                        result = await createCnftCollection({
-                            payer: payerPubkey,
-                            name,
-                            symbol,
-                            uri,
-                            maxDepth,
-                            maxBufferSize,
-                            rpcEndpoint,
-                            wallet
-                        });
-                    } catch (error) {
-                        throw error;
-                    }
-                    break;
-                    
-                case 'solanaMintCnft':
-                    try {
-                        if (!wallet || !connected || !publicKey) {
-                            throw new Error('Wallet not connected. Please connect your wallet first.');
-                        }
-
-                        const { payerPubkey, recipientPubkey, name, symbol, uri, treeAddress, collectionMint, rpcEndpoint } = payload;
-                        
-                        result = await mintCnft({
-                            payer: payerPubkey,
-                            recipient: recipientPubkey,
-                            name,
-                            symbol,
-                            uri,
-                            treeAddress,
-                            collectionMint,
-                            rpcEndpoint,
-                            wallet
-                        });
-                    } catch (error) {
-                        throw error;
-                    }
-                    break;
-                    
                 case 'jupiterSwap':
                     try {
                         if (!walletSignTransaction) {
@@ -576,6 +509,47 @@ export function SolanaIframeProvider({ children }: SolanaIframeProviderProps) {
                         });
                         
                         result = { signature };
+                    } catch (error) {
+                        throw error;
+                    }
+                    break;
+                    
+                case 'metaplexMintNFT':
+                    try {
+                        if (!walletSignTransaction) {
+                            throw new Error('No wallet connected');
+                        }
+
+                        const { name, uri, owner, collectionMint, rpcEndpoint } = payload;
+                        
+                        // Validate required parameters
+                        if (!name || !uri || !owner) {
+                            throw new Error('Missing required parameters: name, uri, and owner are required');
+                        }
+
+                        let result;
+                        if (collectionMint) {
+                            // Mint as part of a collection
+                            result = await mintCollectionNFT({
+                                name,
+                                uri,
+                                owner,
+                                collectionMint,
+                                rpcEndpoint,
+                                walletSignTransaction,
+                                publicKey
+                            });
+                        } else {
+                            // Mint standalone NFT
+                            result = await mintStandaloneNFT({
+                                name,
+                                uri,
+                                owner,
+                                rpcEndpoint,
+                                walletSignTransaction,
+                                publicKey
+                            });
+                        }
                     } catch (error) {
                         throw error;
                     }

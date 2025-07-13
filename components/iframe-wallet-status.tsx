@@ -184,6 +184,32 @@ export function IframeWalletStatus() {
         }
     };
 
+    const testMetaplexMintNFT = async () => {
+        setIsLoading(true);
+        try {
+            // Test NFT minting with sample data
+            const testNFTData = {
+                name: 'Test NFT',
+                uri: 'https://example.com/metadata.json',
+                owner: publicKey?.toString() || 'test-public-key'
+            };
+            
+            const result = await sendMessageToParent('metaplexMintNFT', testNFTData) as { 
+                mint: string; 
+                metadata: string; 
+                signature: string 
+            };
+            setTestResults(prev => ({ ...prev, metaplexMintNFT: result }));
+            toast.success(`✅ NFT minted successfully: ${result.mint}`);
+        } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+            setTestResults(prev => ({ ...prev, metaplexMintNFT: { error: errorMessage } }));
+            toast.error(`❌ metaplexMintNFT failed: ${errorMessage}`);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
     return (
         <Card className="w-full max-w-2xl">
             <CardHeader>
@@ -273,6 +299,15 @@ export function IframeWalletStatus() {
                                     size="sm"
                                 >
                                     6. receiveToken
+                                </Button>
+
+                                <Button 
+                                    onClick={testMetaplexMintNFT}
+                                    disabled={isLoading}
+                                    variant="outline"
+                                    size="sm"
+                                >
+                                    7. metaplexMintNFT
                                 </Button>
                             </div>
 
