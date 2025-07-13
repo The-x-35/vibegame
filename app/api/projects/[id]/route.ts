@@ -61,7 +61,8 @@ export async function DELETE(
       const key = urlObj.pathname.startsWith('/') ? urlObj.pathname.substring(1) : urlObj.pathname;
       
       // Construct absolute URL for the API endpoint
-      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+      const url = new URL(request.url);
+      const baseUrl = `${url.protocol}//${url.host}`;
       const response = await fetch(`${baseUrl}/api/game-files/${encodeURIComponent(key)}?wallet=${wallet}`, {
         method: 'DELETE'
       });
@@ -116,7 +117,8 @@ export async function PATCH(
 
     // If the ID changed, return a redirect response
     if (newId !== id) {
-      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+      const url = new URL(request.url);
+      const baseUrl = `${url.protocol}//${url.host}`;
       const newUrl = `${baseUrl}/projects/${newId}`;
       return NextResponse.json({ 
         project: result.rows[0], 
