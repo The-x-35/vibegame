@@ -514,15 +514,6 @@ export function SolanaIframeProvider({ children }: SolanaIframeProviderProps) {
                     }
                     break;
                     
-                // NFT minting functionality temporarily disabled
-                case 'metaplexMintNFT':
-                    try {
-                        throw new Error('NFT minting functionality is currently disabled');
-                    } catch (error) {
-                        throw error;
-                    }
-                    break;
-                    
                 default:
                     // Unknown action - let other providers handle it
                     return;
