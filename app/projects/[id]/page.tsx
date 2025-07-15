@@ -1,3 +1,5 @@
+"use client";
+
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { query } from '@/lib/db';
@@ -9,6 +11,11 @@ import AttachTokenDialog from '@/components/launch-token-dialog';
 import EditProjectDialog from '@/components/edit-project-dialog';
 import DeleteProjectDialog from '@/components/delete-project-dialog';
 import ShareProjectButton from '@/components/share-project-button';
+import { useEffect, useState } from 'react';
+import { useUser } from '@/lib/hooks/use-user';
+import { useRouter } from 'next/navigation';
+import { use } from 'react';
+import { getAuthHeader, loginWithWallet, removeAuthToken } from '@/lib/auth-utils';
 
 interface ProjectRow {
   id: string;
@@ -20,27 +27,117 @@ interface ProjectRow {
   is_public: boolean;
 }
 
-async function getProjectData(projectId: string) {
-  try {
-    const result = await query(
-      `SELECT p.id, p.url, p.name, p.description, p.ca, p.is_public, p.wallet
-       FROM projects p
-       WHERE p.id = $1;`,
-      [projectId]
+export default function ProjectPage({
+  params: paramsPromise,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { user, isLoading } = useUser();
+  const router = useRouter();
+  const [project, setProject] = useState<ProjectRow | null>(null);
+  const [isLoadingProject, setIsLoadingProject] = useState(true);
+  const params = use(paramsPromise);
+
+  useEffect(() => {
+    if (isLoading) return; // wait until user is resolved
+    if (!user) return; // no authenticated wallet – do nothing, loader continues
+
+    const fetchProject = async () => {
+      try {
+        const response = await fetch(`/api/projects/${params.id}`, {
+          headers: {
+            'Content-Type': 'application/json',
+            ...getAuthHeader(),
+          },
+        });
+        
+        if ((response.status === 401 || response.status === 403) && user) {
+          if (response.status === 403) {
+            removeAuthToken();
+          }
+          try {
+            await loginWithWallet(user.wallet);
+          } catch (err) {
+            console.error('Auto login failed:', err);
+          }
+          const retryRes = await fetch(`/api/projects/${params.id}`, {
+            headers: {
+              'Content-Type': 'application/json',
+              ...getAuthHeader(),
+            },
+          });
+          if (!retryRes.ok) {
+            if (retryRes.status === 404 || retryRes.status === 403) {
+              router.push('/not-found');
+              return;
+            }
+            throw new Error('Failed to fetch project');
+          }
+          const retryData = await retryRes.json();
+          const projectData = retryData.project;
+          // Only owner can view this page
+          if (!user || user.wallet !== projectData.wallet) {
+            router.push('/not-found');
+            return;
+          }
+          setProject(projectData);
+          return;
+        }
+        
+        if (!response.ok) {
+          if (response.status === 404 || response.status === 403) {
+            router.push('/not-found');
+            return;
+          }
+          throw new Error('Failed to fetch project');
+        }
+
+        const data = await response.json();
+        const projectData = data.project;
+
+        // Only owner can view this page
+        if (!user || user.wallet !== projectData.wallet) {
+          router.push('/not-found');
+          return;
+        }
+
+        setProject(projectData);
+      } catch (error) {
+        console.error('Error fetching project:', error);
+      } finally {
+        setIsLoadingProject(false);
+      }
+    };
+
+    fetchProject();
+  }, [params.id, user, isLoading]);
+
+  // Show loading state
+  if (isLoading || isLoadingProject) {
+    return (
+      <div className="container mx-auto px-4 py-10">
+        <div className="animate-pulse">
+          <div className="h-8 w-32 bg-muted rounded mb-6"></div>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="lg:col-span-2">
+              <div className="aspect-video bg-muted rounded-lg"></div>
+            </div>
+            <div className="lg:col-span-1 space-y-4">
+              <div className="h-8 bg-muted rounded w-3/4"></div>
+              <div className="h-4 bg-muted rounded w-full"></div>
+              <div className="h-4 bg-muted rounded w-2/3"></div>
+            </div>
+          </div>
+        </div>
+      </div>
     );
-
-    if (result.rowCount === 0) {
-      return null;
-    }
-
-    return result.rows[0] as ProjectRow;
-  } catch (error) {
-    console.error('Error fetching project:', error);
-    throw new Error('Failed to fetch project data');
   }
-}
 
-function ProjectContent({ project }: { project: ProjectRow }) {
+  // Show not found if project doesn't exist or user not authorized
+  if (!project) {
+    return notFound();
+  }
+
   const embedUrl = `${ALPHA_GUI.EMBED_URL}?project_url=${encodeURIComponent(
     project.url
   )}`;
@@ -118,36 +215,5 @@ function ProjectContent({ project }: { project: ProjectRow }) {
         </div>
       </div>
     </div>
-  );
-}
-
-export default async function ProjectPage(props: { params: Promise<{ id: string }> }) {
-  const { id: projectId } = await props.params;
-  const project = await getProjectData(projectId);
-
-  if (!project) {
-    return notFound();
-  }
-
-  return (
-    <Suspense fallback={
-      <div className="container mx-auto px-4 py-10">
-        <div className="animate-pulse">
-          <div className="h-8 w-32 bg-muted rounded mb-6"></div>
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div className="lg:col-span-2">
-              <div className="aspect-video bg-muted rounded-lg"></div>
-            </div>
-            <div className="lg:col-span-1 space-y-4">
-              <div className="h-8 bg-muted rounded w-3/4"></div>
-              <div className="h-4 bg-muted rounded w-full"></div>
-              <div className="h-4 bg-muted rounded w-2/3"></div>
-            </div>
-          </div>
-        </div>
-      </div>
-    }>
-      <ProjectContent project={project} />
-    </Suspense>
   );
 }

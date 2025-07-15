@@ -18,37 +18,37 @@ import {
 } from '@solana/spl-token';
 import { useWallet, Wallet } from '@solana/wallet-adapter-react';
 
-// Metaplex imports
-import { 
-    createTree,
-    mplBubblegum,
-    mintToCollectionV1,
-} from '@metaplex-foundation/mpl-bubblegum';
-import {
-    createNft,
-    mplTokenMetadata,
-} from '@metaplex-foundation/mpl-token-metadata';
+// Metaplex imports - COMMENTED OUT
+// import { 
+//     createTree,
+//     mplBubblegum,
+//     mintToCollectionV1,
+// } from '@metaplex-foundation/mpl-bubblegum';
+// import {
+//     createNft,
+//     mplTokenMetadata,
+// } from '@metaplex-foundation/mpl-token-metadata';
 
-import { createUmi } from '@metaplex-foundation/umi-bundle-defaults';
-import { walletAdapterIdentity } from '@metaplex-foundation/umi-signer-wallet-adapters';
-import { 
-    generateSigner,
-    percentAmount,
-    publicKey as umiPublicKey,
-    none,
-    signerIdentity,
-} from '@metaplex-foundation/umi';
-import { create, mplCore } from '@metaplex-foundation/mpl-core';
-import { fetchCollection } from '@metaplex-foundation/mpl-core';
-import {
-    fromWeb3JsPublicKey,
-    toWeb3JsInstruction,
-    toWeb3JsKeypair,
-    toWeb3JsPublicKey,
-    fromWeb3JsTransaction,
-    toWeb3JsTransaction,
-} from '@metaplex-foundation/umi-web3js-adapters';
-import { base58 } from '@metaplex-foundation/umi/serializers';
+// import { createUmi } from '@metaplex-foundation/umi-bundle-defaults';
+// import { walletAdapterIdentity } from '@metaplex-foundation/umi-signer-wallet-adapters';
+// import { 
+//     generateSigner,
+//     percentAmount,
+//     publicKey as umiPublicKey,
+//     none,
+//     signerIdentity,
+// } from '@metaplex-foundation/umi';
+// import { create, mplCore } from '@metaplex-foundation/mpl-core';
+// import { fetchCollection } from '@metaplex-foundation/mpl-core';
+// import {
+//     fromWeb3JsPublicKey,
+//     toWeb3JsInstruction,
+//     toWeb3JsKeypair,
+//     toWeb3JsPublicKey,
+//     fromWeb3JsTransaction,
+//     toWeb3JsTransaction,
+// } from '@metaplex-foundation/umi-web3js-adapters';
+// import { base58 } from '@metaplex-foundation/umi/serializers';
 
 interface SolanaIframeContextType {
     wallet: Wallet | null;
@@ -62,113 +62,113 @@ interface SolanaIframeProviderProps {
     children: ReactNode;
 }
 
-// Metaplex NFT Helper Functions
-async function mintStandaloneNFT({ 
-    name, 
-    uri, 
-    owner, 
-    rpcEndpoint,
-    walletSignTransaction,
-    publicKey
-}: {
-    name: string;
-    uri: string;
-    owner: string;
-    rpcEndpoint?: string;
-    walletSignTransaction: any;
-    publicKey: any;
-}) {
-    const connection = new Connection(rpcEndpoint || 'https://flying-torrie-fast-mainnet.helius-rpc.com');
+// Metaplex NFT Helper Functions - COMMENTED OUT
+// async function mintStandaloneNFT({ 
+//     name, 
+//     uri, 
+//     owner, 
+//     rpcEndpoint,
+//     walletSignTransaction,
+//     publicKey
+// }: {
+//     name: string;
+//     uri: string;
+//     owner: string;
+//     rpcEndpoint?: string;
+//     walletSignTransaction: any;
+//     publicKey: any;
+// }) {
+//     const connection = new Connection(rpcEndpoint || 'https://flying-torrie-fast-mainnet.helius-rpc.com');
     
-    // Create UMI instance with proper setup
-    const umi = createUmi(connection.rpcEndpoint).use(mplCore());
+//     // Create UMI instance with proper setup
+//     const umi = createUmi(connection.rpcEndpoint).use(mplCore());
     
-    // Use the user's wallet directly instead of creating a new keypair
-    umi.use(walletAdapterIdentity({
-        publicKey: fromWeb3JsPublicKey(publicKey),
-        signTransaction: walletSignTransaction,
-        signAllTransactions: async (transactions:any) => {
-            const signedTransactions = [];
-            for (const transaction of transactions) {
-                const signed = await walletSignTransaction(toWeb3JsTransaction(transaction) as any);
-                signedTransactions.push(fromWeb3JsTransaction(signed));
-            }
-            return signedTransactions;
-        }
-    } as any));
+//     // Use the user's wallet directly instead of creating a new keypair
+//     umi.use(walletAdapterIdentity({
+//         publicKey: fromWeb3JsPublicKey(publicKey),
+//         signTransaction: walletSignTransaction,
+//         signAllTransactions: async (transactions:any) => {
+//             const signedTransactions = [];
+//             for (const transaction of transactions) {
+//                 const signed = await walletSignTransaction(toWeb3JsTransaction(transaction) as any);
+//                 signedTransactions.push(fromWeb3JsTransaction(signed));
+//             }
+//             return signedTransactions;
+//         }
+//     } as any));
     
-    // Create the NFT using the user's wallet
-    const assetSigner = generateSigner(umi);
-    const tx = await create(umi, {
-        asset: assetSigner,
-        name: name,
-        uri: uri,
-        owner: fromWeb3JsPublicKey(new PublicKey(owner)),
-    }).sendAndConfirm(umi);
+//     // Create the NFT using the user's wallet
+//     const assetSigner = generateSigner(umi);
+//     const tx = await create(umi, {
+//         asset: assetSigner,
+//         name: name,
+//         uri: uri,
+//         owner: fromWeb3JsPublicKey(new PublicKey(owner)),
+//     }).sendAndConfirm(umi);
     
-    return {
-        signature: base58.deserialize(tx.signature)[0],
-        mint: toWeb3JsPublicKey(assetSigner.publicKey).toString()
-    };
-}
+//     return {
+//         signature: base58.deserialize(tx.signature)[0],
+//         mint: toWeb3JsPublicKey(assetSigner.publicKey).toString()
+//     };
+// }
 
-async function mintCollectionNFT({ 
-    name, 
-    uri, 
-    owner, 
-    collectionMint, 
-    rpcEndpoint,
-    walletSignTransaction,
-    publicKey
-}: {
-    name: string;
-    uri: string;
-    owner: string;
-    collectionMint: string;
-    rpcEndpoint?: string;
-    walletSignTransaction: any;
-    publicKey: any;
-}) {
-    const connection = new Connection(rpcEndpoint || 'https://flying-torrie-fast-mainnet.helius-rpc.com');
+// async function mintCollectionNFT({ 
+//     name, 
+//     uri, 
+//     owner, 
+//     collectionMint, 
+//     rpcEndpoint,
+//     walletSignTransaction,
+//     publicKey
+// }: {
+//     name: string;
+//     uri: string;
+//     owner: string;
+//     collectionMint: string;
+//     rpcEndpoint?: string;
+//     walletSignTransaction: any;
+//     publicKey: any;
+// }) {
+//     const connection = new Connection(rpcEndpoint || 'https://flying-torrie-fast-mainnet.helius-rpc.com');
     
-    // Create UMI instance with proper setup
-    const umi = createUmi(connection.rpcEndpoint).use(mplCore());
+//     // Create UMI instance with proper setup
+//     const umi = createUmi(connection.rpcEndpoint).use(mplCore());
     
-    // Use the user's wallet directly instead of creating a new keypair
-    umi.use(walletAdapterIdentity({
-        publicKey: fromWeb3JsPublicKey(publicKey),
-        signTransaction: walletSignTransaction,
-        signAllTransactions: async (transactions:any) => {
-            const signedTransactions = [];
-            for (const transaction of transactions) {
-                const signed = await walletSignTransaction(toWeb3JsTransaction(transaction) as any);
-                signedTransactions.push(fromWeb3JsTransaction(signed));
-            }
-            return signedTransactions;
-        }
-    } as any));
+//     // Use the user's wallet directly instead of creating a new keypair
+//     umi.use(walletAdapterIdentity({
+//         publicKey: fromWeb3JsPublicKey(publicKey),
+//         signTransaction: walletSignTransaction,
+//         signAllTransactions: async (transactions:any) => {
+//             const signedTransactions = [];
+//             for (const transaction of transactions) {
+//                 const signed = await walletSignTransaction(toWeb3JsTransaction(transaction) as any);
+//                 signedTransactions.push(fromWeb3JsTransaction(signed));
+//             }
+//             return signedTransactions;
+//         }
+//     } as any));
     
-    // Convert collection mint to UMI format
-    const umiCollectionMint = fromWeb3JsPublicKey(new PublicKey(collectionMint));
+//     // Convert collection mint to UMI format
+//     const umiCollectionMint = fromWeb3JsPublicKey(new PublicKey(collectionMint));
     
-    // Fetch the existing collection
-    const collection = await fetchCollection(umi, umiCollectionMint);
+//     // Fetch the existing collection
+//     const collection = await fetchCollection(umi, umiCollectionMint);
     
-    // Create the NFT using the user's wallet
-    const assetSigner = generateSigner(umi);
-    const tx = await create(umi, {
-        asset: assetSigner,
-        collection: collection,
-        name: name,
-        uri: uri,
-        owner: fromWeb3JsPublicKey(new PublicKey(owner)),
-    }).sendAndConfirm(umi);
+//     // Create the NFT using the user's wallet
+//     const assetSigner = generateSigner(umi);
+//     const tx = await create(umi, {
+//         asset: assetSigner,
+//         collection: collection,
+//         name: name,
+//         uri: uri,
+//         owner: fromWeb3JsPublicKey(new PublicKey(owner)),
+//     }).sendAndConfirm(umi);
     
-    return {
-        signature: base58.deserialize(tx.signature)[0],
-        mint: toWeb3JsPublicKey(assetSigner.publicKey).toString()
-    };
-}
+//     return {
+//         signature: base58.deserialize(tx.signature)[0],
+//         mint: toWeb3JsPublicKey(assetSigner.publicKey).toString()
+//     };
+// }
 
 export function SolanaIframeProvider({ children }: SolanaIframeProviderProps) {
     const { wallet, publicKey, signTransaction: walletSignTransaction, connected } = useWallet();
@@ -514,42 +514,10 @@ export function SolanaIframeProvider({ children }: SolanaIframeProviderProps) {
                     }
                     break;
                     
+                // NFT minting functionality temporarily disabled
                 case 'metaplexMintNFT':
                     try {
-                        if (!walletSignTransaction) {
-                            throw new Error('No wallet connected');
-                        }
-
-                        const { name, uri, owner, collectionMint, rpcEndpoint } = payload;
-                        
-                        // Validate required parameters
-                        if (!name || !uri || !owner) {
-                            throw new Error('Missing required parameters: name, uri, and owner are required');
-                        }
-
-                        let result;
-                        if (collectionMint) {
-                            // Mint as part of a collection
-                            result = await mintCollectionNFT({
-                                name,
-                                uri,
-                                owner,
-                                collectionMint,
-                                rpcEndpoint,
-                                walletSignTransaction,
-                                publicKey
-                            });
-                        } else {
-                            // Mint standalone NFT
-                            result = await mintStandaloneNFT({
-                                name,
-                                uri,
-                                owner,
-                                rpcEndpoint,
-                                walletSignTransaction,
-                                publicKey
-                            });
-                        }
+                        throw new Error('NFT minting functionality is currently disabled');
                     } catch (error) {
                         throw error;
                     }

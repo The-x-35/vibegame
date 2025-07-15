@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { S3Client, GetObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import { authenticateRequest } from '@/lib/auth-middleware';
+import { query } from '@/lib/db';
 
 const s3 = new S3Client({
     region: process.env.AWS_REGION!,
@@ -22,6 +24,36 @@ export async function GET(
     }
 
     try {
+        // For public files, check if they belong to a public project
+        const projectResult = await query(
+            'SELECT is_public, wallet FROM projects WHERE url LIKE $1',
+            [`%${fileId}%`]
+        );
+
+        // If file is associated with a project
+        if (projectResult.rows.length > 0) {
+            const project = projectResult.rows[0];
+            
+            // If project is not public, verify ownership
+            if (!project.is_public) {
+                const authResult = await authenticateRequest(request);
+                if (authResult instanceof NextResponse) {
+                    return NextResponse.json({ error: "Authentication required to access private file" }, { status: 401 });
+                }
+                
+                const authenticatedRequest = authResult;
+                if (authenticatedRequest.user!.wallet !== project.wallet) {
+                    return NextResponse.json({ error: "Not authorized to access this file" }, { status: 403 });
+                }
+            }
+        } else {
+            // If file is not associated with any project, require authentication
+            const authResult = await authenticateRequest(request);
+            if (authResult instanceof NextResponse) {
+                return NextResponse.json({ error: "Authentication required" }, { status: 401 });
+            }
+        }
+
         // Create a pre-signed URL for accessing the file
         const command = new GetObjectCommand({
             Bucket: process.env.S3_BUCKET_NAME!,
@@ -38,39 +70,48 @@ export async function GET(
     }
 }
 
-// delete a file by its fileId
+// Delete a file
 export async function DELETE(
     request: NextRequest,
     props: { params: Promise<{ fileId: string }> }
 ): Promise<NextResponse> {
-    try {
-        const { fileId } = await props.params;
-        const { searchParams } = new URL(request.url);
-        const wallet = searchParams.get('wallet');
+    const { fileId } = await props.params;
 
-        if (!wallet) {
-            return NextResponse.json({ error: 'Missing wallet parameter' }, { status: 400 });
+    if (!fileId) {
+        return NextResponse.json({ error: "Missing fileId parameter" }, { status: 400 });
+    }
+
+    try {
+        // Authenticate request
+        const authResult = await authenticateRequest(request);
+        if (authResult instanceof NextResponse) {
+            return NextResponse.json({ error: "Authentication required" }, { status: 401 });
+        }
+        const authenticatedRequest = authResult;
+
+        // Check if file belongs to a project and verify ownership
+        const projectResult = await query(
+            'SELECT wallet FROM projects WHERE url LIKE $1',
+            [`%${fileId}%`]
+        );
+
+        if (projectResult.rows.length > 0) {
+            const project = projectResult.rows[0];
+            if (authenticatedRequest.user!.wallet !== project.wallet) {
+                return NextResponse.json({ error: "Not authorized to delete this file" }, { status: 403 });
+            }
         }
 
         // Delete the file from S3
-        const s3Client = new S3Client({
-            region: process.env.AWS_REGION!,
-            credentials: {
-                accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
-                secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
-            },
+        const command = new DeleteObjectCommand({
+            Bucket: process.env.S3_BUCKET_NAME!,
+            Key: fileId,
         });
 
-        await s3Client.send(
-            new DeleteObjectCommand({
-                Bucket: process.env.S3_BUCKET_NAME!,
-                Key: fileId,
-            })
-        );
-
-        return NextResponse.json({ success: true });
-    } catch (err: any) {
-        console.error('Error deleting file:', err);
-        return NextResponse.json({ error: err.message }, { status: 500 });
+        await s3.send(command);
+        return NextResponse.json({ message: "File deleted successfully" }, { status: 200 });
+    } catch (err) {
+        console.error(err);
+        return NextResponse.json({ error: "Failed to delete file" }, { status: 500 });
     }
 }

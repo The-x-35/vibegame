@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 import { generateUniqueSlug } from '@/lib/utils/slug';
+import { authenticateRequest } from '@/lib/auth-middleware';
 
 export async function GET(
   request: Request,
@@ -8,6 +9,8 @@ export async function GET(
 ) {
   try {
     const { id } = await props.params;
+    
+    // Get project data
     const result = await query(
       'SELECT * FROM projects WHERE id = $1',
       [id]
@@ -17,10 +20,45 @@ export async function GET(
       return NextResponse.json({ error: 'Project not found' }, { status: 404 });
     }
 
-    return NextResponse.json({ project: result.rows[0] });
+    const project = result.rows[0];
+
+    console.log('[PROJECT_API] Requested project', {
+      id,
+      projectWallet: project.wallet,
+      isPublic: project.is_public,
+    });
+
+    // If project is public, return it
+    if (project.is_public) {
+      return NextResponse.json({ project });
+    }
+
+    // For private projects, verify ownership
+    const authResult = await authenticateRequest(request as any);
+    if (authResult instanceof NextResponse) {
+      return NextResponse.json({ error: 'Authentication required to view private project' }, { status: 401 });
+    }
+
+    const authenticatedRequest = authResult;
+
+    console.log('[PROJECT_API] Authenticated request wallet', authenticatedRequest.user?.wallet);
+
+    if (!authenticatedRequest.user?.wallet) {
+      return NextResponse.json({ error: 'Invalid authentication token' }, { status: 401 });
+    }
+
+    if (authenticatedRequest.user.wallet !== project.wallet) {
+      console.warn('[PROJECT_API] Wallet mismatch', {
+        tokenWallet: authenticatedRequest.user.wallet,
+        projectWallet: project.wallet,
+      });
+      return NextResponse.json({ error: 'Not authorized to view this project' }, { status: 403 });
+    }
+
+    return NextResponse.json({ project });
   } catch (err: any) {
     console.error('Error fetching project:', err);
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
 
@@ -30,54 +68,35 @@ export async function DELETE(
 ) {
   try {
     const { id } = await props.params;
-    const { searchParams } = new URL(request.url);
-    const wallet = searchParams.get('wallet');
 
-    if (!wallet) {
-      return NextResponse.json({ error: 'Missing wallet parameter' }, { status: 400 });
+    // Authenticate request
+    const authResult = await authenticateRequest(request as any);
+    if (authResult instanceof NextResponse) {
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     }
+    const authenticatedRequest = authResult;
 
-    // Get the project's URL before deleting it
+    // Verify project exists and user owns it
     const projectResult = await query(
-      'SELECT url FROM projects WHERE id = $1 AND wallet = $2',
-      [id, wallet]
+      'SELECT wallet FROM projects WHERE id = $1',
+      [id]
     );
 
     if (projectResult.rows.length === 0) {
       return NextResponse.json({ error: 'Project not found' }, { status: 404 });
     }
 
-    const projectUrl = projectResult.rows[0].url;
-
-    // Delete the project from the database
-    await query(
-      'DELETE FROM projects WHERE id = $1 AND wallet = $2',
-      [id, wallet]
-    );
-
-    // Delete the associated file from S3
-    try {
-      const urlObj = new URL(projectUrl);
-      const key = urlObj.pathname.startsWith('/') ? urlObj.pathname.substring(1) : urlObj.pathname;
-      
-      // Construct absolute URL for the API endpoint
-      const url = new URL(request.url);
-      const baseUrl = `${url.protocol}//${url.host}`;
-      const response = await fetch(`${baseUrl}/api/game-files/${encodeURIComponent(key)}?wallet=${wallet}`, {
-        method: 'DELETE'
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Error deleting file from S3:', errorText);
-        // Don't throw the error, as the project is already deleted from the database
-      }
-    } catch (error) {
-      console.error('Error deleting file from S3:', error);
-      // Don't throw the error, as the project is already deleted from the database
+    if (projectResult.rows[0].wallet !== authenticatedRequest.user!.wallet) {
+      return NextResponse.json({ error: 'Not authorized to delete this project' }, { status: 403 });
     }
 
-    return NextResponse.json({ success: true });
+    // Delete the project
+    await query(
+      'DELETE FROM projects WHERE id = $1',
+      [id]
+    );
+
+    return NextResponse.json({ message: 'Project deleted successfully' });
   } catch (err: any) {
     console.error('Error deleting project:', err);
     return NextResponse.json({ error: err.message }, { status: 500 });
@@ -90,41 +109,43 @@ export async function PATCH(
 ) {
   try {
     const { id } = await props.params;
-    const { name, description, ca, is_public } = await request.json();
-
-    // If name is being updated, generate a new unique ID
-    let newId = id;
-    if (name) {
-      newId = await generateUniqueSlug(name);
+    
+    // Authenticate request
+    const authResult = await authenticateRequest(request as any);
+    if (authResult instanceof NextResponse) {
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     }
+    const authenticatedRequest = authResult;
 
-    const result = await query(
-      `UPDATE projects 
-       SET id = $1,
-           name = COALESCE($2, name),
-           description = COALESCE($3, description),
-           ca = COALESCE($4, ca),
-           is_public = COALESCE($5, is_public),
-           updated_at = NOW()
-       WHERE id = $6 
-       RETURNING *`,
-      [newId, name, description, ca, is_public, id]
+    // Get project data
+    const projectResult = await query(
+      'SELECT wallet FROM projects WHERE id = $1',
+      [id]
     );
 
-    if (result.rows.length === 0) {
+    if (projectResult.rows.length === 0) {
       return NextResponse.json({ error: 'Project not found' }, { status: 404 });
     }
 
-    // If the ID changed, return a redirect response
-    if (newId !== id) {
-      const url = new URL(request.url);
-      const baseUrl = `${url.protocol}//${url.host}`;
-      const newUrl = `${baseUrl}/projects/${newId}`;
-      return NextResponse.json({ 
-        project: result.rows[0], 
-        redirect: newUrl 
-      });
+    // Verify ownership
+    if (projectResult.rows[0].wallet !== authenticatedRequest.user!.wallet) {
+      return NextResponse.json({ error: 'Not authorized to modify this project' }, { status: 403 });
     }
+
+    const body = await request.json();
+    const { name, description, isPublic } = body;
+
+    // Update the project
+    const result = await query(
+      `UPDATE projects 
+       SET name = COALESCE($1, name),
+           description = COALESCE($2, description),
+           is_public = COALESCE($3, is_public),
+           updated_at = NOW()
+       WHERE id = $4
+       RETURNING *`,
+      [name, description, isPublic, id]
+    );
 
     return NextResponse.json({ project: result.rows[0] });
   } catch (err: any) {
