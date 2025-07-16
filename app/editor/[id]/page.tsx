@@ -112,7 +112,7 @@ export default function EditorPage({
   // Show loading state
   if (isLoading || isLoadingProject) {
     return (
-      <div className="container mx-auto py-8 flex justify-center items-center min-h-screen">
+      <div className="min-h-screen flex justify-center items-center bg-background">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
       </div>
     );
@@ -126,10 +126,11 @@ export default function EditorPage({
   const embedUrl = `${ALPHA_GUI.BASE_URL}/?project_url=${encodeURIComponent(project.url)}`;
 
   return (
-    <div className="container mx-auto py-8">
+    <div className="h-[calc(100vh-64px)] flex flex-col bg-background">
       <S3IframeHandler currentProjectUrl={project.url} />
       
-      <div className="flex justify-end mb-4">
+      {/* Top bar with deploy button - positioned below navbar */}
+      <div className="flex justify-end p-4 bg-background/95 backdrop-blur-sm border-b border-border/50">
         <Button asChild>
           <Link href={`/projects/${project.id}`}>
             <Rocket className="mr-2 h-4 w-4" />
@@ -137,13 +138,23 @@ export default function EditorPage({
           </Link>
         </Button>
       </div>
-      <SuggestionCard
-        embedUrl={embedUrl}
-        name={project.name}
-        description={project.description}
-        heightClass="h-[90vh]"
-        showIframe={true}
-      />
+      
+      {/* Full-screen iframe with proper editor dimensions */}
+      <div className="flex-1 w-full min-h-[768px]">
+        <iframe
+          src={embedUrl}
+          title={project.name}
+          className="w-full h-full border-0"
+          frameBorder="0"
+          scrolling="no"
+          allowTransparency={true}
+          allowFullScreen
+          style={{
+            minWidth: '1024px',
+            minHeight: '768px'
+          }}
+        />
+      </div>
     </div>
   );
 }
