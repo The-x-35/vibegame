@@ -37,7 +37,7 @@ export default function SuggestionCard({
   const displayThumbnail = thumbnail || defaultThumbnail;
   return (
     <Card className={cn(
-      "overflow-hidden shadow-sm hover:shadow-md transition-all duration-200 border border-border/50 group",
+      "overflow-hidden shadow-lg hover:shadow-xl transition-all duration-200 border border-white/30 dark:border-gray-200/10 group bg-transparent backdrop-blur-sm",
       fullScreen && "fixed inset-0 m-0 rounded-none"
     )}>
       <div className={cn(
@@ -65,7 +65,7 @@ export default function SuggestionCard({
             }}
           />
         )}
-        <div className="absolute inset-0 bg-black/10 group-hover:bg-black/0 transition-all duration-300 pointer-events-none" />
+        {/* Removed black overlay to fix transparency issue */}
       </div>
       
       {!showIframe && (

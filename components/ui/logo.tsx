@@ -14,7 +14,7 @@ export function Logo({ size = "md" }: LogoProps) {
   return (
     <div className="flex items-center">
       <Image
-        src="/vibegame-logo.svg"
+        src="/vibegame-logo.png"
         alt="VibeGame Logo"
         width={201}
         height={42}

@@ -4,7 +4,7 @@
 
 @font-face {
   font-family: 'Matrix Sans Regular';
-  src: url('/fonts/MatrixSansRegular.ttf') format('truetype');
+  src: url('/fonts/MatrixSans-Regular.ttf') format('truetype');
   font-weight: normal;
   font-style: normal;
 }
@@ -102,6 +102,6 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-matrix-sans-regular;
   }
 }

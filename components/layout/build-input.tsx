@@ -13,7 +13,7 @@ interface BuildInputProps {
   className?: string;
 }
 
-export function BuildInput({ placeholder = "Find with AI", className = "" }: BuildInputProps) {
+export function BuildInput({ placeholder = "What do you want to build?", className = "" }: BuildInputProps) {
   const [focused, setFocused] = useState(false);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -41,7 +41,7 @@ export function BuildInput({ placeholder = "Find with AI", className = "" }: Bui
 
   const getRandomSuggestions = () => {
     const shuffled = [...gameTemplates].sort(() => 0.5 - Math.random());
-    return shuffled.slice(0, 4);
+    return shuffled.slice(0, 3);
   };
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -163,7 +163,7 @@ export function BuildInput({ placeholder = "Find with AI", className = "" }: Bui
       </form>
       {/* Dynamic Suggestion Cards */}
       {(dynamicSuggestions.length > 0 || isLoading) && (
-        <div className="mt-6 p-4 bg-gray-900/50 rounded-lg border border-gray-700">
+        <div className="mt-6 p-4 bg-gray-900/30 rounded-lg border border-gray-700">
           {isLoading ? (
             <div className="flex items-center justify-center p-8">
               <p className="text-white text-lg">Searching templates...</p>
