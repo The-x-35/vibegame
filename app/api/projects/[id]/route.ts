@@ -118,7 +118,7 @@ export async function PATCH(
 
     // Get project data
     const projectResult = await query(
-      'SELECT wallet FROM projects WHERE id = $1',
+      'SELECT wallet, name FROM projects WHERE id = $1',
       [id]
     );
 
@@ -131,20 +131,62 @@ export async function PATCH(
       return NextResponse.json({ error: 'Not authorized to modify this project' }, { status: 403 });
     }
 
-    // Update the project
-    const result = await query(
-      `UPDATE projects 
-       SET name = COALESCE($1, name),
-           description = COALESCE($2, description),
-           is_public = COALESCE($3, is_public),
-           ca = COALESCE($4, ca),
-           updated_at = NOW()
-       WHERE id = $5
-       RETURNING *`,
-      [name, description, isPublic, ca, id]
-    );
+    let newId = id;
+    // If name is being updated, generate a new slug for the ID
+    if (name && name !== projectResult.rows[0].name) {
+      newId = await generateUniqueSlug(name);
+      
+      // Update all related tables to use the new ID
+      await query('BEGIN');
+      try {
+        // First drop the foreign key constraints
+        await query('ALTER TABLE comments DROP CONSTRAINT IF EXISTS comments_project_id_fkey');
+        await query('ALTER TABLE likes DROP CONSTRAINT IF EXISTS likes_project_id_fkey');
+        
+        // Update the project ID and other fields
+        const result = await query(
+          `UPDATE projects 
+           SET id = $1,
+               name = COALESCE($2, name),
+               description = COALESCE($3, description),
+               is_public = COALESCE($4, is_public),
+               ca = COALESCE($5, ca),
+               updated_at = NOW()
+           WHERE id = $6
+           RETURNING *`,
+          [newId, name, description, isPublic, ca, id]
+        );
 
-    return NextResponse.json({ project: result.rows[0] });
+        // Update references in other tables
+        await query('UPDATE comments SET project_id = $1 WHERE project_id = $2', [newId, id]);
+        await query('UPDATE likes SET project_id = $1 WHERE project_id = $2', [newId, id]);
+        
+        // Recreate the foreign key constraints
+        await query('ALTER TABLE comments ADD CONSTRAINT comments_project_id_fkey FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE');
+        await query('ALTER TABLE likes ADD CONSTRAINT likes_project_id_fkey FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE');
+        
+        await query('COMMIT');
+        return NextResponse.json({ project: result.rows[0] });
+      } catch (err) {
+        await query('ROLLBACK');
+        throw err;
+      }
+    } else {
+      // If name is not changing, just update other fields
+      const result = await query(
+        `UPDATE projects 
+         SET name = COALESCE($1, name),
+             description = COALESCE($2, description),
+             is_public = COALESCE($3, is_public),
+             ca = COALESCE($4, ca),
+             updated_at = NOW()
+         WHERE id = $5
+         RETURNING *`,
+        [name, description, isPublic, ca, id]
+      );
+
+      return NextResponse.json({ project: result.rows[0] });
+    }
   } catch (err: any) {
     console.error('Error updating project:', err);
     return NextResponse.json({ error: err.message }, { status: 500 });

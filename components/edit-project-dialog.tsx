@@ -74,13 +74,18 @@ export default function EditProjectDialog({
       console.log('Project updated successfully');
       setIsOpen(false);
       
-      // Update parent state instead of refreshing
-      if (onUpdate) {
-        onUpdate({
-          name: name.trim(),
-          description: description.trim(),
-          ca: ca.trim() || null,
-        });
+      // If the project ID has changed (due to name change), redirect to the new URL
+      if (responseData.project.id !== projectId) {
+        router.push(`/projects/${responseData.project.id}`);
+      } else {
+        // Update parent state instead of refreshing
+        if (onUpdate) {
+          onUpdate({
+            name: name.trim(),
+            description: description.trim(),
+            ca: ca.trim() || null,
+          });
+        }
       }
     } catch (err) {
       console.error('Project update error:', err);
