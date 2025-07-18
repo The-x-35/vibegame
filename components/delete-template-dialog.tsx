@@ -12,6 +12,7 @@ import { useRouter } from "next/navigation";
 import { useUser } from "@/lib/hooks/use-user";
 import { jwtDecode } from 'jwt-decode';
 import { useEffect } from "react";
+import { useWalletModal } from '@solana/wallet-adapter-react-ui';
 
 interface DeleteTemplateDialogProps {
   isOpen: boolean;
@@ -29,6 +30,7 @@ export default function DeleteTemplateDialog({
   const { toast } = useToast();
   const router = useRouter();
   const { user, isLoading: isUserLoading } = useUser();
+  const { setVisible } = useWalletModal();
 
   useEffect(() => {
     if (isUserLoading) return;
@@ -47,7 +49,12 @@ export default function DeleteTemplateDialog({
 
   const handleDelete = async () => {
     if (!user) {
-      router.push('/login');
+      setVisible(true);
+      toast({
+        title: 'Connect Wallet',
+        description: 'Please connect your wallet to continue.',
+        variant: 'destructive',
+      });
       return;
     }
 

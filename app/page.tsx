@@ -9,6 +9,8 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useUser } from "@/lib/hooks/use-user";
 import SuggestionCard from "@/components/suggestion-card";
+import { useWalletModal } from '@solana/wallet-adapter-react-ui';
+import { useToast } from '@/components/ui/use-toast';
 
 // Template interface
 interface Template {
@@ -26,6 +28,8 @@ export default function Home() {
   const [isTemplatesLoading, setIsTemplatesLoading] = useState(true);
   const router = useRouter();
   const { user } = useUser();
+  const { setVisible } = useWalletModal();
+  const { toast } = useToast();
 
   const handleCopy = () => {
     navigator.clipboard.writeText(ALPHA_GUI.SEND_TOKEN_CA);
@@ -56,7 +60,12 @@ export default function Home() {
   const handleCreateFreshGame = async () => {
     // If user is not authenticated, redirect to login
     if (!user) {
-      router.push('/login');
+      setVisible(true);
+      toast({
+        title: 'Connect Wallet',
+        description: 'Please connect your wallet to continue.',
+        variant: 'destructive',
+      });
       return;
     }
 
@@ -95,7 +104,12 @@ export default function Home() {
   const handleCloneTemplate = async (template: Template) => {
     // If user is not authenticated, redirect to login
     if (!user) {
-      router.push('/login');
+      setVisible(true);
+      toast({
+        title: 'Connect Wallet',
+        description: 'Please connect your wallet to continue.',
+        variant: 'destructive',
+      });
       return;
     }
 

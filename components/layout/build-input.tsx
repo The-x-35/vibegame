@@ -7,6 +7,8 @@ import SuggestionCard from "@/components/suggestion-card";
 import { useRouter } from "next/navigation";
 import { useUser } from "@/lib/hooks/use-user";
 import { ALPHA_GUI } from '@/global/constant';
+import { useWalletModal } from '@solana/wallet-adapter-react-ui';
+import { useToast } from '@/components/ui/use-toast';
 
 interface BuildInputProps {
   placeholder?: string;
@@ -23,6 +25,8 @@ export function BuildInput({ placeholder = "What do you want to build?", classNa
   const inputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
   const { user } = useUser();
+  const { setVisible } = useWalletModal();
+  const { toast } = useToast();
   const [isCloning, setIsCloning] = useState(false);
 
   const gameTemplates = [
@@ -90,7 +94,12 @@ export function BuildInput({ placeholder = "What do you want to build?", classNa
 
   const handleCloneTemplate = async (template: { name: string; description: string; url: string; id: string; thumbnail?: string }) => {
     if (!user) {
-      router.push('/login');
+      setVisible(true);
+      toast({
+        title: 'Connect Wallet',
+        description: 'Please connect your wallet to continue.',
+        variant: 'destructive',
+      });
       return;
     }
 

@@ -7,6 +7,8 @@ import { useRouter } from "next/navigation";
 import { useUser } from "@/lib/hooks/use-user";
 import { Button } from "@/components/ui/button";
 import { ALPHA_GUI } from '@/global/constant';
+import { useWalletModal } from '@solana/wallet-adapter-react-ui';
+import { useToast } from '@/components/ui/use-toast';
 import DeleteTemplateDialog from '@/components/delete-template-dialog';
 import { Trash2 } from 'lucide-react';
 import { jwtDecode } from 'jwt-decode';
@@ -25,6 +27,8 @@ export default function TemplatesPage() {
   const [isLoading, setIsLoading] = useState(true);
   const { user, isLoading: isUserLoading } = useUser();
   const router = useRouter();
+  const { setVisible } = useWalletModal();
+  const { toast } = useToast();
   const [templateToDelete, setTemplateToDelete] = useState<GameTemplate | null>(null);
   const [isCloning, setIsCloning] = useState(false);
 
@@ -97,7 +101,12 @@ export default function TemplatesPage() {
 
   const handleCloneTemplate = async (template: GameTemplate) => {
     if (!user) {
-      router.push('/login');
+      setVisible(true);
+      toast({
+        title: 'Connect Wallet',
+        description: 'Please connect your wallet to continue.',
+        variant: 'destructive',
+      });
       return;
     }
 
