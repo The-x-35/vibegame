@@ -10,6 +10,7 @@ import { PlusCircle } from "lucide-react";
 import { Project } from "@/components/project-card";
 import { Switch } from "@/components/ui/switch";
 import { API_ENDPOINTS, ALPHA_GUI } from '@/global/constant';
+import { useRouter } from "next/navigation";
 
 interface LaunchProjectDialogProps {
   projectId: string;
@@ -17,8 +18,9 @@ interface LaunchProjectDialogProps {
 }
 
 export default function CreateProjectDialog() {
+  const router = useRouter();
   return (
-    <Button size="lg" variant="default" type="button">
+    <Button size="lg" variant="default" type="button" onClick={() => router.push("/")}> 
       Create Project
     </Button>
   );
