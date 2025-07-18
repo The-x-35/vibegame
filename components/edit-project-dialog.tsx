@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Edit } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { getAuthHeader } from '@/lib/auth-utils';
+import { useWallet } from '@solana/wallet-adapter-react';
 
 interface EditProjectDialogProps {
   projectId: string;
@@ -26,6 +26,7 @@ export default function EditProjectDialog({
   onUpdate,
 }: EditProjectDialogProps) {
   const router = useRouter();
+  const { publicKey } = useWallet();
   const [isOpen, setIsOpen] = useState(false);
   const [name, setName] = useState(projectName);
   const [description, setDescription] = useState(projectDescription);
@@ -46,16 +47,20 @@ export default function EditProjectDialog({
     try {
       console.log('Updating project details...');
       
+      if (!publicKey) {
+        throw new Error('Please connect your wallet');
+      }
+
       const updateResponse = await fetch(`/api/projects/${projectId}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
-          ...getAuthHeader(),
         },
         body: JSON.stringify({
           name: name.trim(),
           description: description.trim(),
           ca: ca.trim() || null,
+          wallet: publicKey.toString(),
         }),
       });
       

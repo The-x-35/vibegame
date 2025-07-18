@@ -68,13 +68,12 @@ export async function DELETE(
 ) {
   try {
     const { id } = await props.params;
+    const body = await request.json();
+    const { wallet } = body;
 
-    // Authenticate request
-    const authResult = await authenticateRequest(request as any);
-    if (authResult instanceof NextResponse) {
-      return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
+    if (!wallet) {
+      return NextResponse.json({ error: 'Wallet address is required' }, { status: 400 });
     }
-    const authenticatedRequest = authResult;
 
     // Verify project exists and user owns it
     const projectResult = await query(
@@ -86,7 +85,8 @@ export async function DELETE(
       return NextResponse.json({ error: 'Project not found' }, { status: 404 });
     }
 
-    if (projectResult.rows[0].wallet !== authenticatedRequest.user!.wallet) {
+    // Simple wallet check like editor and project pages
+    if (projectResult.rows[0].wallet !== wallet) {
       return NextResponse.json({ error: 'Not authorized to delete this project' }, { status: 403 });
     }
 
@@ -109,13 +109,12 @@ export async function PATCH(
 ) {
   try {
     const { id } = await props.params;
-    
-    // Authenticate request
-    const authResult = await authenticateRequest(request as any);
-    if (authResult instanceof NextResponse) {
-      return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
+    const body = await request.json();
+    const { name, description, isPublic, ca, wallet } = body;
+
+    if (!wallet) {
+      return NextResponse.json({ error: 'Wallet address is required' }, { status: 400 });
     }
-    const authenticatedRequest = authResult;
 
     // Get project data
     const projectResult = await query(
@@ -127,13 +126,10 @@ export async function PATCH(
       return NextResponse.json({ error: 'Project not found' }, { status: 404 });
     }
 
-    // Verify ownership
-    if (projectResult.rows[0].wallet !== authenticatedRequest.user!.wallet) {
+    // Simple wallet check like editor and project pages
+    if (projectResult.rows[0].wallet !== wallet) {
       return NextResponse.json({ error: 'Not authorized to modify this project' }, { status: 403 });
     }
-
-    const body = await request.json();
-    const { name, description, isPublic, ca } = body;
 
     // Update the project
     const result = await query(

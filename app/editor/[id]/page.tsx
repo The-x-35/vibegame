@@ -147,7 +147,6 @@ export default function EditorPage({
           className="w-full h-full border-0"
           frameBorder="0"
           scrolling="no"
-          allowTransparency={true}
           allowFullScreen
           style={{
             minWidth: '1024px',

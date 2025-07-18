@@ -15,7 +15,6 @@ import { getGameUrl } from '@/lib/utils';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 import { Transaction, VersionedTransaction } from '@solana/web3.js';
-import { getAuthHeader } from '@/lib/auth-utils';
 
 interface AttachTokenDialogProps {
   projectId: string;
@@ -63,15 +62,19 @@ export default function AttachTokenDialog({
 
       // Update project with CA
       console.log('Updating project with CA:', ca);
+      if (!publicKey) {
+        throw new Error('Please connect your wallet');
+      }
+
       const updateResponse = await fetch(`/api/projects/${projectId}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
-          ...getAuthHeader(),
         },
         body: JSON.stringify({
           ca,
-          is_public: true
+          is_public: true,
+          wallet: publicKey.toString()
         }),
       });
       

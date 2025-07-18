@@ -2,8 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useUser } from "@/lib/hooks/use-user";
-import { getAuthHeader } from '@/lib/auth-utils';
+import { useWallet } from '@solana/wallet-adapter-react';
 import {
   Dialog,
   DialogContent,
@@ -27,10 +26,10 @@ const DeleteProjectDialog = ({ projectId, onDelete }: DeleteProjectDialogProps) 
   const [confirmationText, setConfirmationText] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
   const router = useRouter();
-  const { user } = useUser();
+  const { publicKey } = useWallet();
 
   const handleDelete = async () => {
-    if (!user || confirmationText !== "delete my project") return;
+    if (!publicKey || confirmationText !== "delete my project") return;
 
     setIsDeleting(true);
     try {
@@ -38,8 +37,10 @@ const DeleteProjectDialog = ({ projectId, onDelete }: DeleteProjectDialogProps) 
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
-          ...getAuthHeader(),
         },
+        body: JSON.stringify({
+          wallet: publicKey.toString()
+        }),
       });
 
       if (!response.ok) {
