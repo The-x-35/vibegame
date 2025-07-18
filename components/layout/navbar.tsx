@@ -5,21 +5,23 @@ import { useUser } from "@/lib/hooks/use-user";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/ui/logo";
 import { useState, useEffect } from "react";
-import { Menu, X, Code, GamepadIcon, LayoutDashboardIcon as DashboardIcon } from "lucide-react";
+import { Menu, X, Code, GamepadIcon, LayoutDashboardIcon as DashboardIcon, LogOut } from "lucide-react";
 import { Connection, LAMPORTS_PER_SOL, PublicKey } from "@solana/web3.js";
 import { API_ENDPOINTS } from "@/global/constant";
 import { useWallet } from '@solana/wallet-adapter-react';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import '@solana/wallet-adapter-react-ui/styles.css';
+import { useRouter } from "next/navigation";
 
 export default function Navbar() {
   const { user, isLoading } = useUser();
-  const { connected, publicKey } = useWallet();
+  const { connected, publicKey, disconnect } = useWallet();
   const [isOpen, setIsOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [copied, setCopied] = useState(false);
   const [balance, setBalance] = useState<number | null>(null);
+  const router = useRouter();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -91,6 +93,12 @@ export default function Navbar() {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     }
+  };
+
+  // Handler to disconnect wallet and redirect to home
+  const handleDisconnect = async () => {
+    await disconnect();
+    router.push("/");
   };
 
   // Get initials from wallet address
@@ -166,6 +174,15 @@ export default function Navbar() {
                     >
                       {copied ? 'Copied!' : `${publicKey?.toString().slice(0,6)}...${publicKey?.toString().slice(-4)}`}
                     </span>
+                    <Button
+                      size="icon"
+                      variant="destructive"
+                      className="ml-2"
+                      title="Disconnect Wallet"
+                      onClick={handleDisconnect}
+                    >
+                      <LogOut className="h-4 w-4" />
+                    </Button>
                   </div>
                 </>
               ) : (
@@ -224,7 +241,7 @@ export default function Navbar() {
             {isLoading ? (
               <div className="h-8 w-8 rounded-full bg-muted animate-pulse" />
             ) : connected ? (
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col items-center justify-between space-y-2">
                 <div className="flex items-center space-x-2">
                   {balance !== null && (
                     <span className="text-sm font-medium bg-primary/10 px-2 py-1 rounded">
@@ -245,6 +262,13 @@ export default function Navbar() {
                     {copied ? 'Copied!' : `${publicKey?.toString().slice(0,6)}...${publicKey?.toString().slice(-4)}`}
                   </span>
                 </div>
+                <Button
+                  variant="destructive"
+                  className="w-full mt-2"
+                  onClick={handleDisconnect}
+                >
+                  <LogOut className="h-4 w-4 mr-2" /> Disconnect Wallet
+                </Button>
               </div>
             ) : (
               <WalletMultiButton className="w-full !h-10" />
