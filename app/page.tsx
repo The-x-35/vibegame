@@ -71,14 +71,14 @@ export default function Home() {
 
     setIsCloning(true);
     try {
-      // Clone the "New" template (ID: 558aca0a-b28a-4ab1-baed-03cb966a4033)
+      // Clone the "New" template (ID: 6c489184-69ab-402d-b335-b70a03d38349)
       const response = await fetch('/api/projects/clone', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          projectId: '558aca0a-b28a-4ab1-baed-03cb966a4033',
+          projectId: '6c489184-69ab-402d-b335-b70a03d38349',
           name: 'My VibeGame',
           description: 'A fresh new game created with VibeGame',
           isPublic: false,
