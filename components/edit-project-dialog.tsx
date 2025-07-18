@@ -8,12 +8,14 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Edit } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { getAuthHeader } from '@/lib/auth-utils';
 
 interface EditProjectDialogProps {
   projectId: string;
   projectName: string;
   projectDescription: string;
   projectCa: string | null;
+  onUpdate?: (updatedProject: { name?: string; description?: string; ca?: string | null }) => void;
 }
 
 export default function EditProjectDialog({ 
@@ -21,6 +23,7 @@ export default function EditProjectDialog({
   projectName, 
   projectDescription,
   projectCa,
+  onUpdate,
 }: EditProjectDialogProps) {
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
@@ -47,6 +50,7 @@ export default function EditProjectDialog({
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
+          ...getAuthHeader(),
         },
         body: JSON.stringify({
           name: name.trim(),
@@ -65,11 +69,13 @@ export default function EditProjectDialog({
       console.log('Project updated successfully');
       setIsOpen(false);
       
-      // Handle redirect if the project ID changed
-      if (responseData.redirect) {
-        router.push(responseData.redirect);
-      } else {
-        router.refresh(); // Refresh the page to show the updated details
+      // Update parent state instead of refreshing
+      if (onUpdate) {
+        onUpdate({
+          name: name.trim(),
+          description: description.trim(),
+          ca: ca.trim() || null,
+        });
       }
     } catch (err) {
       console.error('Project update error:', err);

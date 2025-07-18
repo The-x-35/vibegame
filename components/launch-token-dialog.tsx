@@ -15,6 +15,7 @@ import { getGameUrl } from '@/lib/utils';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 import { Transaction, VersionedTransaction } from '@solana/web3.js';
+import { getAuthHeader } from '@/lib/auth-utils';
 
 interface AttachTokenDialogProps {
   projectId: string;
@@ -22,6 +23,7 @@ interface AttachTokenDialogProps {
   projectName: string;
   projectDescription: string;
   ca?: string | null;
+  onUpdate?: (updatedProject: { ca: string; is_public: boolean }) => void;
 }
 
 export default function AttachTokenDialog({ 
@@ -30,6 +32,7 @@ export default function AttachTokenDialog({
   projectName, 
   projectDescription,
   ca,
+  onUpdate,
 }: AttachTokenDialogProps) {
   const router = useRouter();
   const { connected, publicKey, signTransaction } = useWallet();
@@ -64,6 +67,7 @@ export default function AttachTokenDialog({
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
+          ...getAuthHeader(),
         },
         body: JSON.stringify({
           ca,
@@ -79,7 +83,11 @@ export default function AttachTokenDialog({
       
       console.log('Project updated successfully');
       setIsOpen(false);
-      router.refresh(); // Refresh the page to show the new CA
+      
+      // Update parent state instead of refreshing
+      if (onUpdate) {
+        onUpdate({ ca, is_public: true });
+      }
     } catch (err) {
       console.error('Token attach error:', err);
       alert(`Token attach failed: ${err instanceof Error ? err.message : err}`);

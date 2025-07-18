@@ -38,6 +38,13 @@ export default function ProjectPage({
   const [isLoadingProject, setIsLoadingProject] = useState(true);
   const params = use(paramsPromise);
 
+  // Callback to update project state from child components
+  const updateProjectState = (updatedProject: Partial<ProjectRow>) => {
+    if (project) {
+      setProject({ ...project, ...updatedProject });
+    }
+  };
+
   useEffect(() => {
     if (isLoading) return; // wait until user is resolved
     if (!user) return; // no authenticated wallet – do nothing, loader continues
@@ -194,6 +201,7 @@ export default function ProjectPage({
                 projectName={project.name}
                 projectDescription={project.description}
                 ca={project.ca}
+                onUpdate={updateProjectState}
               />
               <Button size="lg" variant="outline" className="flex-1" asChild>
                 <Link href={`/editor/${project.id}`}>Edit Game</Link>
@@ -205,11 +213,15 @@ export default function ProjectPage({
                 projectName={project.name}
                 projectDescription={project.description}
                 projectCa={project.ca}
+                onUpdate={updateProjectState}
               />
               <ShareProjectButton projectId={project.id} projectName={project.name} />
             </div>
             <div className="pt-4 border-t">
-              <DeleteProjectDialog projectId={project.id} />
+              <DeleteProjectDialog 
+                projectId={project.id} 
+                onDelete={() => router.push('/profile')}
+              />
             </div>
           </div>
         </div>

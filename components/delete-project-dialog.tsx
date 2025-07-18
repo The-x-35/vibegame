@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useUser } from "@/lib/hooks/use-user";
+import { getAuthHeader } from '@/lib/auth-utils';
 import {
   Dialog,
   DialogContent,
@@ -18,9 +19,10 @@ import { Trash2 } from "lucide-react";
 
 interface DeleteProjectDialogProps {
   projectId: string;
+  onDelete?: () => void;
 }
 
-const DeleteProjectDialog = ({ projectId }: DeleteProjectDialogProps) => {
+const DeleteProjectDialog = ({ projectId, onDelete }: DeleteProjectDialogProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [confirmationText, setConfirmationText] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
@@ -32,8 +34,12 @@ const DeleteProjectDialog = ({ projectId }: DeleteProjectDialogProps) => {
 
     setIsDeleting(true);
     try {
-      const response = await fetch(`/api/projects/${projectId}?wallet=${user.wallet}`, {
-        method: 'DELETE'
+      const response = await fetch(`/api/projects/${projectId}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          ...getAuthHeader(),
+        },
       });
 
       if (!response.ok) {
@@ -42,8 +48,13 @@ const DeleteProjectDialog = ({ projectId }: DeleteProjectDialogProps) => {
       }
 
       setIsOpen(false);
-      router.push('/profile');
-      router.refresh();
+      
+      // Call the onDelete callback if provided, otherwise redirect to profile
+      if (onDelete) {
+        onDelete();
+      } else {
+        router.push('/profile');
+      }
     } catch (err) {
       console.error('Error deleting project:', err);
       alert(err instanceof Error ? err.message : 'Error deleting project');

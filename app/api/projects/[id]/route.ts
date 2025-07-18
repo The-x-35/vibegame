@@ -133,7 +133,7 @@ export async function PATCH(
     }
 
     const body = await request.json();
-    const { name, description, isPublic } = body;
+    const { name, description, isPublic, ca } = body;
 
     // Update the project
     const result = await query(
@@ -141,10 +141,11 @@ export async function PATCH(
        SET name = COALESCE($1, name),
            description = COALESCE($2, description),
            is_public = COALESCE($3, is_public),
+           ca = COALESCE($4, ca),
            updated_at = NOW()
-       WHERE id = $4
+       WHERE id = $5
        RETURNING *`,
-      [name, description, isPublic, id]
+      [name, description, isPublic, ca, id]
     );
 
     return NextResponse.json({ project: result.rows[0] });
