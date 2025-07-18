@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowRight, Code, Sparkles, Zap, Gamepad2, Star, Users, Copy } from "lucide-react";
 import Link from "next/link";
 import { ALPHA_GUI } from "@/global/constant";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useUser } from "@/lib/hooks/use-user";
 import SuggestionCard from "@/components/suggestion-card";
@@ -26,6 +26,10 @@ export default function Home() {
   const [isCloning, setIsCloning] = useState(false);
   const [templates, setTemplates] = useState<Template[]>([]);
   const [isTemplatesLoading, setIsTemplatesLoading] = useState(true);
+  const [page, setPage] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
+  const PAGE_SIZE = 20;
+  const loaderRef = useRef<HTMLDivElement | null>(null);
   const router = useRouter();
   const { user } = useUser();
   const { setVisible } = useWalletModal();
@@ -37,25 +41,52 @@ export default function Home() {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  // Fetch templates on component mount
-  useEffect(() => {
-    const fetchTemplates = async () => {
-      try {
-        const response = await fetch('/api/templates');
-        if (!response.ok) {
-          throw new Error(`Failed to fetch templates: ${response.statusText}`);
-        }
-        const data: Template[] = await response.json();
-        setTemplates(data);
-      } catch (error) {
-        console.error('Error fetching templates:', error);
-      } finally {
-        setIsTemplatesLoading(false);
-      }
-    };
+  // Fetch templates with pagination
+  const fetchTemplates = async (page: number) => {
+    setIsTemplatesLoading(true);
+    try {
+      const response = await fetch(`/api/templates?limit=${PAGE_SIZE}&offset=${page * PAGE_SIZE}`);
+      if (!response.ok) throw new Error(`Failed to fetch templates: ${response.statusText}`);
+      const data = await response.json();
+      setTemplates((prev) => [...prev, ...data.templates]);
+      setHasMore(data.hasMore);
+    } catch (error) {
+      console.error('Error fetching templates:', error);
+    } finally {
+      setIsTemplatesLoading(false);
+    }
+  };
 
-    fetchTemplates();
+  // Fetch first page on mount
+  useEffect(() => {
+    setTemplates([]);
+    setPage(0);
+    setHasMore(true);
+    fetchTemplates(0);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Infinite scroll: fetch more when loaderRef is visible
+  useEffect(() => {
+    if (!hasMore || isTemplatesLoading) return;
+    const observer = new window.IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          setPage((prevPage) => {
+            const nextPage = prevPage + 1;
+            fetchTemplates(nextPage);
+            return nextPage;
+          });
+        }
+      },
+      { threshold: 1 }
+    );
+    if (loaderRef.current) observer.observe(loaderRef.current);
+    return () => {
+      if (loaderRef.current) observer.unobserve(loaderRef.current);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasMore, isTemplatesLoading]);
 
   const handleCreateFreshGame = async () => {
     // If user is not authenticated, redirect to login
@@ -227,10 +258,8 @@ export default function Home() {
               <h2 className="text-3xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-blue-500 to-purple-500 font-matrix-sans-regular">
                 Community Games
               </h2>
-
             </div>
-            
-            {isTemplatesLoading ? (
+            {templates.length === 0 && isTemplatesLoading ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {Array.from({ length: 6 }).map((_, idx) => (
                   <div key={idx} className="rounded-lg overflow-hidden border border-border/50 shadow-sm">
@@ -244,19 +273,26 @@ export default function Home() {
                 ))}
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 bg-transparent">
-                {templates.map((template) => (
-                  <SuggestionCard
-                    key={template.id}
-                    embedUrl={`${ALPHA_GUI.EMBED_URL}?project_url=${encodeURIComponent(template.url)}`}
-                    name={template.name}
-                    description={template.description}
-                    onOpen={() => handleCloneTemplate(template)}
-                    buttonText="Use Template"
-                    thumbnail={template.thumbnail}
-                  />
-                ))}
-              </div>
+              <>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 bg-transparent">
+                  {templates.map((template) => (
+                    <SuggestionCard
+                      key={template.id}
+                      embedUrl={`${ALPHA_GUI.EMBED_URL}?project_url=${encodeURIComponent(template.url)}`}
+                      name={template.name}
+                      description={template.description}
+                      onOpen={() => handleCloneTemplate(template)}
+                      buttonText="Use Template"
+                      thumbnail={template.thumbnail}
+                    />
+                  ))}
+                </div>
+                <div ref={loaderRef} style={{ height: 1 }} />
+                {isTemplatesLoading && <div className="text-center py-4">Loading more...</div>}
+                {!hasMore && templates.length > 0 && (
+                  <div className="text-center py-4 text-muted-foreground">No more templates to load.</div>
+                )}
+              </>
             )}
           </div>
         </div>

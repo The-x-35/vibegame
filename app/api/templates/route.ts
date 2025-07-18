@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 import { S3Client, PutObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3";
 
@@ -10,15 +10,22 @@ const s3 = new S3Client({
     },
 });
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
-    // Query returns a result object with 'rows' containing the data
+    const { searchParams } = new URL(req.url);
+    const limit = parseInt(searchParams.get('limit') || '20', 10);
+    const offset = parseInt(searchParams.get('offset') || '0', 10);
+
+    // Query for paginated templates
     const result = await query(
-      'SELECT id, name, url, description, thumbnail FROM templates ORDER BY created_at',
-      []
+      'SELECT id, name, url, description, thumbnail FROM templates ORDER BY created_at DESC LIMIT $1 OFFSET $2',
+      [limit, offset]
     );
-    const templates = result.rows;
-    return NextResponse.json(templates);
+    // Query for total count
+    const countResult = await query('SELECT COUNT(*) FROM templates');
+    const total = parseInt(countResult.rows[0].count, 10);
+    const hasMore = offset + limit < total;
+    return NextResponse.json({ templates: result.rows, hasMore });
   } catch (error) {
     console.error('Error fetching templates:', error);
     return NextResponse.error();
