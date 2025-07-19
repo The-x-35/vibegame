@@ -110,7 +110,7 @@ export async function PATCH(
   try {
     const { id } = await props.params;
     const body = await request.json();
-    const { name, description, isPublic, ca, wallet } = body;
+    const { name, description, isPublic, ca, wallet, thumbnail } = body; // Include thumbnail
 
     if (!wallet) {
       return NextResponse.json({ error: 'Wallet address is required' }, { status: 400 });
@@ -151,10 +151,11 @@ export async function PATCH(
                description = COALESCE($3, description),
                is_public = COALESCE($4, is_public),
                ca = COALESCE($5, ca),
+               thumbnail = COALESCE($6, thumbnail), // Update thumbnail
                updated_at = NOW()
-           WHERE id = $6
+           WHERE id = $7
            RETURNING *`,
-          [newId, name, description, isPublic, ca, id]
+          [newId, name, description, isPublic, ca, thumbnail, id]
         );
 
         // Update references in other tables
@@ -173,16 +174,18 @@ export async function PATCH(
       }
     } else {
       // If name is not changing, just update other fields
+      console.log('Updating project with values:', { name, description, isPublic, ca, thumbnail, id });
       const result = await query(
         `UPDATE projects 
          SET name = COALESCE($1, name),
              description = COALESCE($2, description),
              is_public = COALESCE($3, is_public),
              ca = COALESCE($4, ca),
+             thumbnail = COALESCE($5, thumbnail),
              updated_at = NOW()
-         WHERE id = $5
+         WHERE id = $6
          RETURNING *`,
-        [name, description, isPublic, ca, id]
+        [name, description, isPublic, ca, thumbnail, id]
       );
 
       return NextResponse.json({ project: result.rows[0] });

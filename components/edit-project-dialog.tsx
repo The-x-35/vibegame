@@ -15,7 +15,7 @@ interface EditProjectDialogProps {
   projectName: string;
   projectDescription: string;
   projectCa: string | null;
-  onUpdate?: (updatedProject: { name?: string; description?: string; ca?: string | null }) => void;
+  onUpdate?: (updatedProject: { name?: string; description?: string; ca?: string | null; thumbnail?: string | null }) => void;
 }
 
 export default function EditProjectDialog({ 
@@ -32,6 +32,8 @@ export default function EditProjectDialog({
   const [description, setDescription] = useState(projectDescription);
   const [ca, setCa] = useState(projectCa || "");
   const [isLoading, setIsLoading] = useState(false);
+  // Add state for thumbnail
+  const [thumbnail, setThumbnail] = useState<File | null>(null);
 
   useEffect(() => {
     if (isOpen) {
@@ -51,6 +53,30 @@ export default function EditProjectDialog({
         throw new Error('Please connect your wallet');
       }
 
+      // Handle thumbnail upload
+      let thumbnailUrl = null;
+      if (thumbnail) {
+        const formData = new FormData();
+        formData.append('file', thumbnail);
+        const uploadResponse = await fetch('/api/upload-thumbnail', {
+          method: 'POST',
+          body: formData,
+        });
+        if (!uploadResponse.ok) {
+          throw new Error('Failed to upload thumbnail');
+        }
+        const uploadData = await uploadResponse.json();
+        thumbnailUrl = uploadData.url;
+      }
+
+      console.log('Request body:', {
+        name: name.trim(),
+        description: description.trim(),
+        ca: ca.trim() || null,
+        wallet: publicKey.toString(),
+        thumbnail: thumbnailUrl,
+      });
+
       const updateResponse = await fetch(`/api/projects/${projectId}`, {
         method: 'PATCH',
         headers: {
@@ -61,6 +87,7 @@ export default function EditProjectDialog({
           description: description.trim(),
           ca: ca.trim() || null,
           wallet: publicKey.toString(),
+          thumbnail: thumbnailUrl, // Include thumbnail URL
         }),
       });
       
@@ -84,6 +111,7 @@ export default function EditProjectDialog({
             name: name.trim(),
             description: description.trim(),
             ca: ca.trim() || null,
+            thumbnail: thumbnailUrl, // Update parent with new thumbnail
           });
         }
       }
@@ -139,6 +167,16 @@ export default function EditProjectDialog({
               placeholder="Enter contract address (optional)"
               value={ca}
               onChange={(e) => setCa(e.target.value)}
+            />
+          </div>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="project-thumbnail" className="text-right">Thumbnail</Label>
+            <Input 
+              id="project-thumbnail" 
+              type="file"
+              accept="image/*"
+              className="col-span-3" 
+              onChange={(e) => setThumbnail(e.target.files ? e.target.files[0] : null)}
             />
           </div>
           <DialogFooter>

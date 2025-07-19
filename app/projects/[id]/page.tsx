@@ -25,6 +25,7 @@ interface ProjectRow {
   wallet: string;
   ca: string | null;
   is_public: boolean;
+  thumbnail?: string; // Ensure thumbnail is optional and of type string
 }
 
 export default function ProjectPage({
@@ -39,9 +40,9 @@ export default function ProjectPage({
   const params = use(paramsPromise);
 
   // Callback to update project state from child components
-  const updateProjectState = (updatedProject: Partial<ProjectRow>) => {
+  const updateProjectState = (updatedProject: { name?: string; description?: string; ca?: string | null; thumbnail?: string | null }) => {
     if (project) {
-      setProject({ ...project, ...updatedProject });
+      setProject({ ...project, ...updatedProject, thumbnail: updatedProject.thumbnail ?? project.thumbnail });
     }
   };
 
@@ -164,13 +165,12 @@ export default function ProjectPage({
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2">
           <div className="rounded-lg overflow-hidden shadow-sm border border-border/50">
+            {/* Replace iframe with image element to display thumbnail */}
             <div className="relative aspect-video bg-muted overflow-hidden">
-              <iframe
-                src={embedUrl}
-                title={project.name}
-                className="w-full h-full"
-                frameBorder="0"
-                loading="lazy"
+              <img
+                src={project.thumbnail}
+                alt={project.name}
+                className="w-full h-full object-cover"
               />
               <div className="absolute inset-0 bg-black/10 group-hover:bg-black/0 transition-all duration-300" />
             </div>
