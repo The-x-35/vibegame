@@ -175,6 +175,57 @@ export default function Home() {
     }
   };
 
+  const handleEditRandomTemplate = async () => {
+    console.log('handleEditRandomTemplate - User state:', user);
+    // If user is not authenticated, redirect to login
+    if (!user) {
+      setVisible(true);
+      toast({
+        title: 'Connect Wallet',
+        description: 'Please connect your wallet to continue.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (templates.length === 0) {
+      alert('No templates available to edit.');
+      return;
+    }
+
+    setIsCloning(true);
+    try {
+      // Select a random template
+      const randomTemplate = templates[Math.floor(Math.random() * templates.length)];
+      const response = await fetch('/api/projects/clone', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          projectId: randomTemplate.id,
+          name: randomTemplate.name, // Use template's name
+          description: randomTemplate.description, // Use template's description
+          isPublic: false,
+          wallet: user.wallet,
+        }),
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to edit random template');
+      }
+
+      const projectId = data.project.id;
+      router.push(`/editor/${projectId}`);
+    } catch (err) {
+      console.error(err);
+      alert(err instanceof Error ? err.message : 'Error editing random template');
+    } finally {
+      setIsCloning(false);
+    }
+  };
+
   return (
     <div className="relative">
       {/* Hero background with hero.svg */}
@@ -240,10 +291,10 @@ export default function Home() {
               size="default" 
               variant="outline" 
               className="group font-matrix-sans-regular text-sm" 
-              onClick={handleCreateFreshGame}
+              onClick={handleEditRandomTemplate}
               disabled={isCloning}
             >
-              {isCloning ? 'Creating...' : 'Create Fresh VibeGame'}
+              {isCloning ? 'Creating...' : 'Edit Random Template'}
               <ArrowRight className="ml-2 h-3 w-3 group-hover:translate-x-1 transition-transform" />
             </Button>
           </div>
