@@ -126,7 +126,7 @@ export default function EditorPage({
   const embedUrl = `${ALPHA_GUI.BASE_URL}/?project_url=${encodeURIComponent(project.url)}`;
 
   return (
-    <div className="h-[calc(100vh-64px)] flex flex-col bg-background">
+    <div className="h-[calc(100vh-64px)] flex flex-col bg-background" style={{ backgroundImage: 'url(/bg.svg)', backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat', backgroundAttachment: 'fixed' }}>
       <S3IframeHandler currentProjectUrl={project.url} />
       
       {/* Top bar with deploy button - positioned below navbar */}

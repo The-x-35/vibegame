@@ -115,11 +115,7 @@ export default function Navbar() {
 
   return (
     <header 
-      className={`w-full z-50 transition-all duration-300 font-['Matrix_Sans_Video'] ${
-        isScrolled 
-          ? "bg-background/80 backdrop-blur-md border-b" 
-          : "bg-transparent"
-      }`}
+      className={`w-full z-50 transition-all duration-300 font-['Matrix_Sans_Video'] bg-black/50`}
     >
       <div className="w-full px-4 py-3">
         <nav className="flex items-center justify-between">

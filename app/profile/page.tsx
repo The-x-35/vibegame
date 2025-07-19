@@ -94,7 +94,7 @@ export default function ProfilePage() {
   if (!connected) return null;
 
   return (
-    <div className="container mx-auto px-4 py-10">
+    <div className="h-screen w-screen container mx-auto px-4 py-10" style={{ backgroundImage: 'url(/bg.svg)', backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat', backgroundAttachment: 'fixed' }}>
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
         <div>
           <h1 className="text-3xl font-bold">Your Profile</h1>

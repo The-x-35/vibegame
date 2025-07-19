@@ -152,7 +152,7 @@ export default function ProjectPage({
   const projectUrl = `${process.env.NEXT_PUBLIC_APP_URL}/projects/${project.id}`;
 
   return (
-    <div className="container mx-auto px-4 py-10">
+    <div className="min-h-screen container mx-auto px-4 py-10" style={{ backgroundImage: 'url(/bg.svg)', backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat', backgroundAttachment: 'fixed' }}>
       <div className="mb-6">
         <Button variant="ghost" asChild>
           <Link href="/profile" className="flex items-center text-muted-foreground hover:text-foreground">
