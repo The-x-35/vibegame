@@ -47,7 +47,6 @@ export default function LaunchTokenDialog({
   const [tokenTelegram, setTokenTelegram] = useState("");
   const [tokenTwitter, setTokenTwitter] = useState("");
   const [tokenWebsite, setTokenWebsite] = useState("");
-  const [tokenAmount, setTokenAmount] = useState("");
   const [imageUrl, setImageUrl] = useState<string>("");
 
   useEffect(() => {
@@ -71,9 +70,7 @@ export default function LaunchTokenDialog({
         if (!connected || !publicKey) {
           throw new Error('Please connect your wallet to launch a token');
         }
-        if (!tokenAmount || isNaN(Number(tokenAmount)) || Number(tokenAmount) < 0) {
-          throw new Error('Please enter a valid token amount');
-        }
+        // Token amount is set to 0 by default
         
         console.log('Token launch parameters:', {
           tokenName,
@@ -83,7 +80,7 @@ export default function LaunchTokenDialog({
           tokenTwitter,
           tokenWebsite,
           wallet: publicKey.toString(),
-          initialBuyAmount: Number(tokenAmount),
+          initialBuyAmount: 0,
           image: imageUrl
         });
 
@@ -94,7 +91,7 @@ export default function LaunchTokenDialog({
           tokenTicker: tokenTicker,
           description: tokenDescription.slice(0, 500),
           image: imageUrl,
-          initialBuyAmount: Number(tokenAmount),
+          initialBuyAmount: 0,
           twitter: tokenTwitter?.trim() || undefined,
           telegram: tokenTelegram?.trim() || undefined,
           website: tokenWebsite?.trim() || undefined,
@@ -307,18 +304,7 @@ export default function LaunchTokenDialog({
                         required
                       />
                   </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="token-amount" className="text-right text-white">Token Amount</Label>
-                    <Input
-                      id="token-amount"
-                      type="number"
-                      className="col-span-3 bg-black border-gray-800 text-white placeholder:text-gray-500"
-                      placeholder="Amount of tokens to mint"
-                      value={tokenAmount}
-                      onChange={(e) => setTokenAmount(e.target.value)}
-                      required
-                    />
-                  </div>
+
                   <div className="grid grid-cols-4 items-center gap-4">
                     <Label htmlFor="token-telegram" className="text-right text-white">Telegram</Label>
                     <Input
@@ -374,7 +360,7 @@ export default function LaunchTokenDialog({
               type="submit" 
               disabled={isLoading || 
                 (!isLaunchMode && !manualCa.trim()) || 
-                (isLaunchMode && (!connected || !tokenName || !tokenTicker || !tokenDescription || !tokenAmount || !imageUrl))
+                (isLaunchMode && (!connected || !tokenName || !tokenTicker || !tokenDescription || !imageUrl))
               }
             >
               {isLoading ? "Processing..." : (isLaunchMode ? "Launch Token" : "Attach Token")}
