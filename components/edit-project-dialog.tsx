@@ -131,7 +131,7 @@ export default function EditProjectDialog({
           Edit Details
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-h-[80vh] overflow-y-auto">
+      <DialogContent className="max-h-[80vh] overflow-y-auto bg-black/40 backdrop-blur-xl border border-gray-800/50">
         <DialogHeader>
           <DialogTitle>Edit Project Details</DialogTitle>
           <DialogDescription>Update your project information.</DialogDescription>
@@ -141,7 +141,7 @@ export default function EditProjectDialog({
             <Label htmlFor="project-name" className="text-right">Name</Label>
             <Input 
               id="project-name" 
-              className="col-span-3" 
+              className="col-span-3 bg-black border-gray-800 text-white placeholder:text-gray-500 focus:ring-0 focus:border-gray-700" 
               placeholder="Project Name" 
               value={name} 
               onChange={(e) => setName(e.target.value)} 
@@ -152,7 +152,7 @@ export default function EditProjectDialog({
             <Label htmlFor="project-description" className="text-right pt-2">Description</Label>
             <Textarea 
               id="project-description" 
-              className="col-span-3" 
+              className="col-span-3 bg-black border-gray-800 text-white placeholder:text-gray-500 focus:ring-0 focus:border-gray-700" 
               placeholder="Project Description" 
               value={description} 
               onChange={(e) => setDescription(e.target.value)} 
@@ -163,7 +163,7 @@ export default function EditProjectDialog({
             <Label htmlFor="project-ca" className="text-right">Contract Address</Label>
             <Input 
               id="project-ca" 
-              className="col-span-3" 
+              className="col-span-3 bg-black border-gray-800 text-white placeholder:text-gray-500 focus:ring-0 focus:border-gray-700" 
               placeholder="Enter contract address (optional)"
               value={ca}
               onChange={(e) => setCa(e.target.value)}
@@ -175,7 +175,7 @@ export default function EditProjectDialog({
               id="project-thumbnail" 
               type="file"
               accept="image/*"
-              className="col-span-3" 
+              className="col-span-3 bg-black border-gray-800 text-white placeholder:text-gray-500 focus:ring-0 focus:border-gray-700" 
               onChange={(e) => setThumbnail(e.target.files ? e.target.files[0] : null)}
             />
           </div>

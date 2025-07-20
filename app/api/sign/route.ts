@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 
-const MINTER_API_BASE_URL = process.env.MINTER_API_BASE_URL || "https://dolphin-app-leo54.ondigitalocean.app";
+const MINTER_API_BASE_URL = process.env.MINTER_API_BASE_URL || "https://api.sendshot.ag";
 
 if (!MINTER_API_BASE_URL) {
   throw new Error('MINTER_API_BASE_URL env variable is missing');
@@ -22,7 +22,7 @@ async function signTransaction(mintAddress: string, tx: string) {
     headers: {
       'Accept': 'application/json',
       'Content-Type': 'application/json',
-      'x-api-key': process.env.NEXT_PUBLIC_MINTER_API_KEY || process.env.MINTER_API_KEY || process.env.PUMP_API_KEY!
+      'x-api-key': process.env.MINTER_API_KEY || process.env.PUMP_API_KEY!
     },
     body: JSON.stringify({ mintAddress, tx }),
   });

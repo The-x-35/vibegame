@@ -4,20 +4,21 @@ import { QueryResult } from 'pg';
 
 // Primary base URL for the DigitalOcean-hosted minter service.
 // If the env var is not set, we default to the canonical production URL.
-const MINTER_API_BASE_URL = process.env.MINTER_API_BASE_URL || "https://dolphin-app-leo54.ondigitalocean.app";
+const MINTER_API_BASE_URL = process.env.MINTER_API_BASE_URL || "https://api.sendshot.ag";
 
 interface TokenFormData {
-  user: string;
+  user: string; // Solana public key of the user
   tokenName: string;
   tokenTicker: string;
   description: string;
   website?: string;
   twitter?: string;
   telegram?: string;
-  image?: string | File;
-  initialBuyAmount?: number;
-  // Optional API key coming from the client; overrides env key if provided.
-  apiKey?: string;
+  image?: string | File; // Can be either URL string or File object
+  initialBuyAmount?: number; // Optional amount parameter for pump API
+  fid?: string; // Farcaster ID
+  username?: string; // Farcaster username
+  platform: "meteora" | "pumpfun"; // Platform selection for creator fees
 }
 
 interface MinterApiPayload {
@@ -30,6 +31,7 @@ interface MinterApiPayload {
   twitter?: string;
   telegram?: string;
   website?: string;
+  platform: string;
 }
 
 interface ValidationError {
@@ -39,13 +41,13 @@ interface ValidationError {
 
 interface TokenLaunch {
   token_address: string;
-  token_name: string;
-  token_ticker: string;
+  tokenName: string;
+  tokenTicker: string;
   description: string;
   website: string | null;
   twitter: string | null;
   telegram: string | null;
-  image_url: string;
+  image: string;
   is_launched: boolean;
   created_at: Date;
   updated_at: Date;
@@ -167,7 +169,8 @@ export async function POST(request: NextRequest) {
       name: formData.tokenName.trim(),
       symbol: formData.tokenTicker.trim().toUpperCase(),
       description: formData.description.trim(),
-      imageUrl: imageUrl
+      imageUrl: imageUrl,
+      platform: "meteora"
     };
 
     if (formData.initialBuyAmount) {
@@ -176,7 +179,7 @@ export async function POST(request: NextRequest) {
     console.log('📦 Prepared payload for minter /mint:', payload);
 
     // We now only use the /mint endpoint.
-    const resolvedApiKey = formData.apiKey?.trim() || process.env.NEXT_PUBLIC_MINTER_API_KEY || process.env.MINTER_API_KEY || process.env.PUMP_API_KEY!;
+    const resolvedApiKey = process.env.MINTER_API_KEY || process.env.PUMP_API_KEY!;
 
     const url = `${MINTER_API_BASE_URL}/mint/post-signed-tx`;
     console.log(`🌐 Sending POST ${url} with x-api-key ${resolvedApiKey?.slice(0,4)}***`);
@@ -214,11 +217,13 @@ export async function POST(request: NextRequest) {
 
     if (!response.ok) {
       console.error('❌ Minter API error response:', responseData);
+      const errorMessage = responseData.error || responseData.raw || responseData.message || `API request failed with status ${response.status}`;
+      console.error('❌ Error details:', errorMessage);
       return NextResponse.json(
         {
           success: false,
           message: 'Token launch failed',
-          error: responseData.error || responseData.raw || `API request failed with status ${response.status}`
+          error: errorMessage
         },
         { status: 400 }
       );

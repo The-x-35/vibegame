@@ -72,7 +72,7 @@ const DeleteProjectDialog = ({ projectId, onDelete }: DeleteProjectDialogProps) 
           Delete Project
         </Button>
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent className="bg-black/40 backdrop-blur-xl border border-gray-800/50">
         <DialogHeader>
           <DialogTitle>Delete Project</DialogTitle>
           <DialogDescription>
