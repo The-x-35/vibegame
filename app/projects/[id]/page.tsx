@@ -11,6 +11,7 @@ import AttachTokenDialog from '@/components/launch-token-dialog';
 import EditProjectDialog from '@/components/edit-project-dialog';
 import DeleteProjectDialog from '@/components/delete-project-dialog';
 import ShareProjectButton from '@/components/share-project-button';
+import ClaimFeesDialog from '@/components/claim-fees-dialog';
 import { useEffect, useState } from 'react';
 import { useUser } from '@/lib/hooks/use-user';
 import { useRouter } from 'next/navigation';
@@ -217,6 +218,17 @@ export default function ProjectPage({
               />
               <ShareProjectButton projectId={project.id} projectName={project.name} />
             </div>
+            
+            {/* Fee claiming section - only show if token is launched */}
+            {project.ca && (
+              <div className="pt-4 border-t">
+                <ClaimFeesDialog 
+                  tokenMint={project.ca}
+                  tokenName={project.name}
+                />
+              </div>
+            )}
+            
             <div className="pt-4 border-t">
               <DeleteProjectDialog 
                 projectId={project.id} 
