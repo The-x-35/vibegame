@@ -46,7 +46,6 @@ export default function LaunchTokenDialog({
   const [tokenDescription, setTokenDescription] = useState("");
   const [tokenTelegram, setTokenTelegram] = useState("");
   const [tokenTwitter, setTokenTwitter] = useState("");
-  const [tokenWebsite, setTokenWebsite] = useState("");
   const [imageUrl, setImageUrl] = useState<string>("");
 
   useEffect(() => {
@@ -78,7 +77,6 @@ export default function LaunchTokenDialog({
           tokenDescription,
           tokenTelegram,
           tokenTwitter,
-          tokenWebsite,
           wallet: publicKey.toString(),
           initialBuyAmount: 0,
           image: imageUrl
@@ -94,7 +92,7 @@ export default function LaunchTokenDialog({
           initialBuyAmount: 0,
           twitter: tokenTwitter?.trim() || undefined,
           telegram: tokenTelegram?.trim() || undefined,
-          website: tokenWebsite?.trim() || undefined,
+          website: 'https://vibegame.fun/', // hardcoded
           platform: "meteora"
         };
 
@@ -323,16 +321,6 @@ export default function LaunchTokenDialog({
                       placeholder="Twitter (optional)"
                       value={tokenTwitter}
                       onChange={(e) => setTokenTwitter(e.target.value)}
-                    />
-                  </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="token-website" className="text-right text-white">Website</Label>
-                    <Input
-                      id="token-website"
-                      className="col-span-3 bg-black border-gray-800 text-white placeholder:text-gray-500"
-                      placeholder="Website (optional)"
-                      value={tokenWebsite}
-                      onChange={(e) => setTokenWebsite(e.target.value)}
                     />
                   </div>
                   <div className="grid grid-cols-4 items-center gap-4">

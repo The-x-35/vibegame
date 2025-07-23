@@ -106,27 +106,29 @@ function validateFormData(data: TokenFormData): ValidationError[] {
     }
   }
 
-  if (data.website && data.website.trim().length > 0) {
-    try {
-      new URL(data.website);
-    } catch {
-      errors.push({ field: 'website', message: 'Please enter a valid website URL' });
-    }
-  }
+  // Remove strict validation for website, twitter, and telegram
+  // Only check if present, not their format
+  // if (data.website && data.website.trim().length > 0) {
+  //   try {
+  //     new URL(data.website);
+  //   } catch {
+  //     errors.push({ field: 'website', message: 'Please enter a valid website URL' });
+  //   }
+  // }
 
-  if (data.twitter && data.twitter.trim().length > 0) {
-    const twitter = data.twitter.trim();
-    if (!twitter.startsWith('@') && !twitter.includes('twitter.com') && !twitter.includes('x.com')) {
-      errors.push({ field: 'twitter', message: 'Please enter a valid Twitter handle (e.g., @username)' });
-    }
-  }
+  // if (data.twitter && data.twitter.trim().length > 0) {
+  //   const twitter = data.twitter.trim();
+  //   if (!twitter.startsWith('@') && !twitter.includes('twitter.com') && !twitter.includes('x.com')) {
+  //     errors.push({ field: 'twitter', message: 'Please enter a valid Twitter handle (e.g., @username)' });
+  //   }
+  // }
 
-  if (data.telegram && data.telegram.trim().length > 0) {
-    const telegram = data.telegram.trim();
-    if (!telegram.startsWith('@') && !telegram.includes('t.me')) {
-      errors.push({ field: 'telegram', message: 'Please enter a valid Telegram handle (e.g., @username)' });
-    }
-  }
+  // if (data.telegram && data.telegram.trim().length > 0) {
+  //   const telegram = data.telegram.trim();
+  //   if (!telegram.startsWith('@') && !telegram.includes('t.me')) {
+  //     errors.push({ field: 'telegram', message: 'Please enter a valid Telegram handle (e.g., @username)' });
+  //   }
+  // }
 
   if (data.initialBuyAmount !== undefined && data.initialBuyAmount !== null) {
     if (typeof data.initialBuyAmount !== 'number' || data.initialBuyAmount < 0) {
