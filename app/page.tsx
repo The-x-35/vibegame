@@ -41,6 +41,16 @@ export default function Home() {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  // Shuffle array function
+  const shuffleArray = (array: Template[]) => {
+    const shuffled = [...array];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled;
+  };
+
   // Fetch templates with pagination
   const fetchTemplates = async (page: number) => {
     setIsTemplatesLoading(true);
@@ -48,7 +58,16 @@ export default function Home() {
       const response = await fetch(`/api/templates?limit=${PAGE_SIZE}&offset=${page * PAGE_SIZE}`);
       if (!response.ok) throw new Error(`Failed to fetch templates: ${response.statusText}`);
       const data = await response.json();
-      setTemplates((prev) => [...prev, ...data.templates]);
+      
+      if (page === 0) {
+        // For the first page, shuffle all templates
+        setTemplates(shuffleArray(data.templates));
+      } else {
+        // For subsequent pages, shuffle the new templates and add them
+        const shuffledNewTemplates = shuffleArray(data.templates);
+        setTemplates((prev) => [...prev, ...shuffledNewTemplates]);
+      }
+      
       setHasMore(data.hasMore);
     } catch (error) {
       console.error('Error fetching templates:', error);
