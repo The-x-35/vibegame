@@ -26,9 +26,9 @@ export default function Home() {
   const [isCloning, setIsCloning] = useState(false);
   const [templates, setTemplates] = useState<Template[]>([]);
   const [isTemplatesLoading, setIsTemplatesLoading] = useState(true);
-  const [page, setPage] = useState(0);
+  const [allTemplates, setAllTemplates] = useState<Template[]>([]);
+  const [displayedCount, setDisplayedCount] = useState(20);
   const [hasMore, setHasMore] = useState(true);
-  const PAGE_SIZE = 20;
   const loaderRef = useRef<HTMLDivElement | null>(null);
   const router = useRouter();
   const { user } = useUser();
@@ -51,24 +51,23 @@ export default function Home() {
     return shuffled;
   };
 
-  // Fetch templates with pagination
-  const fetchTemplates = async (page: number) => {
+  // Fetch all templates, shuffle them, and display first 20
+  const fetchAllTemplates = async () => {
     setIsTemplatesLoading(true);
     try {
-      const response = await fetch(`/api/templates?limit=${PAGE_SIZE}&offset=${page * PAGE_SIZE}`);
+      // Fetch all templates at once with a large limit
+      const response = await fetch(`/api/templates?limit=1000&offset=0`);
       if (!response.ok) throw new Error(`Failed to fetch templates: ${response.statusText}`);
       const data = await response.json();
       
-      if (page === 0) {
-        // For the first page, shuffle all templates
-        setTemplates(shuffleArray(data.templates));
-      } else {
-        // For subsequent pages, shuffle the new templates and add them
-        const shuffledNewTemplates = shuffleArray(data.templates);
-        setTemplates((prev) => [...prev, ...shuffledNewTemplates]);
-      }
+      // Shuffle all templates from the database
+      const shuffledTemplates = shuffleArray(data.templates);
+      setAllTemplates(shuffledTemplates);
       
-      setHasMore(data.hasMore);
+      // Display first 20 templates
+      setTemplates(shuffledTemplates.slice(0, 20));
+      setDisplayedCount(20);
+      setHasMore(shuffledTemplates.length > 20);
     } catch (error) {
       console.error('Error fetching templates:', error);
     } finally {
@@ -76,36 +75,57 @@ export default function Home() {
     }
   };
 
-  // Fetch first page on mount
+  // Load more templates when scrolling
+  const loadMoreTemplates = () => {
+    console.log('loadMoreTemplates called', { isTemplatesLoading, hasMore, displayedCount, allTemplatesLength: allTemplates.length });
+    
+    if (isTemplatesLoading || !hasMore) {
+      console.log('Early return:', { isTemplatesLoading, hasMore });
+      return;
+    }
+    
+    setIsTemplatesLoading(true);
+    const nextCount = Math.min(displayedCount + 20, allTemplates.length);
+    console.log('Loading more templates:', { displayedCount, nextCount, allTemplatesLength: allTemplates.length });
+    
+    setTemplates(allTemplates.slice(0, nextCount));
+    setDisplayedCount(nextCount);
+    setHasMore(nextCount < allTemplates.length);
+    setIsTemplatesLoading(false);
+  };
+
+  // Fetch all templates on mount
   useEffect(() => {
     setTemplates([]);
-    setPage(0);
+    setAllTemplates([]);
+    setDisplayedCount(20);
     setHasMore(true);
-    fetchTemplates(0);
+    fetchAllTemplates();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Infinite scroll: fetch more when loaderRef is visible
+  // Infinite scroll: load more when loaderRef is visible
   useEffect(() => {
-    if (!hasMore || isTemplatesLoading) return;
     const observer = new window.IntersectionObserver(
       (entries) => {
-        if (entries[0].isIntersecting) {
-          setPage((prevPage) => {
-            const nextPage = prevPage + 1;
-            fetchTemplates(nextPage);
-            return nextPage;
-          });
+        if (entries[0].isIntersecting && hasMore && !isTemplatesLoading) {
+          console.log('Loading more templates...', { displayedCount, allTemplatesLength: allTemplates.length });
+          loadMoreTemplates();
         }
       },
-      { threshold: 1 }
+      { threshold: 0.1, rootMargin: '100px' }
     );
-    if (loaderRef.current) observer.observe(loaderRef.current);
+    
+    if (loaderRef.current) {
+      observer.observe(loaderRef.current);
+    }
+    
     return () => {
-      if (loaderRef.current) observer.unobserve(loaderRef.current);
+      if (loaderRef.current) {
+        observer.unobserve(loaderRef.current);
+      }
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hasMore, isTemplatesLoading]);
+  }, [hasMore, isTemplatesLoading, displayedCount, allTemplates.length]);
 
   const handleCreateFreshGame = async () => {
     // If user is not authenticated, redirect to login
@@ -357,7 +377,7 @@ export default function Home() {
                     />
                   ))}
                 </div>
-                <div ref={loaderRef} style={{ height: 1 }} />
+                {hasMore && <div ref={loaderRef} style={{ height: 20, marginTop: 20 }} />}
                 {isTemplatesLoading && <div className="text-center py-4">Loading more...</div>}
                 {!hasMore && templates.length > 0 && (
                   <div className="text-center py-4 text-muted-foreground">No more templates to load.</div>
