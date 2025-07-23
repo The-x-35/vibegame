@@ -191,7 +191,7 @@ export default function ProjectPage({
             <span className="font-medium">Contract Address:</span> {project.ca || 'Not launched yet'}
           </p>
           <p className="text-sm text-muted-foreground">
-            <span className="font-medium">Status:</span> {project.is_public ? 'Launched' : 'Draft'}
+            <span className="font-medium">Status:</span> {project.ca ? 'Launched' : 'Draft'}
           </p>
 
           <div className="flex flex-col gap-4 mt-4">

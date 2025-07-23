@@ -11,7 +11,7 @@ export async function GET(request: Request) {
 
   try {
     const result = await query(
-      `SELECT id, wallet, url, name, description, is_public, created_at, updated_at
+      `SELECT id, wallet, url, name, description, ca, is_public, created_at, updated_at
        FROM projects
        WHERE wallet = $1
        ORDER BY created_at DESC;`,

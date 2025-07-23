@@ -11,7 +11,7 @@ export interface Project {
   url: string;
   name: string;
   description: string;
-  isPublic: boolean;
+  ca?: string | null;
   createdAt: Date;
   updatedAt: Date;
   thumbnail?: string;
@@ -48,7 +48,7 @@ export function ProjectCard({ project, onToggleVisibility, onClick }: ProjectCar
         />
         <div className="absolute inset-0 bg-black/10 group-hover:bg-black/0 transition-all duration-300" />
         <div className="absolute top-2 right-2">
-          {project.isPublic ? (
+          {project.ca ? (
             <div className="bg-green-500/20 text-green-500 text-xs px-2 py-1 rounded-full flex items-center">
               <Eye className="w-3 h-3 mr-1" />
               Launched

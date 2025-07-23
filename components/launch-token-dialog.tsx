@@ -46,7 +46,7 @@ export default function LaunchTokenDialog({
   const [tokenDescription, setTokenDescription] = useState("");
   const [tokenTelegram, setTokenTelegram] = useState("");
   const [tokenTwitter, setTokenTwitter] = useState("");
-  const [imageUrl, setImageUrl] = useState<string>("");
+  const [imageBase64, setImageBase64] = useState<string>("");
 
   useEffect(() => {
     if (isOpen) {
@@ -79,7 +79,7 @@ export default function LaunchTokenDialog({
           tokenTwitter,
           wallet: publicKey.toString(),
           initialBuyAmount: 0,
-          image: imageUrl
+          image: imageBase64
         });
 
         // Build request body expected by /api/launch
@@ -88,7 +88,7 @@ export default function LaunchTokenDialog({
           tokenName: tokenName,
           tokenTicker: tokenTicker,
           description: tokenDescription.slice(0, 500),
-          image: imageUrl,
+          image: imageBase64,
           initialBuyAmount: 0,
           twitter: tokenTwitter?.trim() || undefined,
           telegram: tokenTelegram?.trim() || undefined,
@@ -324,14 +324,24 @@ export default function LaunchTokenDialog({
                     />
                   </div>
                   <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="token-image" className="text-right text-white">Token Image URL</Label>
+                    <Label htmlFor="token-image" className="text-right text-white">Token Image</Label>
                     <Input
                       id="token-image"
                       className="col-span-3 bg-black border-gray-800 text-white placeholder:text-gray-500"
-                      type="url"
-                      placeholder="https://example.com/image.png"
-                      value={imageUrl}
-                      onChange={e => setImageUrl(e.target.value)}
+                      type="file"
+                      accept="image/*"
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          const reader = new FileReader();
+                          reader.onloadend = () => {
+                            setImageBase64(reader.result as string);
+                          };
+                          reader.readAsDataURL(file);
+                        } else {
+                          setImageBase64("");
+                        }
+                      }}
                       required
                     />
                   </div>
@@ -348,7 +358,7 @@ export default function LaunchTokenDialog({
               type="submit" 
               disabled={isLoading || 
                 (!isLaunchMode && !manualCa.trim()) || 
-                (isLaunchMode && (!connected || !tokenName || !tokenTicker || !tokenDescription || !imageUrl))
+                (isLaunchMode && (!connected || !tokenName || !tokenTicker || !tokenDescription || !imageBase64))
               }
             >
               {isLoading ? "Processing..." : (isLaunchMode ? "Launch Token" : "Attach Token")}

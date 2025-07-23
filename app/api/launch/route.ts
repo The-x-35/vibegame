@@ -139,10 +139,46 @@ function validateFormData(data: TokenFormData): ValidationError[] {
   return errors;
 }
 
+// Add Pinata upload utility
+async function uploadBase64ToPinata(base64Data: string, filename: string = 'image.png'): Promise<string> {
+  const pinataGateway = process.env.PINATA_GATEWAY || "maroon-leading-sparrow-392.mypinata.cloud";
+  const pinataJwt = process.env.PINATA_JWT;
+  if (!pinataJwt) throw new Error('PINATA_JWT env variable missing');
+
+  // Extract the image type and actual base64 data
+  const match = base64Data.match(/^data:image\/(png|jpeg|jpg);base64,(.+)$/);
+  if (!match) {
+    throw new Error('Invalid base64 image data or unsupported image type. Supported types: png, jpeg, jpg.');
+  }
+  const imageType = match[1];
+  const base64String = match[2];
+  const buffer = Buffer.from(base64String, 'base64');
+
+  // Prepare form data
+  const formData = new FormData();
+  const dynamicFilename = filename.replace(/\.\w+$/, `.${imageType}`);
+  formData.append('file', new Blob([buffer], { type: `image/${imageType}` }), dynamicFilename);
+
+  const res = await fetch('https://api.pinata.cloud/pinning/pinFileToIPFS', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${pinataJwt}`
+    },
+    body: formData as any
+  });
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(`Pinata upload failed: ${err}`);
+  }
+  const data = await res.json();
+  if (!data.IpfsHash) throw new Error('Pinata did not return IpfsHash');
+  return `https://${pinataGateway}/ipfs/${data.IpfsHash}`;
+}
+
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.json() as TokenFormData;
-    console.log('🔔 Received /api/launch request with body:', formData);
+    console.log('🔔 Received /api/launch request with body:', { ...formData, image: '[base64 omitted]' });
 
     // Validate the form data
     const validationErrors = validateFormData(formData);
@@ -157,8 +193,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Image is expected to be a direct URL – no Pinata upload.
-    const imageUrl = formData.image as string;
+    // Always expect base64 image, upload to Pinata
+    let imageUrl: string;
+    if (typeof formData.image === 'string' && formData.image.startsWith('data:image/')) {
+      imageUrl = await uploadBase64ToPinata(formData.image, 'token-image.png');
+    } else {
+      throw new Error('Image must be a base64-encoded string');
+    }
 
     // Ensure we have a base URL configured
     if (!MINTER_API_BASE_URL) {
@@ -249,8 +290,8 @@ export async function POST(request: NextRequest) {
     // Store token data in database
     const result = await query(
       `INSERT INTO token_launches (
-        token_address, token_name, token_ticker, description, website, twitter, telegram, image_url
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+        token_address, token_name, token_ticker, description, website, twitter, telegram, image_url, is_launched
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
       RETURNING *`,
       [
         responseData.mint,
@@ -260,7 +301,8 @@ export async function POST(request: NextRequest) {
         formData.website?.trim() || null,
         formData.twitter?.trim() || null,
         formData.telegram?.trim() || null,
-        imageUrl
+        imageUrl,
+        true // is_launched
       ]
     );
 

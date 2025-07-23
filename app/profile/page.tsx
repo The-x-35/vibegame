@@ -40,7 +40,7 @@ export default function ProfilePage() {
             url: p.url,
             name: p.name,
             description: p.description,
-            isPublic: p.is_public,
+            ca: p.ca,
             createdAt: new Date(p.created_at),
             updatedAt: new Date(p.updated_at),
             thumbnail: undefined,
@@ -55,31 +55,10 @@ export default function ProfilePage() {
     }
   }, [user, isLoading]);
 
-  const handleToggleVisibility = async (id: string, isPublic: boolean) => {
-    try {
-      const response = await fetch('/api/projects', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id, isPublic }),
-      });
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to update project visibility');
-      }
-      const updated = data.project;
-      setProjects(prev => prev.map(p =>
-        p.id === updated.id
-          ? { ...p, isPublic: updated.is_public, updatedAt: new Date(updated.updated_at) }
-          : p
-      ));
-    } catch (err) {
-      console.error('Failed to update project visibility', err);
-      alert(err instanceof Error ? err.message : 'Error updating project');
-    }
-  };
+  // Optionally, you can update this to handle ca changes if needed, or remove if not required
 
-  const getPublicProjects = () => projects.filter(p => p.isPublic);
-  const getPrivateProjects = () => projects.filter(p => !p.isPublic);
+  const getPublicProjects = () => projects.filter(p => p.ca);
+  const getPrivateProjects = () => projects.filter(p => !p.ca);
 
   // Show loading state if checking user authentication
   if (isLoading) {
@@ -136,7 +115,6 @@ export default function ProfilePage() {
                 <ProjectCard
                   key={project.id}
                   project={project}
-                  onToggleVisibility={handleToggleVisibility}
                   onClick={() => router.push(`/projects/${project.id}`)}
                 />
               ))}
@@ -171,7 +149,6 @@ export default function ProfilePage() {
                 <ProjectCard
                   key={project.id}
                   project={project}
-                  onToggleVisibility={handleToggleVisibility}
                   onClick={() => router.push(`/projects/${project.id}`)}
                 />
               ))}
@@ -206,7 +183,6 @@ export default function ProfilePage() {
                 <ProjectCard
                   key={project.id}
                   project={project}
-                  onToggleVisibility={handleToggleVisibility}
                   onClick={() => router.push(`/projects/${project.id}`)}
                 />
               ))}
