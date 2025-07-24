@@ -3,9 +3,11 @@ import { NextRequest } from "next/server";
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import { verifyToken } from "@/lib/auth";
 
+// Configure maximum duration for Vercel Pro plan (up to 800s with fluid compute)
+export const maxDuration = 800; // 5 minutes - safe for Pro plan
+
 // Configure body size limit for this route
 export const dynamic = 'force-dynamic';
-export const maxDuration = 300; // 5 minutes timeout
 
 const s3 = new S3Client({
     region: process.env.AWS_REGION!,
