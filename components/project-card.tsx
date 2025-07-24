@@ -24,11 +24,8 @@ interface ProjectCardProps {
 }
 
 export function ProjectCard({ project, onToggleVisibility, onClick }: ProjectCardProps) {
-
-  // Preview embed URL
-  const embedUrl = `${ALPHA_GUI.EMBED_URL}?project_url=${encodeURIComponent(
-    project.url
-  )}`;
+  const defaultThumbnail = "/og/og1.png";
+  const displayThumbnail = project.thumbnail || defaultThumbnail;
 
   return (
     <Card
@@ -39,12 +36,16 @@ export function ProjectCard({ project, onToggleVisibility, onClick }: ProjectCar
       )}
     >
       <div className="relative aspect-video bg-muted overflow-hidden">
-        <iframe
-          src={embedUrl}
-          title={project.name}
-          className="w-full h-full"
-          frameBorder="0"
-          loading="lazy"
+        <img
+          src={displayThumbnail}
+          alt={project.name}
+          className="w-full h-full object-cover"
+          onError={(e) => {
+            const target = e.target as HTMLImageElement;
+            if (target.src !== defaultThumbnail) {
+              target.src = defaultThumbnail;
+            }
+          }}
         />
         <div className="absolute inset-0 bg-black/10 group-hover:bg-black/0 transition-all duration-300" />
         <div className="absolute top-2 right-2">

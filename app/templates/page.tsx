@@ -77,8 +77,8 @@ export default function TemplatesPage() {
         if (!response.ok) {
           throw new Error(`Failed to fetch templates: ${response.statusText}`);
         }
-        const data: GameTemplate[] = await response.json();
-        setTemplates(data);
+        const data = await response.json();
+        setTemplates(data.templates);
       } catch (error) {
         console.error(error);
       } finally {

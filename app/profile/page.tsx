@@ -43,7 +43,7 @@ export default function ProfilePage() {
             ca: p.ca,
             createdAt: new Date(p.created_at),
             updatedAt: new Date(p.updated_at),
-            thumbnail: undefined,
+            thumbnail: p.thumbnail,
           }));
           setProjects(fetched);
         } catch (err) {
