@@ -3,6 +3,10 @@ import { NextRequest } from "next/server";
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import { verifyToken } from "@/lib/auth";
 
+// Configure body size limit for this route
+export const dynamic = 'force-dynamic';
+export const maxDuration = 300; // 5 minutes timeout
+
 const s3 = new S3Client({
     region: process.env.AWS_REGION!,
     credentials: {

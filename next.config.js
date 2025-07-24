@@ -8,9 +8,12 @@ const nextConfig = {
   images: { unoptimized: true },
   api: {
     bodyParser: {
-      sizeLimit: '500mb',
+      sizeLimit: '50mb',
     },
-    responseLimit: '500mb',
+    responseLimit: '50mb',
+  },
+  experimental: {
+    serverComponentsExternalPackages: ['@aws-sdk/client-s3'],
   },
   typescript: {
     ignoreDuringBuilds: true,
