@@ -151,7 +151,7 @@ export async function PATCH(
                description = COALESCE($3, description),
                is_public = COALESCE($4, is_public),
                ca = COALESCE($5, ca),
-               thumbnail = COALESCE($6, thumbnail), // Update thumbnail
+               thumbnail = COALESCE($6, thumbnail),
                updated_at = NOW()
            WHERE id = $7
            RETURNING *`,
