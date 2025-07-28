@@ -38,26 +38,26 @@ export default function Footer() {
             <h3 className="font-medium text-base mb-2">Legal</h3>
             <ul className="space-y-2">
               <li>
-                <Link href="/terms" className="text-muted-foreground hover:text-foreground transition-colors">
-                  Terms of Service
-                </Link>
-              </li>
-              <li>
-                <Link href="/privacy" className="text-muted-foreground hover:text-foreground transition-colors">
+                <Link href="https://www.sendarcade.fun/privacy-policy" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-foreground transition-colors">
                   Privacy Policy
                 </Link>
               </li>
               <li>
-                <Link href="/cookies" className="text-muted-foreground hover:text-foreground transition-colors">
-                  Cookie Policy
+                <Link href="https://www.sendarcade.fun/terms-and-conditions" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-foreground transition-colors">
+                  Terms and Conditions
+                </Link>
+              </li>
+              <li>
+                <Link href="https://www.sendarcade.fun/copyright" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-foreground transition-colors">
+                  Copyright
                 </Link>
               </li>
             </ul>
           </div>
         </div>
         
-        <div className="mt-8 pt-8 border-t text-center text-sm text-muted-foreground">
-          <p>&copy; {new Date().getFullYear()} VibeGame. All rights reserved.</p>
+        <div className="mt-8 pt-8 border-t flex justify-between items-center text-sm text-muted-foreground">
+          <p>&copy; 2025 Send Arcade Pte Ltd. All rights reserved.</p>
         </div>
       </div>
     </footer>

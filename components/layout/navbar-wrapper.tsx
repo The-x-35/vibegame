@@ -36,6 +36,7 @@ export function NavbarWrapper({ children }: { children: React.ReactNode }) {
       <main className={`flex-1 overflow-auto pb-16`}>
         {children}
       </main>
+      {!isComingSoonPage && <Footer />}
     </>
   );
 } 

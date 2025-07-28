@@ -57,7 +57,7 @@ export default function GamesPage() {
             Public Games
           </h1>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            Explore games created by the community. Find inspiration and play amazing creations.
+          Explore & play games created by community folks like you and their associated coins.
           </p>
         </div>
         
