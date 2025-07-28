@@ -3,9 +3,6 @@
 import { notFound } from 'next/navigation';
 import { query } from '@/lib/db';
 import { ALPHA_GUI } from '@/global/constant';
-import { Button } from '@/components/ui/button';
-import Link from 'next/link';
-import { Rocket } from 'lucide-react';
 import SuggestionCard from '@/components/suggestion-card';
 import { S3IframeHandler } from '@/components/s3-iframe-handler';
 import { useEffect, useState } from 'react';
@@ -128,16 +125,6 @@ export default function EditorPage({
   return (
     <div className="h-[calc(100vh-64px)] flex flex-col bg-background" style={{ backgroundImage: 'url(/bg.svg)', backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat', backgroundAttachment: 'fixed' }}>
       <S3IframeHandler currentProjectUrl={project.url} />
-      
-      {/* Top bar with deploy button - positioned below navbar */}
-      <div className="flex justify-end p-4 bg-background/95 backdrop-blur-sm border-b border-border/50">
-        <Button asChild>
-          <Link href={`/projects/${project.id}`}>
-            <Rocket className="mr-2 h-4 w-4" />
-            Deploy Project
-          </Link>
-        </Button>
-      </div>
       
       {/* Full-screen iframe with proper editor dimensions */}
       <div className="flex-1 w-full min-h-[768px]">

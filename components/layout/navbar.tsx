@@ -5,14 +5,14 @@ import { useUser } from "@/lib/hooks/use-user";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/ui/logo";
 import { useState, useEffect } from "react";
-import { Menu, X, Code, GamepadIcon, LayoutDashboardIcon as DashboardIcon, LogOut } from "lucide-react";
+import { Menu, X, Code, GamepadIcon, LayoutDashboardIcon as DashboardIcon, LogOut, Rocket } from "lucide-react";
 import { Connection, LAMPORTS_PER_SOL, PublicKey } from "@solana/web3.js";
 import { API_ENDPOINTS } from "@/global/constant";
 import { useWallet } from '@solana/wallet-adapter-react';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import '@solana/wallet-adapter-react-ui/styles.css';
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 
 export default function Navbar() {
   const { user, isLoading } = useUser();
@@ -22,6 +22,11 @@ export default function Navbar() {
   const [copied, setCopied] = useState(false);
   const [balance, setBalance] = useState<number | null>(null);
   const router = useRouter();
+  const pathname = usePathname();
+
+  // Check if we're on an editor page and extract project ID
+  const isEditorPage = pathname?.startsWith('/editor/');
+  const projectId = isEditorPage ? pathname.split('/editor/')[1] : null;
 
   useEffect(() => {
     const handleScroll = () => {
@@ -143,6 +148,16 @@ export default function Navbar() {
                   </Link>
                 </Button>
               ))}
+
+              {/* Deploy Project button for editor pages */}
+              {isEditorPage && projectId && (
+                <Button asChild className="ml-4">
+                  <Link href={`/projects/${projectId}`}>
+                    <Rocket className="mr-2 h-4 w-4" />
+                    Deploy Project
+                  </Link>
+                </Button>
+              )}
             </div>
 
             {/* Wallet / user section */}
@@ -231,6 +246,20 @@ export default function Navbar() {
                 </Link>
               </Button>
             ))}
+
+            {/* Deploy Project button for editor pages in mobile */}
+            {isEditorPage && projectId && (
+              <Button 
+                className="justify-start" 
+                asChild
+                onClick={() => setIsOpen(false)}
+              >
+                <Link href={`/projects/${projectId}`} className="flex items-center font-['Matrix_Sans_Video']">
+                  <Rocket className="mr-2 h-4 w-4" />
+                  Deploy Project
+                </Link>
+              </Button>
+            )}
           </div>
           
           <div className="mt-auto">
