@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
 import { useUser } from "@/lib/hooks/use-user";
 import { jwtDecode } from 'jwt-decode';
+import { uploadTemplateFile } from "@/lib/utils/chunked-upload";
 
 export default function AddTemplatePage() {
   const [name, setName] = useState("");
@@ -81,21 +82,30 @@ export default function AddTemplatePage() {
 
     setIsSubmitting(true);
     try {
-      const formData = new FormData();
-      formData.append('name', name);
-      formData.append('description', description);
-      formData.append('file', file);
+      // Upload file using chunked upload
+      console.log('🚀 Starting template upload with chunked upload...');
+      const uploadResult = await uploadTemplateFile(
+        file,
+        name,
+        (progress) => {
+          console.log(`📊 Upload progress: ${Math.round(progress * 100)}%`);
+        }
+      );
 
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 300000); // 5 minute timeout
+      console.log('✅ File uploaded successfully:', uploadResult.url);
 
+      // Create template record in database
       const response = await fetch('/api/templates', {
         method: 'POST',
-        body: formData,
-        signal: controller.signal,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name,
+          description,
+          url: uploadResult.url,
+        }),
       });
-
-      clearTimeout(timeoutId);
 
       if (!response.ok) {
         const error = await response.json();

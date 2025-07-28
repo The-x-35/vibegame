@@ -3,6 +3,7 @@
 import { useEffect } from 'react';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { loginWithWallet, getAuthToken } from '@/lib/auth-utils';
+import { uploadProjectFile } from '@/lib/utils/chunked-upload';
 
 interface S3IframeHandlerProps {
     currentProjectUrl?: string;
@@ -126,45 +127,24 @@ export function S3IframeHandler({ currentProjectUrl }: S3IframeHandlerProps) {
                 }
 
                 // Prepare headers (same as other components)
-                const headers: Record<string, string> = {
-                    'Content-Type': 'application/json',
-                };
-                
-                // Add JWT token if available
-                if (token) {
-                    headers['Authorization'] = `Bearer ${token}`;
-                }
+                console.log('📤 Starting chunked upload with token:', token ? 'present' : 'missing');
 
-                console.log('📤 Sending request to /api/upload/get-s3-link with token:', token ? 'present' : 'missing');
-
-                // Direct upload with file data (like template upload)
-                const uploadResponse = await fetch('/api/upload/get-s3-link', {
-                    method: 'POST',
-                    headers,
-                    body: JSON.stringify({
-                        filename: filename || 'project.sb3',
-                        userId: publicKey.toString(),
-                        fileId: currentFileId, // This will update the existing file
-                        fileData: fileData // Send the file data directly
-                    })
-                });
-
-                console.log('📥 Upload response status:', uploadResponse.status);
-
-                if (!uploadResponse.ok) {
-                    const errorData = await uploadResponse.json();
-                    console.error('❌ Upload error:', errorData);
-                    
-                    if (uploadResponse.status === 401) {
-                        throw new Error('Authentication failed. Please refresh the page and reconnect your wallet.');
+                // Use chunked upload instead of direct upload
+                const uploadResult = await uploadProjectFile(
+                    fileData,
+                    filename || 'project.sb3',
+                    publicKey.toString(),
+                    currentFileId,
+                    token!,
+                    (progress) => {
+                        console.log(`📊 Upload progress: ${Math.round(progress * 100)}%`);
                     }
-                    
-                    throw new Error(`Failed to upload file: ${errorData.error || uploadResponse.statusText}`);
-                }
+                );
 
-                const { success, key, url } = await uploadResponse.json();
-                console.log('✅ Upload successful, S3 Key:', key);
-                console.log('🔗 File URL:', url);
+                console.log('✅ Chunked upload successful, S3 Key:', uploadResult.key);
+                console.log('🔗 File URL:', uploadResult.url);
+
+                const { success, key, url } = uploadResult;
 
                 console.log('✅ Successfully saved SB3 file to S3');
                 const result = { 

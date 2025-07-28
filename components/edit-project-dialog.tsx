@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Edit } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useWallet } from '@solana/wallet-adapter-react';
+import { uploadThumbnailFile } from "@/lib/utils/chunked-upload";
 
 interface EditProjectDialogProps {
   projectId: string;
@@ -53,20 +54,18 @@ export default function EditProjectDialog({
         throw new Error('Please connect your wallet');
       }
 
-      // Handle thumbnail upload
+      // Handle thumbnail upload using chunked upload
       let thumbnailUrl = null;
       if (thumbnail) {
-        const formData = new FormData();
-        formData.append('file', thumbnail);
-        const uploadResponse = await fetch('/api/upload-thumbnail', {
-          method: 'POST',
-          body: formData,
-        });
-        if (!uploadResponse.ok) {
-          throw new Error('Failed to upload thumbnail');
-        }
-        const uploadData = await uploadResponse.json();
-        thumbnailUrl = uploadData.url;
+        console.log('🖼️ Starting thumbnail upload with chunked upload...');
+        const uploadResult = await uploadThumbnailFile(
+          thumbnail,
+          (progress) => {
+            console.log(`📊 Thumbnail upload progress: ${Math.round(progress * 100)}%`);
+          }
+        );
+        thumbnailUrl = uploadResult.url;
+        console.log('✅ Thumbnail uploaded successfully:', thumbnailUrl);
       }
 
       console.log('Request body:', {

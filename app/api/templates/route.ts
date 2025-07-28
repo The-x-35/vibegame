@@ -34,41 +34,62 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: Request) {
   try {
-    const formData = await req.formData();
-    const name = formData.get('name') as string;
-    const description = formData.get('description') as string;
-    const file = formData.get('file') as File;
+    const contentType = req.headers.get('content-type');
+    
+    // Handle both FormData (legacy) and JSON (chunked upload) requests
+    if (contentType?.includes('application/json')) {
+      // New chunked upload flow - file already uploaded, just create DB record
+      const { name, description, url } = await req.json();
 
-    if (!name || !description || !file) {
-      return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+      if (!name || !description || !url) {
+        return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+      }
+
+      // Add template to database
+      const result = await query(
+        'INSERT INTO templates (name, url, description, thumbnail) VALUES ($1, $2, $3, $4) RETURNING id, name, url, description, thumbnail',
+        [name, url, description, '/og/og1.png']
+      );
+
+      return NextResponse.json(result.rows[0], { status: 201 });
+    } else {
+      // Legacy FormData flow - direct upload
+      const formData = await req.formData();
+      const name = formData.get('name') as string;
+      const description = formData.get('description') as string;
+      const file = formData.get('file') as File;
+
+      if (!name || !description || !file) {
+        return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+      }
+
+      if (!file.name.endsWith('.sb3')) {
+        return NextResponse.json({ error: "File must be a .sb3 file" }, { status: 400 });
+      }
+
+      // Upload file to S3
+      const fileBuffer = await file.arrayBuffer();
+      const key = `templates/${name.replace(/\s+/g, '')}-${Date.now()}.sb3`;
+
+      await s3.send(new PutObjectCommand({
+        Bucket: process.env.S3_BUCKET_NAME!,
+        Key: key,
+        Body: Buffer.from(fileBuffer),
+        ContentType: 'binary/octet-stream',
+        ACL: 'public-read',
+      }));
+
+      // Construct the public URL
+      const url = `https://${process.env.S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`;
+
+      // Add template to database
+      const result = await query(
+        'INSERT INTO templates (name, url, description, thumbnail) VALUES ($1, $2, $3, $4) RETURNING id, name, url, description, thumbnail',
+        [name, url, description, '/og/og1.png']
+      );
+
+      return NextResponse.json(result.rows[0], { status: 201 });
     }
-
-    if (!file.name.endsWith('.sb3')) {
-      return NextResponse.json({ error: "File must be a .sb3 file" }, { status: 400 });
-    }
-
-    // Upload file to S3
-    const fileBuffer = await file.arrayBuffer();
-    const key = `templates/${name.replace(/\s+/g, '')}-${Date.now()}.sb3`;
-
-    await s3.send(new PutObjectCommand({
-      Bucket: process.env.S3_BUCKET_NAME!,
-      Key: key,
-      Body: Buffer.from(fileBuffer),
-      ContentType: 'binary/octet-stream',
-      ACL: 'public-read',
-    }));
-
-    // Construct the public URL
-    const url = `https://${process.env.S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`;
-
-    // Add template to database
-    const result = await query(
-      'INSERT INTO templates (name, url, description, thumbnail) VALUES ($1, $2, $3, $4) RETURNING id, name, url, description, thumbnail',
-              [name, url, description, '/og/og1.png']
-    );
-
-    return NextResponse.json(result.rows[0], { status: 201 });
   } catch (error) {
     console.error('Error creating template:', error);
     return NextResponse.json({ error: "Failed to create template" }, { status: 500 });

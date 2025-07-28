@@ -4,6 +4,9 @@
     "app/api/upload/get-s3-link/route.ts": {
       "maxDuration": 800
     },
+    "app/api/upload/chunked/route.ts": {
+      "maxDuration": 800
+    },
     "app/api/**/*.ts": {
       "maxDuration": 300
     }
