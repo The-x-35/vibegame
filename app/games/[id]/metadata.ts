@@ -13,7 +13,7 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
       description: "Build and share games using blocks on Solana.",
       siteName: "VibeGame",
       images: [{
-        url: `https://vibegame.fun/og/og2.png`,
+        url: `https://vibegame.fun/og/og1.png`,
         width: 1200,
         height: 630,
         alt: "VibeGame",
@@ -23,7 +23,7 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
       card: "summary_large_image",
       title: "VibeGame - Play and Share Games on Solana",
       description: "Build and share games using blocks on Solana.",
-      images: [`https://vibegame.fun/og/og2.png`],
+      images: [`https://vibegame.fun/og/og1.png`],
     },
     metadataBase: new URL("https://vibegame.fun"),
   };
