@@ -5,9 +5,10 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useWallet } from '@solana/wallet-adapter-react';
-import { Transaction, VersionedTransaction } from '@solana/web3.js';
+import { Transaction, VersionedTransaction, Connection } from '@solana/web3.js';
 import { toast } from 'sonner';
 import { DollarSign, TrendingUp, Wallet } from 'lucide-react';
+import { API_ENDPOINTS } from '@/global/constant';
 
 interface FeeData {
   isMigrated: boolean;
@@ -31,6 +32,9 @@ interface ClaimFeesDialogProps {
   tokenMint: string;
   tokenName: string;
 }
+
+// Initialize Solana connection
+const solanaConnection = new Connection(API_ENDPOINTS.SOLANA_RPC_ENDPOINT, 'confirmed');
 
 export default function ClaimFeesDialog({ tokenMint, tokenName }: ClaimFeesDialogProps) {
   const { publicKey, signTransaction } = useWallet();
@@ -79,7 +83,8 @@ export default function ClaimFeesDialog({ tokenMint, tokenName }: ClaimFeesDialo
 
     setIsClaiming(true);
     try {
-      // Get the claim transaction
+      // Step 1: Get unsigned transaction from API
+      console.log('🌐 Requesting unsigned claim transaction...');
       const response = await fetch('/api/fee/claim-creator-fee', {
         method: 'POST',
         headers: {
@@ -103,40 +108,47 @@ export default function ClaimFeesDialog({ tokenMint, tokenName }: ClaimFeesDialo
         throw new Error('No transaction returned from claim API');
       }
 
-      // Deserialize and sign the transaction
+      // Step 2: Sign and submit transaction
+      console.log('📝 Deserializing and signing transaction...');
       const txBuffer = Buffer.from(txBase64, 'base64');
       let transaction: Transaction | VersionedTransaction;
+      
       try {
         transaction = VersionedTransaction.deserialize(Uint8Array.from(txBuffer));
+        
+        // Update recent blockhash for VersionedTransaction
+        transaction.message.recentBlockhash = (await solanaConnection.getLatestBlockhash({
+          commitment: "confirmed",
+        })).blockhash;
+        
       } catch (e) {
-        console.warn('Falling back to legacy Transaction deserialisation');
+        console.warn('Falling back to legacy Transaction deserialization');
         transaction = Transaction.from(txBuffer);
       }
 
       const signedTx = await signTransaction(transaction);
-      const signedTxBase64 = Buffer.from(signedTx.serialize() as Uint8Array).toString('base64');
 
-      // Submit the signed transaction
-      const submitResponse = await fetch('/api/sign', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          mintAddress: tokenMint,
-          tx: signedTxBase64,
-          tokenTicker: tokenName,
-          username: publicKey.toString(),
-        }),
+      // Step 3: Submit signed transaction directly to Solana network
+      console.log('📤 Submitting signed transaction to Solana...');
+      const signature = await solanaConnection.sendRawTransaction(signedTx.serialize() as Uint8Array, {
+        preflightCommitment: 'processed'
+      });
+      
+      // Wait for confirmation
+      console.log('⏳ Waiting for transaction confirmation...');
+      const latestBlockhash = await solanaConnection.getLatestBlockhash();
+      await solanaConnection.confirmTransaction({
+        signature,
+        blockhash: latestBlockhash.blockhash,
+        lastValidBlockHeight: latestBlockhash.lastValidBlockHeight
       });
 
-      if (!submitResponse.ok) {
-        const errorData = await submitResponse.json();
-        throw new Error(errorData.message || 'Failed to submit claim transaction');
-      }
-
+      console.log('✅ Successfully claimed fees:', signature);
       toast.success('Fees claimed successfully!');
       
       // Refresh fee data
       await fetchFees();
+
     } catch (error) {
       console.error('Error claiming fees:', error);
       toast.error(`Failed to claim fees: ${error instanceof Error ? error.message : 'Unknown error'}`);
