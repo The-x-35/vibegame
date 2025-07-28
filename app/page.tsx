@@ -2,7 +2,7 @@
 
 import { BuildInput } from "@/components/layout/build-input";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Code, Sparkles, Zap, Gamepad2, Star, Users, Copy } from "lucide-react";
+import { ArrowRight, Sparkles, Zap, Gamepad2, Star, Users, Copy } from "lucide-react";
 import Link from "next/link";
 import { ALPHA_GUI } from "@/global/constant";
 import { useState, useEffect, useRef } from "react";
@@ -127,49 +127,7 @@ export default function Home() {
     };
   }, [hasMore, isTemplatesLoading, displayedCount, allTemplates.length]);
 
-  const handleCreateFreshGame = async () => {
-    // If user is not authenticated, redirect to login
-    if (!user) {
-      setVisible(true);
-      toast({
-        title: 'Connect Wallet',
-        description: 'Please connect your wallet to continue.',
-        variant: 'destructive',
-      });
-      return;
-    }
 
-    setIsCloning(true);
-    try {
-      // Clone the "New" template (ID: 6c489184-69ab-402d-b335-b70a03d38349)
-      const response = await fetch('/api/projects/clone', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          projectId: '6c489184-69ab-402d-b335-b70a03d38349',
-          name: 'My VibeGame',
-          description: 'A fresh new game created with VibeGame',
-          isPublic: false,
-          wallet: user.wallet,
-        }),
-      });
-
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to create fresh game');
-      }
-
-      const projectId = data.project.id;
-      router.push(`/editor/${projectId}`);
-    } catch (err) {
-      console.error(err);
-      alert(err instanceof Error ? err.message : 'Error creating fresh game');
-    } finally {
-      setIsCloning(false);
-    }
-  };
 
   const handleCloneTemplate = async (template: Template) => {
     // If user is not authenticated, redirect to login
@@ -310,7 +268,7 @@ export default function Home() {
           </h1>
           
           <p className="text-sm md:text-base text-muted-foreground mb-8 max-w-xl mx-auto font-matrix-sans-regular">
-          CREATE AND SHARE your blockchain game ideas into reality without writing a single line of code.
+          Build your own games with drag and drop. No code needed.
           </p>
         </div>
         
@@ -340,16 +298,6 @@ export default function Home() {
             >
               {isCloning ? 'Creating...' : 'Edit Random Template'}
               <ArrowRight className="ml-2 h-3 w-3 group-hover:translate-x-1 transition-transform" />
-            </Button>
-            <Button 
-              size="default" 
-              variant="outline" 
-              className="group font-matrix-sans-regular text-sm" 
-              onClick={handleCreateFreshGame}
-              disabled={isCloning}
-            >
-              {isCloning ? 'Creating...' : 'Create Fresh Game'}
-              <Code className="ml-2 h-3 w-3 group-hover:scale-110 transition-transform" />
             </Button>
           </div>
                 </div>

@@ -84,7 +84,7 @@ export default function Navbar() {
   }, [publicKey]);
 
   const navLinks = [
-    { href: "/games", label: "Games", icon: <GamepadIcon className="w-4 h-4 mr-2" /> },
+    { href: "/games", label: "Games & Coins", icon: <GamepadIcon className="w-4 h-4 mr-2" /> },
   ];
 
   const authenticatedLinks: { href: string; label: string; icon: JSX.Element }[] = [
