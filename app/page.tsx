@@ -131,6 +131,7 @@ export default function Home() {
 
   const handleCloneTemplate = async (template: Template) => {
     // If user is not authenticated, redirect to login
+    console.log("[handleCloneTemplate] user", user);
     if (!user) {
       setVisible(true);
       toast({

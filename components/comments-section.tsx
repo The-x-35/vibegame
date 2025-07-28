@@ -8,7 +8,8 @@ import { useToast } from '@/components/ui/use-toast';
 import { formatDistanceToNow, parseISO } from 'date-fns';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { useWalletModal } from '@solana/wallet-adapter-react-ui';
-import { getAuthToken, loginWithWallet } from '@/lib/auth-utils';
+import { getAuthToken } from '@/lib/auth-utils';
+import { useUser } from '@/lib/hooks/use-user';
 
 interface Comment {
   id: number;
@@ -29,13 +30,13 @@ export function CommentsSection({ projectId, onCommentAdded }: CommentsSectionPr
   const { toast } = useToast();
   const { connected, publicKey } = useWallet();
   const { setVisible } = useWalletModal();
-
+  const { refreshUser } = useUser();
   // Auto-login when wallet connects
   useEffect(() => {
     const handleWalletLogin = async () => {
       if (connected && publicKey && !getAuthToken()) {
         try {
-          await loginWithWallet(publicKey.toString());
+          await refreshUser();
           console.log('Auto-login successful in comments');
         } catch (error) {
           console.error('Auto-login failed in comments:', error);

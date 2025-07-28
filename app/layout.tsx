@@ -4,6 +4,7 @@ import { Inter } from 'next/font/google';
 import { ThemeProvider } from '@/components/theme-provider';
 import { PrivyProvider } from '@/components/privy-provider';
 import { WalletContextProvider } from '@/components/wallet-provider';
+import { UserProvider } from '@/lib/contexts/user-context';
 import { NavbarWrapper } from '@/components/layout/navbar-wrapper';
 
 const inter = Inter({ subsets: ['latin'] });
@@ -50,11 +51,13 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <WalletContextProvider>
-            <PrivyProvider>
-              <NavbarWrapper>
-                {children}
-              </NavbarWrapper>
-            </PrivyProvider>
+            <UserProvider>
+              <PrivyProvider>
+                <NavbarWrapper>
+                  {children}
+                </NavbarWrapper>
+              </PrivyProvider>
+            </UserProvider>
           </WalletContextProvider>
         </ThemeProvider>
       </body>

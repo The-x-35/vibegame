@@ -18,7 +18,8 @@ import { JUP_ULTRA_API } from '@/global/constant';
 import { getGameUrl } from '@/lib/utils';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 import { useWalletModal } from '@solana/wallet-adapter-react-ui';
-import { getAuthToken, loginWithWallet } from '@/lib/auth-utils';
+import { getAuthToken } from '@/lib/auth-utils';
+import { useUser } from "@/lib/hooks/use-user";
 
 interface Game {
   id: string;
@@ -87,6 +88,8 @@ export default function GameDetailPage() {
   const [playsCount, setPlaysCount] = useState(0);
   const [commentsCount, setCommentsCount] = useState(0);
 
+  const { user, isLoading: isLoadingUser, signMessage } = useUser();
+
   const { signTransaction, connected, publicKey, select, connect, wallet } = useWallet();
   const { setVisible } = useWalletModal();
 
@@ -97,7 +100,6 @@ export default function GameDetailPage() {
     const handleWalletLogin = async () => {
       if (connected && publicKey && !getAuthToken()) {
         try {
-          await loginWithWallet(publicKey.toString());
           console.log('Auto-login successful');
         } catch (error) {
           console.error('Auto-login failed:', error);

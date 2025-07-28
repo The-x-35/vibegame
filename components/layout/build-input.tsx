@@ -24,7 +24,7 @@ export function BuildInput({ placeholder = "What do you want to build?", classNa
   const [lastRequest, setLastRequest] = useState<string>("");
   const inputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
-  const { user } = useUser();
+  const { user, isLoading: isLoadingUser , refreshUser} = useUser();
   const { setVisible } = useWalletModal();
   const { toast } = useToast();
   const [isCloning, setIsCloning] = useState(false);
@@ -93,6 +93,8 @@ export function BuildInput({ placeholder = "What do you want to build?", classNa
   };
 
   const handleCloneTemplate = async (template: { name: string; description: string; url: string; id: string; thumbnail?: string }) => {
+    console.log("[handleCloneTemplate] user", user, isLoading, isLoadingUser);
+
     if (!user) {
       setVisible(true);
       toast({

@@ -2,8 +2,9 @@
 
 import { useEffect } from 'react';
 import { useWallet } from '@solana/wallet-adapter-react';
-import { loginWithWallet, getAuthToken } from '@/lib/auth-utils';
+import { getAuthToken } from '@/lib/auth-utils';
 import { uploadProjectFile } from '@/lib/utils/chunked-upload';
+import { useUser } from '@/lib/hooks/use-user';
 
 interface S3IframeHandlerProps {
     currentProjectUrl?: string;
@@ -11,22 +12,7 @@ interface S3IframeHandlerProps {
 
 export function S3IframeHandler({ currentProjectUrl }: S3IframeHandlerProps) {
     const { publicKey, connected } = useWallet();
-
-    // Auto-login when wallet connects (just like other pages)
-    useEffect(() => {
-        const handleWalletLogin = async () => {
-            if (connected && publicKey && !getAuthToken()) {
-                try {
-                    await loginWithWallet(publicKey.toString());
-                    console.log('🔐 Auto-login successful in editor');
-                } catch (error) {
-                    console.error('❌ Auto-login failed in editor:', error);
-                }
-            }
-        };
-
-        handleWalletLogin();
-    }, [connected, publicKey]);
+    const { refreshUser } = useUser();
 
     useEffect(() => {
         const handleS3Message = async (event: MessageEvent) => {
@@ -96,7 +82,7 @@ export function S3IframeHandler({ currentProjectUrl }: S3IframeHandlerProps) {
                 if (!token) {
                     console.log('🔑 No token found, attempting auto-login...');
                     try {
-                        await loginWithWallet(publicKey.toString());
+                        await refreshUser();
                         console.log('🔐 Auto-login successful during save');
                         
                         // Try to get token again after login

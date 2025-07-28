@@ -20,13 +20,13 @@ export interface LoginResponse {
 /**
  * Login with wallet address
  */
-export async function loginWithWallet(wallet: string): Promise<LoginResponse> {
+export async function loginWithWallet(wallet: string, message: string, signature: string): Promise<LoginResponse> {
   const response = await fetch('/api/auth/login', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ wallet }),
+    body: JSON.stringify({ wallet, message, signature }),
   });
 
   if (!response.ok) {
