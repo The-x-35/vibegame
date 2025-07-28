@@ -320,7 +320,12 @@ export default function Home() {
         
         <div className="w-full max-w-4xl mx-auto text-center px-4 mt-8">
           <div className="flex flex-wrap justify-center gap-3">
-            <Button size="default" className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 font-matrix-sans-regular text-sm" asChild>
+            <Button 
+              size="default" 
+              className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 font-matrix-sans-regular text-sm" 
+              asChild
+              disabled={isCloning}
+            >
               <Link href="/games">
                 <Sparkles className="mr-2 h-4 w-4" />
                 Explore Games
@@ -335,6 +340,16 @@ export default function Home() {
             >
               {isCloning ? 'Creating...' : 'Edit Random Template'}
               <ArrowRight className="ml-2 h-3 w-3 group-hover:translate-x-1 transition-transform" />
+            </Button>
+            <Button 
+              size="default" 
+              variant="outline" 
+              className="group font-matrix-sans-regular text-sm" 
+              onClick={handleCreateFreshGame}
+              disabled={isCloning}
+            >
+              {isCloning ? 'Creating...' : 'Create Fresh Game'}
+              <Code className="ml-2 h-3 w-3 group-hover:scale-110 transition-transform" />
             </Button>
           </div>
                 </div>
@@ -374,6 +389,7 @@ export default function Home() {
                       onOpen={() => handleCloneTemplate(template)}
                       buttonText="Use Template"
                       thumbnail={template.thumbnail}
+                      isLoading={isCloning}
                     />
                   ))}
                 </div>

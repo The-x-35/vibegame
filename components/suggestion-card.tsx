@@ -20,6 +20,8 @@ type SuggestionCardProps = {
   buttonText?: string;
   /** optional thumbnail URL */
   thumbnail?: string;
+  /** optional loading state to disable button */
+  isLoading?: boolean;
 };
 
 export default function SuggestionCard({ 
@@ -31,7 +33,8 @@ export default function SuggestionCard({
   showIframe,
   heightClass,
   buttonText = "Edit Game",
-  thumbnail
+  thumbnail,
+  isLoading = false
 }: SuggestionCardProps) {
   const defaultThumbnail = "/og/og1.png";
   const displayThumbnail = thumbnail || defaultThumbnail;
@@ -87,8 +90,9 @@ export default function SuggestionCard({
             onClick={onOpen}
             className="w-full group-hover:bg-green-600 group-hover:text-white transition-colors"
             variant="outline"
+            disabled={isLoading}
           >
-            {buttonText}
+            {isLoading ? 'Creating...' : buttonText}
           </Button>
         </CardFooter>
       )}
