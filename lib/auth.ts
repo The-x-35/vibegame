@@ -3,6 +3,9 @@ import { jwtVerify, decodeProtectedHeader } from "jose";
 import { AppTokenPayload } from "./types";
 import { Buffer } from "buffer";
 import { PublicKey } from '@solana/web3.js';
+import bs58 from "bs58";
+import nacl from "tweetnacl";
+
 
 // Secret key for verifying tokens - should be stored in environment variables
 const JWT_SECRET = process.env.JWT_SECRET;
@@ -99,6 +102,34 @@ export function verifyWallet(wallet: string): boolean {
     new PublicKey(wallet);
     return true;
   } catch {
+    return false;
+  }
+}
+
+/**
+ * Verifies a signature is valid
+ * 
+ * @param wallet Wallet address
+ * @param signature Signature to verify
+ * @param message Message to verify
+ * @returns True if valid, false otherwise
+ */ 
+export function verifySignature(wallet: string, signature: string, message: string): boolean {
+  try {
+    // Convert wallet address to public key bytes
+    const publicKey = new PublicKey(wallet);
+    const publicKeyBytes = publicKey.toBytes();
+    
+    // Convert message to bytes
+    const messageBytes = new TextEncoder().encode(message);
+    
+    // Decode signature from base58
+    const signatureBytes = bs58.decode(signature);
+    
+    // Verify signature using tweetnacl
+    return nacl.sign.detached.verify(messageBytes, signatureBytes, publicKeyBytes);
+  } catch (error) {
+    console.error('Signature verification failed:', error);
     return false;
   }
 }

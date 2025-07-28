@@ -100,6 +100,7 @@ export default function TemplatesPage() {
   if (!user) return null;
 
   const handleCloneTemplate = async (template: GameTemplate) => {
+    console.log("[handleCloneTemplate] user", user);
     if (!user) {
       setVisible(true);
       toast({

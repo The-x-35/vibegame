@@ -9,7 +9,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@/lib/hooks/use-user';
 import { use } from 'react';
-import { getAuthHeader, loginWithWallet, removeAuthToken } from '@/lib/auth-utils';
+import { getAuthHeader, removeAuthToken } from '@/lib/auth-utils';
 
 interface ProjectRow {
   id: string;
@@ -26,7 +26,7 @@ export default function EditorPage({
   params: Promise<{ id: string }>;
 }) {
   const router = useRouter();
-  const { user, isLoading } = useUser();
+  const { user, isLoading  } = useUser();
   const [project, setProject] = useState<ProjectRow | null>(null);
   const [isLoadingProject, setIsLoadingProject] = useState(true);
   const params = use(paramsPromise);
@@ -50,7 +50,6 @@ export default function EditorPage({
             if (response.status === 403) {
               removeAuthToken();
             }
-            await loginWithWallet(user.wallet);
           } catch (err) {
             console.error('Auto login failed:', err);
           }
