@@ -256,15 +256,25 @@ export default function Home() {
           </div>
 
           <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold mb-4 leading-tight font-matrix-sans-regular">
-            What do you want to{" "}
+            what{" "}
             <span className="bg-clip-text text-transparent" style={{
               background: 'linear-gradient(to right, #EE00FF 0%, #EE5705 66%, #EE05E7 100%)',
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent',
               backgroundClip: 'text'
             }}>
-              build today?
+              games
             </span>
+            {" "}you wanna{" "}
+            <span className="bg-clip-text text-transparent" style={{
+              background: 'linear-gradient(to right, #EE00FF 0%, #EE5705 66%, #EE05E7 100%)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text'
+            }}>
+              build
+            </span>
+            {" "}today?
           </h1>
           
           <p className="text-sm md:text-base text-muted-foreground mb-8 max-w-xl mx-auto font-matrix-sans-regular">
