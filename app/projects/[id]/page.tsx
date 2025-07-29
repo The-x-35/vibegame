@@ -229,12 +229,12 @@ export default function ProjectPage({
               </div>
             )}
             
-            <div className="pt-4 border-t">
+            {/* <div className="pt-4 border-t">
               <DeleteProjectDialog 
                 projectId={project.id} 
                 onDelete={() => router.push('/profile')}
               />
-            </div>
+            </div> */}
           </div>
         </div>
       </div>
