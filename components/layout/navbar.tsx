@@ -5,7 +5,7 @@ import { useUser } from "@/lib/hooks/use-user";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/ui/logo";
 import { useState, useEffect } from "react";
-import { Menu, X, Code, GamepadIcon, LayoutDashboardIcon as DashboardIcon, LogOut, Rocket } from "lucide-react";
+import { Menu, X, Code, GamepadIcon, LayoutDashboardIcon as DashboardIcon, LogOut, Rocket, Twitter, Send } from "lucide-react";
 import { Connection, LAMPORTS_PER_SOL, PublicKey } from "@solana/web3.js";
 import { API_ENDPOINTS } from "@/global/constant";
 import { useWallet } from '@solana/wallet-adapter-react';
@@ -84,6 +84,8 @@ export default function Navbar() {
   }, [publicKey]);
 
   const navLinks = [
+    { href: "https://t.me/vibegamescreenerbot", label: "Telegram Bot", icon: <Send className="w-4 h-4 mr-2" />, external: true },
+    { href: "https://x.com/vibegamefun", label: "Twitter/X", icon: <Twitter className="w-4 h-4 mr-2" />, external: true },
     { href: "/games", label: "Games & Coins", icon: <GamepadIcon className="w-4 h-4 mr-2" /> },
   ];
 
@@ -133,10 +135,22 @@ export default function Navbar() {
             <div className="flex items-center">
               {navLinks.map((link) => (
                 <Button key={link.href} variant="ghost" asChild className="mr-4">
-                  <Link href={link.href} className="flex items-center font-['Matrix_Sans_Video']">
-                    {link.icon}
-                    {link.label}
-                  </Link>
+                  {link.external ? (
+                    <a 
+                      href={link.href} 
+                      target="_blank" 
+                      rel="noopener noreferrer" 
+                      className="flex items-center font-['Matrix_Sans_Video']"
+                    >
+                      {link.icon}
+                      {link.label}
+                    </a>
+                  ) : (
+                    <Link href={link.href} className="flex items-center font-['Matrix_Sans_Video']">
+                      {link.icon}
+                      {link.label}
+                    </Link>
+                  )}
                 </Button>
               ))}
               
@@ -223,12 +237,24 @@ export default function Navbar() {
                 variant="ghost" 
                 className="justify-start" 
                 asChild
-                onClick={() => setIsOpen(false)}
+                onClick={() => !link.external && setIsOpen(false)}
               >
-                <Link href={link.href} className="flex items-center font-['Matrix_Sans_Video']">
-                  {link.icon}
-                  {link.label}
-                </Link>
+                {link.external ? (
+                  <a 
+                    href={link.href} 
+                    target="_blank" 
+                    rel="noopener noreferrer" 
+                    className="flex items-center font-['Matrix_Sans_Video']"
+                  >
+                    {link.icon}
+                    {link.label}
+                  </a>
+                ) : (
+                  <Link href={link.href} className="flex items-center font-['Matrix_Sans_Video']">
+                    {link.icon}
+                    {link.label}
+                  </Link>
+                )}
               </Button>
             ))}
             
