@@ -22,7 +22,7 @@ export const API_ENDPOINTS = {
 export const ALPHA_GUI = {
     BASE_URL: IS_PRODUCTION ? 'https://alpha.vibegame.fun' : 'http://localhost:8601',
     EMBED_URL: IS_PRODUCTION ? 'https://alpha.vibegame.fun/embed.html' : 'http://localhost:8601/embed.html',
-    SEND_TOKEN_CA: 'SENDdRQtYMWaQrBroBrJ2Q53fgVuq95CV9UPGEvpCxa'
+    SEND_TOKEN_CA: '3nf8LgahHm57gEUx64cDNJf4h53C2MwqZCK6LGDTsend'
 } as const;
 
 // S3 Bucket Information
