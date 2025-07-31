@@ -6,6 +6,7 @@ import { PrivyProvider } from '@/components/privy-provider';
 import { WalletContextProvider } from '@/components/wallet-provider';
 import { UserProvider } from '@/lib/contexts/user-context';
 import { NavbarWrapper } from '@/components/layout/navbar-wrapper';
+import { Analytics } from '@vercel/analytics/next';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -60,6 +61,7 @@ export default function RootLayout({
             </UserProvider>
           </WalletContextProvider>
         </ThemeProvider>
+        <Analytics />
       </body>
     </html>
   );
