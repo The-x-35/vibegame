@@ -47,11 +47,11 @@ export const TOKENS = {
 /**
  * Default configuration options
  * @property {number} TOKEN_DECIMALS - Default number of decimals for new tokens
- * @property {number} RERERRAL_FEE - Referral fee in basis points
+ * @property {number} REFERRAL_FEE - Referral fee in basis points
  */
 export const DEFAULT_OPTIONS = {
     TOKEN_DECIMALS: 9,
-    RERERRAL_FEE: 200,
+    REFERRAL_FEE: 200,
 } as const;
 
 /**
@@ -59,4 +59,8 @@ export const DEFAULT_OPTIONS = {
  */
 export const JUP_ULTRA_API = "https://lite-api.jup.ag/ultra/v1";
 
-export const JUP_REFERRAL_ADDRESS = "7seWe5mR6CcVreeDQEruV8FkJsNmsVW5zxGti7b3orb7";
+/**
+ * Jupiter referral configuration
+ */
+export const JUP_REFERRAL_ADDRESS = "JBbc8MBy1KiVAbqbk1BPKdXxV6jRT4PWUgKnMb1KXFc1";
+export const JUP_REFERRAL_FEE = 100; // 1% in basis points
