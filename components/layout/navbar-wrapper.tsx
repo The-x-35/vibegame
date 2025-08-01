@@ -8,6 +8,7 @@ import { useEffect, useState } from 'react';
 export function NavbarWrapper({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const isComingSoonPage = pathname === '/coming-soon';
+  const isEditorPage = pathname.startsWith('/editor');
   // const [isSubdomain, setIsSubdomain] = useState(false);
 
   // useEffect(() => {
@@ -36,7 +37,7 @@ export function NavbarWrapper({ children }: { children: React.ReactNode }) {
       <main className={`flex-1 overflow-auto pb-16`}>
         {children}
       </main>
-      {!isComingSoonPage && <Footer />}
+      {!isComingSoonPage && !isEditorPage && <Footer />}
     </>
   );
 } 

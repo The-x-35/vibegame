@@ -17,12 +17,14 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
 import { useUser } from "@/lib/hooks/use-user";
 import { jwtDecode } from 'jwt-decode';
-import { uploadTemplateFile } from "@/lib/utils/chunked-upload";
+import { uploadTemplateFile, uploadThumbnailFile } from "@/lib/utils/chunked-upload";
 
 export default function AddTemplatePage() {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [file, setFile] = useState<File | null>(null);
+  const [thumbnail, setThumbnail] = useState<File | null>(null);
+  const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
@@ -42,6 +44,15 @@ export default function AddTemplatePage() {
       return;
     }
   }, [user, isUserLoading, router]);
+
+  // Cleanup thumbnail preview URL on unmount
+  useEffect(() => {
+    return () => {
+      if (thumbnailPreview) {
+        URL.revokeObjectURL(thumbnailPreview);
+      }
+    };
+  }, [thumbnailPreview]);
 
   // Show loading state while checking user authentication
   if (isUserLoading) {
@@ -68,6 +79,34 @@ export default function AddTemplatePage() {
     }
   };
 
+  const handleThumbnailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFile = e.target.files?.[0];
+    if (selectedFile) {
+      // Check if it's an image file
+      if (selectedFile.type.startsWith('image/')) {
+        setThumbnail(selectedFile);
+        
+        // Create preview URL
+        const previewUrl = URL.createObjectURL(selectedFile);
+        setThumbnailPreview(previewUrl);
+      } else {
+        toast({
+          title: "Invalid file",
+          description: "Please select an image file (PNG, JPG, etc.)",
+          variant: "destructive",
+        });
+      }
+    }
+  };
+
+  const clearThumbnail = () => {
+    setThumbnail(null);
+    if (thumbnailPreview) {
+      URL.revokeObjectURL(thumbnailPreview);
+      setThumbnailPreview(null);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -82,17 +121,31 @@ export default function AddTemplatePage() {
 
     setIsSubmitting(true);
     try {
-      // Upload file using chunked upload
+      // Upload template file using chunked upload
       console.log('🚀 Starting template upload with chunked upload...');
       const uploadResult = await uploadTemplateFile(
         file,
         name,
         (progress) => {
-          console.log(`📊 Upload progress: ${Math.round(progress * 100)}%`);
+          console.log(`📊 Template upload progress: ${Math.round(progress * 100)}%`);
         }
       );
 
-      console.log('✅ File uploaded successfully:', uploadResult.url);
+      console.log('✅ Template file uploaded successfully:', uploadResult.url);
+
+      // Upload thumbnail if provided
+      let thumbnailUrl = '/og/og1.png'; // Default thumbnail
+      if (thumbnail) {
+        console.log('🖼️ Starting thumbnail upload...');
+        const thumbnailResult = await uploadThumbnailFile(
+          thumbnail,
+          (progress) => {
+            console.log(`📊 Thumbnail upload progress: ${Math.round(progress * 100)}%`);
+          }
+        );
+        thumbnailUrl = thumbnailResult.url;
+        console.log('✅ Thumbnail uploaded successfully:', thumbnailUrl);
+      }
 
       // Create template record in database
       const response = await fetch('/api/templates', {
@@ -104,6 +157,7 @@ export default function AddTemplatePage() {
           name,
           description,
           url: uploadResult.url,
+          thumbnail: thumbnailUrl,
         }),
       });
 
@@ -121,6 +175,11 @@ export default function AddTemplatePage() {
       setName("");
       setDescription("");
       setFile(null);
+      setThumbnail(null);
+      if (thumbnailPreview) {
+        URL.revokeObjectURL(thumbnailPreview);
+        setThumbnailPreview(null);
+      }
       
       // Redirect to templates page
       router.push('/templates');
@@ -198,6 +257,41 @@ export default function AddTemplatePage() {
               <p className="text-sm text-muted-foreground">
                 Only .sb3 files are accepted
               </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="thumbnail">Thumbnail Image (Optional)</Label>
+              <Input
+                id="thumbnail"
+                type="file"
+                accept="image/*"
+                onChange={handleThumbnailChange}
+              />
+              <p className="text-sm text-muted-foreground">
+                Upload a thumbnail image for your template. If not provided, a default image will be used.
+              </p>
+              
+              {thumbnailPreview && (
+                <div className="mt-4 space-y-2">
+                  <Label>Preview:</Label>
+                  <div className="relative inline-block">
+                    <img
+                      src={thumbnailPreview}
+                      alt="Thumbnail preview"
+                      className="w-32 h-32 object-cover rounded-lg border"
+                    />
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      size="sm"
+                      className="absolute -top-2 -right-2 w-6 h-6 p-0 rounded-full"
+                      onClick={clearThumbnail}
+                    >
+                      ×
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
 
             <Button

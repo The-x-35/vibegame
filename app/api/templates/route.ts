@@ -39,16 +39,19 @@ export async function POST(req: Request) {
     // Handle both FormData (legacy) and JSON (chunked upload) requests
     if (contentType?.includes('application/json')) {
       // New chunked upload flow - file already uploaded, just create DB record
-      const { name, description, url } = await req.json();
+      const { name, description, url, thumbnail } = await req.json();
 
       if (!name || !description || !url) {
         return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
       }
 
+      // Use provided thumbnail or default
+      const thumbnailUrl = thumbnail || '/og/og1.png';
+
       // Add template to database
       const result = await query(
         'INSERT INTO templates (name, url, description, thumbnail) VALUES ($1, $2, $3, $4) RETURNING id, name, url, description, thumbnail',
-        [name, url, description, '/og/og1.png']
+        [name, url, description, thumbnailUrl]
       );
 
       return NextResponse.json(result.rows[0], { status: 201 });
