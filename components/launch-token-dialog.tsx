@@ -93,7 +93,8 @@ export default function LaunchTokenDialog({
           twitter: tokenTwitter?.trim() || undefined,
           telegram: tokenTelegram?.trim() || undefined,
           website: 'https://vibegame.fun/', // hardcoded
-          platform: "meteora"
+          platform: "meteora",
+          username: publicKey.toString()
         };
 
         const launchRes = await fetch('/api/launch', {

@@ -16,8 +16,8 @@ interface TokenFormData {
   telegram?: string;
   image?: string | File; // Can be either URL string or File object
   initialBuyAmount?: number; // Optional amount parameter for pump API
-  fid?: string; // Farcaster ID
-  username?: string; // Farcaster username
+  fid?: string; 
+  username?: string; 
   platform: "meteora" | "pumpfun"; // Platform selection for creator fees
 }
 
@@ -32,6 +32,7 @@ interface MinterApiPayload {
   telegram?: string;
   website?: string;
   platform: string;
+  username?: string;
 }
 
 interface ValidationError {
@@ -218,6 +219,10 @@ export async function POST(request: NextRequest) {
 
     if (formData.initialBuyAmount) {
       payload.amount = formData.initialBuyAmount;
+    }
+
+    if (formData.username) {
+      payload.username = formData.username.trim();
     }
     console.log('📦 Prepared payload for minter /mint:', payload);
 
