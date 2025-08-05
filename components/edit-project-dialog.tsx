@@ -29,6 +29,7 @@ export default function EditProjectDialog({
   const [isOpen, setIsOpen] = useState(false);
   const [name, setName] = useState(projectName);
   const [description, setDescription] = useState(projectDescription);
+  const [subdomain, setSubdomain] = useState(projectId);
   const [isLoading, setIsLoading] = useState(false);
   // Add state for thumbnail
   const [thumbnail, setThumbnail] = useState<File | null>(null);
@@ -37,8 +38,9 @@ export default function EditProjectDialog({
     if (isOpen) {
       setName(projectName);
       setDescription(projectDescription);
+      setSubdomain(projectId);
     }
-  }, [isOpen, projectName, projectDescription]);
+  }, [isOpen, projectName, projectDescription, projectId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -67,6 +69,7 @@ export default function EditProjectDialog({
       console.log('Request body:', {
         name: name.trim(),
         description: description.trim(),
+        subdomain: subdomain.trim(),
         wallet: publicKey.toString(),
         thumbnail: thumbnailUrl,
       });
@@ -79,6 +82,7 @@ export default function EditProjectDialog({
         body: JSON.stringify({
           name: name.trim(),
           description: description.trim(),
+          subdomain: subdomain.trim(),
           wallet: publicKey.toString(),
           thumbnail: thumbnailUrl, // Include thumbnail URL
         }),
@@ -94,7 +98,7 @@ export default function EditProjectDialog({
       console.log('Project updated successfully');
       setIsOpen(false);
       
-      // If the project ID has changed (due to name change), redirect to the new URL
+      // If the project ID has changed (due to name or subdomain change), redirect to the new URL
       if (responseData.project.id !== projectId) {
         router.push(`/projects/${responseData.project.id}`);
       } else {
@@ -139,6 +143,22 @@ export default function EditProjectDialog({
               onChange={(e) => setName(e.target.value)} 
               required 
             />
+          </div>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="project-subdomain" className="text-right">Subdomain</Label>
+            <div className="col-span-3 flex items-center">
+              <Input 
+                id="project-subdomain" 
+                className="flex-1 bg-black border-gray-800 text-white placeholder:text-gray-500 focus:ring-0 focus:border-gray-700 rounded-r-none" 
+                placeholder="subdomain" 
+                value={subdomain} 
+                onChange={(e) => setSubdomain(e.target.value)} 
+                required 
+              />
+              <div className="px-3 py-2 bg-gray-800 text-gray-300 text-sm border border-l-0 border-gray-700 rounded-r-md">
+                .vibegame.fun
+              </div>
+            </div>
           </div>
           <div className="grid grid-cols-4 items-start gap-4">
             <Label htmlFor="project-description" className="text-right pt-2">Description</Label>

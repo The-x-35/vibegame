@@ -110,7 +110,7 @@ export async function PATCH(
   try {
     const { id } = await props.params;
     const body = await request.json();
-    const { name, description, isPublic, ca, wallet, thumbnail } = body; // Include thumbnail
+    const { name, description, isPublic, ca, wallet, thumbnail, subdomain } = body; // Include subdomain
 
     if (!wallet) {
       return NextResponse.json({ error: 'Wallet address is required' }, { status: 400 });
@@ -132,10 +132,31 @@ export async function PATCH(
     }
 
     let newId = id;
-    // If name is being updated, generate a new slug for the ID
-    if (name && name !== projectResult.rows[0].name) {
-      newId = await generateUniqueSlug(name);
-      
+    let shouldUpdateId = false;
+
+    // Check if subdomain is being updated
+    if (subdomain && subdomain !== id) {
+      // Validate subdomain format
+      const subdomainRegex = /^[a-z0-9-]+$/;
+      if (!subdomainRegex.test(subdomain)) {
+        return NextResponse.json({ error: 'Subdomain can only contain lowercase letters, numbers, and hyphens' }, { status: 400 });
+      }
+
+      // Check if subdomain is already taken
+      const existingProject = await query(
+        'SELECT id FROM projects WHERE id = $1',
+        [subdomain]
+      );
+
+      if (existingProject.rows.length > 0) {
+        return NextResponse.json({ error: 'Subdomain is already taken' }, { status: 400 });
+      }
+
+      newId = subdomain;
+      shouldUpdateId = true;
+    }
+
+    if (shouldUpdateId) {
       // Update all related tables to use the new ID
       await query('BEGIN');
       try {
@@ -173,7 +194,7 @@ export async function PATCH(
         throw err;
       }
     } else {
-      // If name is not changing, just update other fields
+      // If ID is not changing, just update other fields
       console.log('Updating project with values:', { name, description, isPublic, ca, thumbnail, id });
       const result = await query(
         `UPDATE projects 
