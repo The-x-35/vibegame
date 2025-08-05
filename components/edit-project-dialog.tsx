@@ -15,15 +15,13 @@ interface EditProjectDialogProps {
   projectId: string;
   projectName: string;
   projectDescription: string;
-  projectCa: string | null;
-  onUpdate?: (updatedProject: { name?: string; description?: string; ca?: string | null; thumbnail?: string | null }) => void;
+  onUpdate?: (updatedProject: { name?: string; description?: string; thumbnail?: string | null }) => void;
 }
 
 export default function EditProjectDialog({ 
   projectId, 
   projectName, 
   projectDescription,
-  projectCa,
   onUpdate,
 }: EditProjectDialogProps) {
   const router = useRouter();
@@ -31,7 +29,6 @@ export default function EditProjectDialog({
   const [isOpen, setIsOpen] = useState(false);
   const [name, setName] = useState(projectName);
   const [description, setDescription] = useState(projectDescription);
-  const [ca, setCa] = useState(projectCa || "");
   const [isLoading, setIsLoading] = useState(false);
   // Add state for thumbnail
   const [thumbnail, setThumbnail] = useState<File | null>(null);
@@ -40,9 +37,8 @@ export default function EditProjectDialog({
     if (isOpen) {
       setName(projectName);
       setDescription(projectDescription);
-      setCa(projectCa || "");
     }
-  }, [isOpen, projectName, projectDescription, projectCa]);
+  }, [isOpen, projectName, projectDescription]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -71,7 +67,6 @@ export default function EditProjectDialog({
       console.log('Request body:', {
         name: name.trim(),
         description: description.trim(),
-        ca: ca.trim() || null,
         wallet: publicKey.toString(),
         thumbnail: thumbnailUrl,
       });
@@ -84,7 +79,6 @@ export default function EditProjectDialog({
         body: JSON.stringify({
           name: name.trim(),
           description: description.trim(),
-          ca: ca.trim() || null,
           wallet: publicKey.toString(),
           thumbnail: thumbnailUrl, // Include thumbnail URL
         }),
@@ -109,7 +103,6 @@ export default function EditProjectDialog({
           onUpdate({
             name: name.trim(),
             description: description.trim(),
-            ca: ca.trim() || null,
             thumbnail: thumbnailUrl, // Update parent with new thumbnail
           });
         }
@@ -156,16 +149,6 @@ export default function EditProjectDialog({
               value={description} 
               onChange={(e) => setDescription(e.target.value)} 
               required 
-            />
-          </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="project-ca" className="text-right">Contract Address</Label>
-            <Input 
-              id="project-ca" 
-              className="col-span-3 bg-black border-gray-800 text-white placeholder:text-gray-500 focus:ring-0 focus:border-gray-700" 
-              placeholder="Enter contract address (optional)"
-              value={ca}
-              onChange={(e) => setCa(e.target.value)}
             />
           </div>
           <div className="grid grid-cols-4 items-center gap-4">

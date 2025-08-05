@@ -41,9 +41,9 @@ export default function ProjectPage({
   const params = use(paramsPromise);
 
   // Callback to update project state from child components
-  const updateProjectState = (updatedProject: { name?: string; description?: string; ca?: string | null; thumbnail?: string | null }) => {
+  const updateProjectState = (updatedProject: { name?: string; description?: string; thumbnail?: string | null } | { ca: string; is_public: boolean }) => {
     if (project) {
-      setProject({ ...project, ...updatedProject, thumbnail: updatedProject.thumbnail ?? project.thumbnail });
+      setProject({ ...project, ...updatedProject, thumbnail: 'thumbnail' in updatedProject ? updatedProject.thumbnail ?? project.thumbnail : project.thumbnail });
     }
   };
 
@@ -213,7 +213,6 @@ export default function ProjectPage({
                 projectId={project.id}
                 projectName={project.name}
                 projectDescription={project.description}
-                projectCa={project.ca}
                 onUpdate={updateProjectState}
               />
               <ShareProjectButton projectId={project.id} projectName={project.name} />

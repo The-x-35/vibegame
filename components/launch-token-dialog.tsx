@@ -9,12 +9,13 @@ import { Button } from "@/components/ui/button";
 import { Rocket, ExternalLink } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { useRouter } from "next/navigation";
-import { ALPHA_GUI } from "@/global/constant";
+import { ALPHA_GUI, API_ENDPOINTS } from "@/global/constant";
 import Link from "next/link";
 import { getGameUrl } from '@/lib/utils';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
-import { Transaction, VersionedTransaction } from '@solana/web3.js';
+import { Transaction, VersionedTransaction, PublicKey, Connection } from '@solana/web3.js';
+import { getMint } from '@solana/spl-token';
 
 interface LaunchTokenDialogProps {
   projectId: string;
@@ -39,6 +40,11 @@ export default function LaunchTokenDialog({
   const [isLaunchMode, setIsLaunchMode] = useState(false); // true = launch token, false = attach token
   const [manualCa, setManualCa] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isValidatingCa, setIsValidatingCa] = useState(false);
+  const [caValidationError, setCaValidationError] = useState<string | null>(null);
+  const [isCaValid, setIsCaValid] = useState(false);
+  const [tokenInfo, setTokenInfo] = useState<{ name?: string; symbol?: string; decimals?: number; supply?: number } | null>(null);
+  const [lastValidatedCa, setLastValidatedCa] = useState<string>("");
   
   // Token launch fields
   const [tokenName, setTokenName] = useState("");
@@ -48,12 +54,116 @@ export default function LaunchTokenDialog({
   const [tokenTwitter, setTokenTwitter] = useState("");
   const [imageBase64, setImageBase64] = useState<string>("");
 
+  // Initialize Solana connection
+  const connection = new Connection(API_ENDPOINTS.SOLANA_RPC_ENDPOINT, 'confirmed');
+
   useEffect(() => {
     if (isOpen) {
       setTokenName(projectName);
       setTokenDescription(projectDescription);
+      setManualCa("");
+      setCaValidationError(null);
+      setIsCaValid(false);
+      setTokenInfo(null);
+      setLastValidatedCa("");
     }
   }, [isOpen, projectName, projectDescription]);
+
+  // Validate CA when manualCa changes
+  useEffect(() => {
+    const validateCa = async () => {
+      const trimmedCa = manualCa.trim();
+      
+      // Don't validate if empty
+      if (!trimmedCa) {
+        setCaValidationError(null);
+        setIsCaValid(false);
+        setTokenInfo(null);
+        setLastValidatedCa("");
+        return;
+      }
+
+      // Don't validate if we already validated this exact value
+      if (lastValidatedCa === trimmedCa) {
+        return;
+      }
+
+      setIsValidatingCa(true);
+      setCaValidationError(null);
+      setTokenInfo(null);
+
+      try {
+        // Basic format check - Solana addresses are base58 encoded and typically 32-44 characters
+        if (trimmedCa.length < 32 || trimmedCa.length > 44) {
+          setCaValidationError("Invalid contract address format - wrong length");
+          setIsCaValid(false);
+          setTokenInfo(null);
+          return;
+        }
+
+        // Check if it contains only valid base58 characters
+        const base58Regex = /^[1-9A-HJ-NP-Za-km-z]+$/;
+        if (!base58Regex.test(trimmedCa)) {
+          setCaValidationError("Invalid contract address format - invalid characters");
+          setIsCaValid(false);
+          setTokenInfo(null);
+          return;
+        }
+
+        let publicKey: PublicKey;
+        try {
+          publicKey = new PublicKey(trimmedCa);
+        } catch (pubKeyError) {
+          setCaValidationError("Invalid contract address format");
+          setIsCaValid(false);
+          setTokenInfo(null);
+          return;
+        }
+        
+        // Use getMint from @solana/spl-token to properly validate the token mint
+        const mintInfo = await getMint(connection, publicKey);
+        
+        // If getMint succeeds, it's a valid SPL token mint
+        setIsCaValid(true);
+        setCaValidationError(null);
+        
+        // Store token information for display
+        setTokenInfo({
+          decimals: mintInfo.decimals,
+          supply: Number(mintInfo.supply) / Math.pow(10, mintInfo.decimals)
+        });
+        
+        // Mark this CA as validated
+        setLastValidatedCa(trimmedCa);
+        
+      } catch (error) {
+        console.error('Token validation error:', error);
+        
+        // Check if it's a format error vs on-chain error
+        if (error instanceof Error) {
+          if (error.message.includes('Account does not exist')) {
+            setCaValidationError("Invalid contract address - token does not exist on-chain");
+          } else if (error.message.includes('Invalid account data')) {
+            setCaValidationError("Invalid contract address - not a valid SPL token mint");
+          } else {
+            setCaValidationError("Invalid contract address - verification failed");
+          }
+        } else {
+          setCaValidationError("Invalid contract address");
+        }
+        
+        setIsCaValid(false);
+        setTokenInfo(null);
+        setLastValidatedCa(trimmedCa); // Mark as validated even if failed
+      } finally {
+        setIsValidatingCa(false);
+      }
+    };
+
+    // Debounce validation to avoid too many API calls
+    const timeoutId = setTimeout(validateCa, 500);
+    return () => clearTimeout(timeoutId);
+  }, [manualCa, connection]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -167,6 +277,9 @@ export default function LaunchTokenDialog({
         if (!manualCa.trim()) {
           throw new Error('Please enter a valid contract address');
         }
+        if (!isCaValid) {
+          throw new Error('Please enter a valid contract address');
+        }
         ca = manualCa.trim();
       }
 
@@ -246,16 +359,37 @@ export default function LaunchTokenDialog({
           
           {!isLaunchMode && (
             // Attach Token Mode
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="manual-ca" className="text-right text-white">Contract Address</Label>
-              <Input 
-                id="manual-ca" 
-                className="col-span-3 bg-black border-gray-800 text-white placeholder:text-gray-500 focus:ring-0 focus:border-gray-700" 
-                placeholder="Enter contract address"
-                value={manualCa}
-                onChange={(e) => setManualCa(e.target.value)}
-                required
-              />
+            <div className="space-y-2">
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="manual-ca" className="text-right text-white">Contract Address</Label>
+                <div className="col-span-3 space-y-1">
+                  <Input 
+                    id="manual-ca" 
+                    className={`bg-black border-gray-800 text-white placeholder:text-gray-500 focus:ring-0 focus:border-gray-700 ${
+                      caValidationError ? 'border-red-500' : isCaValid ? 'border-green-500' : ''
+                    }`}
+                    placeholder="Enter contract address"
+                    value={manualCa}
+                    onChange={(e) => setManualCa(e.target.value)}
+                    required
+                  />
+                  {isValidatingCa && (
+                    <p className="text-sm text-yellow-500">Validating contract address...</p>
+                  )}
+                  {caValidationError && (
+                    <p className="text-sm text-red-500">{caValidationError}</p>
+                  )}
+                  {isCaValid && !isValidatingCa && tokenInfo && (
+                    <div className="text-sm text-green-500 space-y-1">
+                      <p>✓ Valid SPL token mint</p>
+                      <p className="text-gray-400">
+                        Decimals: {tokenInfo.decimals} | 
+                        Supply: {tokenInfo.supply?.toLocaleString() || 'Unknown'}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
           )}
           
@@ -358,7 +492,7 @@ export default function LaunchTokenDialog({
             <Button 
               type="submit" 
               disabled={isLoading || 
-                (!isLaunchMode && !manualCa.trim()) || 
+                (!isLaunchMode && (!manualCa.trim() || !isCaValid || isValidatingCa)) || 
                 (isLaunchMode && (!connected || !tokenName || !tokenTicker || !tokenDescription || !imageBase64))
               }
             >
