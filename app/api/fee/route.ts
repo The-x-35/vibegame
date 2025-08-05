@@ -3,14 +3,25 @@ import { NextRequest, NextResponse } from 'next/server';
 // Primary base URL for the DigitalOcean-hosted minter service.
 const MINTER_API_BASE_URL = process.env.MINTER_API_BASE_URL || "https://api.sendshot.ag";
 
-interface PendingFeeRequest {
+interface FeeRequest {
   tokenMint: string;
   claimer: string;
 }
 
+interface FeeApiResponse {
+  tx: {
+    tx: string;
+    curveFee: number;
+    lpFee: {
+      claimedFee: number;
+      unclaimedFee: number;
+    };
+  };
+}
+
 export async function POST(request: NextRequest) {
   try {
-    const { tokenMint, claimer } = await request.json() as PendingFeeRequest;
+    const { tokenMint, claimer } = await request.json() as FeeRequest;
 
     if (!tokenMint || !claimer) {
       return NextResponse.json(
@@ -39,7 +50,7 @@ export async function POST(request: NextRequest) {
     }
 
     const resolvedApiKey = process.env.MINTER_API_KEY || process.env.PUMP_API_KEY!;
-    const url = `${MINTER_API_BASE_URL}/fee/pending-fee`;
+    const url = `${MINTER_API_BASE_URL}/fee/claim-creator-fee`;
 
     console.log(`🌐 Sending POST ${url} with tokenMint: ${tokenMint}, claimer: ${claimer}`);
 
@@ -65,16 +76,35 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const data = await response.json();
+    const data: FeeApiResponse = await response.json();
     console.log('📥 Fee API response:', data);
+
+    // Extract data from the correct structure
+    const transactionData = data.tx;
+    const totalUnclaimedFee = transactionData.lpFee.unclaimedFee;
+    const totalClaimedFee = transactionData.lpFee.claimedFee;
+    const hasUnclaimedFees = totalUnclaimedFee > 0;
 
     return NextResponse.json({
       success: true,
-      data
+      data: {
+        // Transaction for claiming fees
+        tx: transactionData.tx,
+        // Fee information
+        fees: {
+          curveFee: transactionData.curveFee,
+          lpFee: {
+            claimedFee: totalClaimedFee,
+            unclaimedFee: totalUnclaimedFee
+          },
+          totalFee: totalClaimedFee + totalUnclaimedFee,
+          hasUnclaimedFees
+        }
+      }
     });
 
   } catch (error) {
-    console.error('💥 Error fetching pending fees:', error);
+    console.error('💥 Error fetching fee data:', error);
     return NextResponse.json(
       {
         success: false,
@@ -87,7 +117,7 @@ export async function POST(request: NextRequest) {
 
 export async function GET() {
   return NextResponse.json(
-    { message: 'Method not allowed. Use POST to get pending fees.' },
+    { message: 'Method not allowed. Use POST to get fee data and claim transaction.' },
     { status: 405 }
   );
 } 

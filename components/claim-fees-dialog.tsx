@@ -11,20 +11,15 @@ import { DollarSign, TrendingUp, Wallet } from 'lucide-react';
 import { API_ENDPOINTS } from '@/global/constant';
 
 interface FeeData {
-  isMigrated: boolean;
-  curve: {
-    baseToken: number;
-    quoteToken: number;
-  };
-  lp: {
-    claimedFee: {
-      baseToken: number;
-      quoteToken: number;
+  tx: string;
+  fees: {
+    curveFee: number;
+    lpFee: {
+      claimedFee: number;
+      unclaimedFee: number;
     };
-    unclaimedFee: {
-      baseToken: number;
-      quoteToken: number;
-    };
+    totalFee: number;
+    hasUnclaimedFees: boolean;
   };
 }
 
@@ -42,12 +37,12 @@ export default function ClaimFeesDialog({ tokenMint, tokenName }: ClaimFeesDialo
   const [isLoading, setIsLoading] = useState(false);
   const [isClaiming, setIsClaiming] = useState(false);
 
-  const fetchFees = async () => {
+  const fetchFeeData = async () => {
     if (!publicKey) return;
 
     setIsLoading(true);
     try {
-      const response = await fetch('/api/fee/pending-fee', {
+      const response = await fetch('/api/fee', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -60,7 +55,7 @@ export default function ClaimFeesDialog({ tokenMint, tokenName }: ClaimFeesDialo
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to fetch fees');
+        throw new Error(errorData.error || 'Failed to fetch fee data');
       }
 
       const result = await response.json();
@@ -68,7 +63,7 @@ export default function ClaimFeesDialog({ tokenMint, tokenName }: ClaimFeesDialo
       console.log('📊 Fee data structure:', result.data);
       setFeeData(result.data);
     } catch (error) {
-      console.error('Error fetching fees:', error);
+      console.error('Error fetching fee data:', error);
       toast.error('Failed to fetch fee data');
     } finally {
       setIsLoading(false);
@@ -76,39 +71,25 @@ export default function ClaimFeesDialog({ tokenMint, tokenName }: ClaimFeesDialo
   };
 
   const handleClaimFees = async () => {
-    if (!publicKey || !signTransaction) {
+    if (!publicKey || !signTransaction || !feeData) {
       toast.error('Please connect your wallet to claim fees');
+      return;
+    }
+
+    if (!feeData.fees.hasUnclaimedFees) {
+      toast.error('No unclaimed fees available');
       return;
     }
 
     setIsClaiming(true);
     try {
-      // Step 1: Get unsigned transaction from API
-      console.log('🌐 Requesting unsigned claim transaction...');
-      const response = await fetch('/api/fee/claim-creator-fee', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          tokenMint,
-          claimer: publicKey.toString(),
-        }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to get claim transaction');
-      }
-
-      const result = await response.json();
-      const txBase64 = result.data.tx;
+      const txBase64 = feeData.tx;
 
       if (!txBase64) {
-        throw new Error('No transaction returned from claim API');
+        throw new Error('No transaction available for claiming fees');
       }
 
-      // Step 2: Sign and submit transaction
+      // Step 1: Sign and submit transaction
       console.log('📝 Deserializing and signing transaction...');
       const txBuffer = Buffer.from(txBase64, 'base64');
       let transaction: Transaction | VersionedTransaction;
@@ -128,7 +109,7 @@ export default function ClaimFeesDialog({ tokenMint, tokenName }: ClaimFeesDialo
 
       const signedTx = await signTransaction(transaction);
 
-      // Step 3: Submit signed transaction directly to Solana network
+      // Step 2: Submit signed transaction directly to Solana network
       console.log('📤 Submitting signed transaction to Solana...');
       const signature = await solanaConnection.sendRawTransaction(signedTx.serialize() as Uint8Array, {
         preflightCommitment: 'processed'
@@ -147,7 +128,7 @@ export default function ClaimFeesDialog({ tokenMint, tokenName }: ClaimFeesDialo
       toast.success('Fees claimed successfully!');
       
       // Refresh fee data
-      await fetchFees();
+      await fetchFeeData();
 
     } catch (error) {
       console.error('Error claiming fees:', error);
@@ -159,7 +140,7 @@ export default function ClaimFeesDialog({ tokenMint, tokenName }: ClaimFeesDialo
 
   useEffect(() => {
     if (publicKey && tokenMint) {
-      fetchFees();
+      fetchFeeData();
     }
   }, [publicKey, tokenMint]);
 
@@ -167,14 +148,9 @@ export default function ClaimFeesDialog({ tokenMint, tokenName }: ClaimFeesDialo
     return (amount / 1e9).toFixed(2); // Show only 2 decimal places
   };
 
-  const hasUnclaimedFees = feeData && feeData.lp && feeData.lp.unclaimedFee && (
-    feeData.lp.unclaimedFee.baseToken > 0 || 
-    feeData.lp.unclaimedFee.quoteToken > 0
-  );
-
-  // Handle case where API response doesn't have lp property
-  const unclaimedFee = feeData?.lp?.unclaimedFee?.quoteToken || 0;
-  const claimedFee = feeData?.lp?.claimedFee?.quoteToken || 0;
+  const hasUnclaimedFees = feeData && feeData.fees && feeData.fees.hasUnclaimedFees;
+  const unclaimedFee = feeData?.fees?.lpFee?.unclaimedFee || 0;
+  const claimedFee = feeData?.fees?.lpFee?.claimedFee || 0;
   const totalFee = unclaimedFee + claimedFee;
 
   if (!publicKey) {
@@ -219,26 +195,35 @@ export default function ClaimFeesDialog({ tokenMint, tokenName }: ClaimFeesDialo
           </div>
         ) : feeData ? (
           <>
-                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-               <div className="text-center p-3 bg-muted/50 rounded-lg">
-                 <div className="text-2xl font-bold text-green-600">
-                   {formatTokenAmount(unclaimedFee)}
-                 </div>
-                 <div className="text-sm text-muted-foreground">Unclaimed SOL</div>
-               </div>
-               <div className="text-center p-3 bg-muted/50 rounded-lg">
-                 <div className="text-2xl font-bold text-blue-600">
-                   {formatTokenAmount(claimedFee)}
-                 </div>
-                 <div className="text-sm text-muted-foreground">Claimed SOL</div>
-               </div>
-               <div className="text-center p-3 bg-muted/50 rounded-lg">
-                 <div className="text-2xl font-bold text-purple-600">
-                   {formatTokenAmount(totalFee)}
-                 </div>
-                 <div className="text-sm text-muted-foreground">Total SOL</div>
-               </div>
-             </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="text-center p-3 bg-muted/50 rounded-lg">
+                <div className="text-2xl font-bold text-green-600">
+                  {formatTokenAmount(unclaimedFee)}
+                </div>
+                <div className="text-sm text-muted-foreground">Unclaimed SOL</div>
+              </div>
+              <div className="text-center p-3 bg-muted/50 rounded-lg">
+                <div className="text-2xl font-bold text-blue-600">
+                  {formatTokenAmount(claimedFee)}
+                </div>
+                <div className="text-sm text-muted-foreground">Claimed SOL</div>
+              </div>
+              <div className="text-center p-3 bg-muted/50 rounded-lg">
+                <div className="text-2xl font-bold text-purple-600">
+                  {formatTokenAmount(totalFee)}
+                </div>
+                <div className="text-sm text-muted-foreground">Total SOL</div>
+              </div>
+            </div>
+
+            {feeData.fees.curveFee > 0 && (
+              <div className="text-center p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                <div className="text-lg font-semibold text-amber-800">
+                  Curve Fee: {formatTokenAmount(feeData.fees.curveFee)} SOL
+                </div>
+                <div className="text-sm text-amber-600">Additional trading fee</div>
+              </div>
+            )}
 
             {hasUnclaimedFees && (
               <div className="flex items-center justify-between p-3 bg-green-50 border border-green-200 rounded-lg">
@@ -269,8 +254,8 @@ export default function ClaimFeesDialog({ tokenMint, tokenName }: ClaimFeesDialo
 
             <div className="flex justify-between items-center text-xs text-muted-foreground">
               <span>Token: {tokenMint.slice(0, 8)}...{tokenMint.slice(-8)}</span>
-              <Badge variant={feeData.isMigrated ? "default" : "secondary"}>
-                {feeData.isMigrated ? "Migrated" : "Not Migrated"}
+              <Badge variant={feeData.fees.hasUnclaimedFees ? "default" : "secondary"}>
+                {feeData.fees.hasUnclaimedFees ? "Unclaimed" : "No Unclaimed"}
               </Badge>
             </div>
           </>
