@@ -319,7 +319,7 @@ export default function Home() {
         <div className="container px-4 mx-auto">
           <div className="max-w-6xl mx-auto">
             <div className="text-center mb-6">
-              <h2 className="text-3xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-blue-500 to-purple-500 font-matrix-sans-regular">
+              <h2 className="text-3xl font-bold mb-4 bg-clip-text text-white font-matrix-sans-regular">
                 Community Game Templates
               </h2>
             </div>
