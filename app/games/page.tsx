@@ -73,7 +73,7 @@ export default function GamesPage() {
     <div className="min-h-screen bg-background" style={{ backgroundImage: 'url(/bg.svg)', backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat', backgroundAttachment: 'fixed' }}>
       <div className="container mx-auto px-4 py-10">
         <div className="text-center mb-10">
-          <h1 className="text-4xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-blue-500 to-purple-500">
+          <h1 className="text-4xl font-bold mb-4 bg-clip-text text-white">
             Discover Gamecoins
           </h1>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
