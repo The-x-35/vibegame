@@ -83,6 +83,30 @@ export default function HowToBuildGamePage() {
             </p>
           </div>
         </div>
+
+        {/* Second Video */}
+        <div className="flex justify-center mt-8">
+          <div className="w-full max-w-2xl">
+            <h3 className="text-lg font-semibold mb-4 text-center font-matrix-sans-regular">
+              🎮 Additional Game Development Tips
+            </h3>
+            <div className="bg-card/50 backdrop-blur-sm border border-border/50 rounded-lg overflow-hidden">
+              <div className="relative w-full" style={{ paddingBottom: '56.25%' }}>
+                <iframe
+                  className="absolute top-0 left-0 w-full h-full"
+                  src="https://www.youtube.com/embed/eCrPTSC7roo"
+                  title="Additional Game Development Tips"
+                  frameBorder="0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  allowFullScreen
+                />
+              </div>
+            </div>
+            <p className="text-sm text-muted-foreground text-center mt-3">
+              Learn more advanced techniques and tips for game development
+            </p>
+          </div>
+        </div>
       </div>
 
       {/* Quick Start CTA */}
