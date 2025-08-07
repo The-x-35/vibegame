@@ -33,6 +33,7 @@ interface MinterApiPayload {
   website?: string;
   platform: string;
   username?: string;
+  referral?: string;
 }
 
 interface ValidationError {
@@ -214,7 +215,8 @@ export async function POST(request: NextRequest) {
       symbol: formData.tokenTicker.trim().toUpperCase(),
       description: formData.description.trim(),
       imageUrl: imageUrl,
-      platform: "meteora"
+      platform: "meteora",
+      referral: "vibegame"
     };
 
     if (formData.initialBuyAmount) {
