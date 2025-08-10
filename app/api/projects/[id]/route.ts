@@ -136,10 +136,16 @@ export async function PATCH(
 
     // Check if subdomain is being updated
     if (subdomain && subdomain !== id) {
-      // Validate subdomain format
+      // Validate subdomain format: no capital letters, no dots, only lowercase letters, numbers, and hyphens
       const subdomainRegex = /^[a-z0-9-]+$/;
       if (!subdomainRegex.test(subdomain)) {
-        return NextResponse.json({ error: 'Subdomain can only contain lowercase letters, numbers, and hyphens' }, { status: 400 });
+        return NextResponse.json({ error: 'Subdomain can only contain lowercase letters, numbers, and hyphens. No capital letters or dots allowed.' }, { status: 400 });
+      }
+      if (subdomain.includes('.')) {
+        return NextResponse.json({ error: 'Subdomain cannot contain dots.' }, { status: 400 });
+      }
+      if (/[A-Z]/.test(subdomain)) {
+        return NextResponse.json({ error: 'Subdomain cannot contain capital letters.' }, { status: 400 });
       }
 
       // Check if subdomain is already taken

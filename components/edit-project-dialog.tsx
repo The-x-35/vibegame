@@ -33,6 +33,7 @@ export default function EditProjectDialog({
   const [isLoading, setIsLoading] = useState(false);
   // Add state for thumbnail
   const [thumbnail, setThumbnail] = useState<File | null>(null);
+  const [subdomainError, setSubdomainError] = useState<string | null>(null);
 
   useEffect(() => {
     if (isOpen) {
@@ -42,6 +43,25 @@ export default function EditProjectDialog({
     }
   }, [isOpen, projectName, projectDescription, projectId]);
 
+  const validateSubdomain = (value: string) => {
+    if (!/^[a-z0-9-]+$/.test(value)) {
+      return 'Subdomain can only contain lowercase letters, numbers, and hyphens. No capital letters or dots allowed.';
+    }
+    if (value.includes('.')) {
+      return 'Subdomain cannot contain dots.';
+    }
+    if (/[A-Z]/.test(value)) {
+      return 'Subdomain cannot contain capital letters.';
+    }
+    return null;
+  };
+
+  const handleSubdomainChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setSubdomain(value);
+    setSubdomainError(validateSubdomain(value));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -50,6 +70,11 @@ export default function EditProjectDialog({
       
       if (!publicKey) {
         throw new Error('Please connect your wallet');
+      }
+
+      if (subdomainError) {
+        setIsLoading(false);
+        return;
       }
 
       // Handle thumbnail upload using chunked upload
@@ -91,6 +116,11 @@ export default function EditProjectDialog({
       if (!updateResponse.ok) {
         const errorData = await updateResponse.json();
         console.error('Failed to update project:', errorData);
+        if (errorData?.error && errorData.error.toLowerCase().includes('subdomain is already taken')) {
+          alert('Sub-domain already exists, please choose another one');
+        } else {
+          alert('Failed to update project details');
+        }
         throw new Error('Failed to update project details');
       }
       
@@ -146,18 +176,23 @@ export default function EditProjectDialog({
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="project-subdomain" className="text-right">Subdomain</Label>
-            <div className="col-span-3 flex items-center">
-              <Input 
-                id="project-subdomain" 
-                className="flex-1 bg-black border-gray-800 text-white placeholder:text-gray-500 focus:ring-0 focus:border-gray-700 rounded-r-none" 
-                placeholder="subdomain" 
-                value={subdomain} 
-                onChange={(e) => setSubdomain(e.target.value)} 
-                required 
-              />
-              <div className="px-3 py-2 bg-gray-800 text-gray-300 text-sm border border-l-0 border-gray-700 rounded-r-md">
-                .vibegame.fun
+            <div className="col-span-3 flex flex-col">
+              <div className="flex items-center">
+                <Input 
+                  id="project-subdomain" 
+                  className="flex-1 bg-black border-gray-800 text-white placeholder:text-gray-500 focus:ring-0 focus:border-gray-700 rounded-r-none" 
+                  placeholder="subdomain" 
+                  value={subdomain} 
+                  onChange={handleSubdomainChange} 
+                  required 
+                />
+                <div className="px-3 py-2 bg-gray-800 text-gray-300 text-sm border border-l-0 border-gray-700 rounded-r-md">
+                  .vibegame.fun
+                </div>
               </div>
+              {subdomainError && (
+                <div className="text-red-500 text-xs mt-1 whitespace-pre-line">{subdomainError}</div>
+              )}
             </div>
           </div>
           <div className="grid grid-cols-4 items-start gap-4">
