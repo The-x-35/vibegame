@@ -1,14 +1,15 @@
 import Image from "next/image";
 
 interface LogoProps {
-  size?: "sm" | "md" | "lg";
+  size?: "xs" | "sm" | "md" | "lg";
 }
 
 export function Logo({ size = "md" }: LogoProps) {
   const sizeClasses = {
-    sm: "w-48",
-    md: "w-72",
-    lg: "w-96"
+    xs: "w-20",    // 80px - smaller
+    sm: "w-32",    // 128px - smaller
+    md: "w-48",    // 192px - smaller (was 288px)
+    lg: "w-64"     // 256px - smaller (was 384px)
   };
 
   return (
