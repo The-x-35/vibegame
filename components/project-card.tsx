@@ -15,6 +15,9 @@ export interface Project {
   createdAt: Date;
   updatedAt: Date;
   thumbnail?: string;
+  type?: 'game' | 'waifu';
+  glb_url?: string | null;
+  rpm_avatar_id?: string | null;
 }
 
 interface ProjectCardProps {
@@ -25,6 +28,7 @@ interface ProjectCardProps {
 
 export function ProjectCard({ project, onToggleVisibility, onClick }: ProjectCardProps) {
   const defaultThumbnail = "/og/og1.png";
+  const modelUrl = project.glb_url || (project.rpm_avatar_id ? `https://models.readyplayer.me/${project.rpm_avatar_id}.glb` : undefined);
   const displayThumbnail = project.thumbnail || defaultThumbnail;
 
   return (
@@ -36,17 +40,28 @@ export function ProjectCard({ project, onToggleVisibility, onClick }: ProjectCar
       )}
     >
       <div className="relative aspect-video bg-muted overflow-hidden">
-        <img
-          src={displayThumbnail}
-          alt={project.name}
-          className="w-full h-full object-cover"
-          onError={(e) => {
-            const target = e.target as HTMLImageElement;
-            if (target.src !== defaultThumbnail) {
-              target.src = defaultThumbnail;
-            }
-          }}
-        />
+        {project.type === 'waifu' && modelUrl ? (
+          <model-viewer
+            src={modelUrl}
+            alt={project.name}
+            ar
+            auto-rotate
+            camera-controls
+            style={{ width: '100%', height: '100%', background: 'black' }}
+          />
+        ) : (
+          <img
+            src={displayThumbnail}
+            alt={project.name}
+            className="w-full h-full object-cover"
+            onError={(e) => {
+              const target = e.target as HTMLImageElement;
+              if (target.src !== defaultThumbnail) {
+                target.src = defaultThumbnail;
+              }
+            }}
+          />
+        )}
         <div className="absolute inset-0 bg-black/10 group-hover:bg-black/0 transition-all duration-300" />
         <div className="absolute top-2 right-2">
           {project.ca ? (

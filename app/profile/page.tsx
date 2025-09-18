@@ -15,6 +15,7 @@ export default function ProfilePage() {
   const { user, isLoading } = useUser();
   const { connected } = useWallet();
   const [projects, setProjects] = useState<Project[]>([]);
+  const [waifus, setWaifus] = useState<Project[]>([]);
   const [isProjectsLoading, setIsProjectsLoading] = useState(true);
 
   useEffect(() => {
@@ -34,8 +35,8 @@ export default function ProfilePage() {
             throw new Error(`Failed to fetch projects: ${response.statusText}`);
           }
           const data = await response.json();
-          // Map API rows to Project type
-          const fetched: Project[] = data.projects.map((p: any) => ({
+          const rows: any[] = data.projects;
+          const mapToProject = (p: any): Project => ({
             id: p.id,
             url: p.url,
             name: p.name,
@@ -44,8 +45,12 @@ export default function ProfilePage() {
             createdAt: new Date(p.created_at),
             updatedAt: new Date(p.updated_at),
             thumbnail: p.thumbnail,
-          }));
-          setProjects(fetched);
+            type: p.type,
+            glb_url: p.glb_url,
+            rpm_avatar_id: p.rpm_avatar_id,
+          });
+          setProjects(rows.filter((p: any) => !p.type || p.type === 'game').map(mapToProject));
+          setWaifus(rows.filter((p: any) => p.type === 'waifu').map(mapToProject));
         } catch (err) {
           console.error('Error fetching user projects:', err);
         } finally {
@@ -59,6 +64,8 @@ export default function ProfilePage() {
 
   const getPublicProjects = () => projects.filter(p => p.ca);
   const getPrivateProjects = () => projects.filter(p => !p.ca);
+  const getPublicWaifus = () => waifus.filter(w => (w as any).ca);
+  const getPrivateWaifus = () => waifus.filter(w => !(w as any).ca);
 
   // Show loading state if checking user authentication
   if (isLoading) {
@@ -91,9 +98,41 @@ export default function ProfilePage() {
       <Tabs defaultValue="all" className="w-full">
         <TabsList className="mb-6">
           <TabsTrigger value="all">All Projects</TabsTrigger>
+          <TabsTrigger value="waifus">Waifus</TabsTrigger>
           <TabsTrigger value="public">Launched</TabsTrigger>
           <TabsTrigger value="private">Draft</TabsTrigger>
         </TabsList>
+        <TabsContent value="waifus">
+          {isProjectsLoading ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {Array.from({ length: 2 }).map((_, idx) => (
+                <div key={idx} className="rounded-lg overflow-hidden border border-border/50 shadow-sm animate-pulse">
+                  <div className="h-48 bg-muted" />
+                  <div className="p-4 space-y-3">
+                    <div className="h-5 bg-muted rounded-md w-3/4" />
+                    <div className="h-4 bg-muted rounded-md w-full" />
+                    <div className="h-8 bg-muted rounded-md w-full mt-4" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : waifus.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {waifus.map(project => (
+                <ProjectCard
+                  key={project.id}
+                  project={project}
+                  onClick={() => router.push(`/projects/${project.id}`)}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-16 bg-muted/20 rounded-lg border border-dashed">
+              <h3 className="text-lg font-medium mb-2">No waifus yet</h3>
+              <p className="text-muted-foreground mb-6">Create your first waifu from the Waifus page</p>
+            </div>
+          )}
+        </TabsContent>
         
         <TabsContent value="all">
           {isProjectsLoading ? (

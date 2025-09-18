@@ -10,7 +10,7 @@ export async function GET(
     
     // Query the projects table with likes count, views count, and comments count
     const result = await query(
-      'SELECT id, name, url, description, ca, likes_count, views_count, comments_count, thumbnail FROM projects WHERE id = $1',
+      'SELECT id, name, url, description, ca, likes_count, views_count, comments_count, thumbnail, type, glb_url, rpm_avatar_id, system_prompt FROM projects WHERE id = $1',
       [id]
     );
 
@@ -30,7 +30,11 @@ export async function GET(
       likesCount: game.likes_count,
       viewsCount: game.views_count,
       commentsCount: game.comments_count,
-      thumbnail: game.thumbnail
+      thumbnail: game.thumbnail,
+      type: game.type,
+      glbUrl: game.glb_url,
+      rpmAvatarId: game.rpm_avatar_id,
+      systemPrompt: game.system_prompt
     });
   } catch (error) {
     console.error('[GAME_GET]', error);

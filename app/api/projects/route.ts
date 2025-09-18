@@ -11,7 +11,7 @@ export async function GET(request: Request) {
 
   try {
     const result = await query(
-      `SELECT id, wallet, url, name, description, ca, is_public, created_at, updated_at, thumbnail
+      `SELECT id, wallet, url, name, description, ca, is_public, created_at, updated_at, thumbnail, type, glb_url, rpm_avatar_id
        FROM projects
        WHERE wallet = $1
        ORDER BY created_at DESC;`,
@@ -26,7 +26,7 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    const { wallet, url, name, description, isPublic } = await request.json();
+    const { wallet, url, name, description, isPublic, type, glbUrl, rpmAvatarId, systemPrompt } = await request.json();
     if (!wallet || !url || !name || !description) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
@@ -35,10 +35,10 @@ export async function POST(request: Request) {
     const id = await generateUniqueSlug(name);
 
     const result = await query(
-      `INSERT INTO projects (id, wallet, url, name, description, is_public, created_at, updated_at)
-       VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())
+      `INSERT INTO projects (id, wallet, url, name, description, is_public, type, glb_url, rpm_avatar_id, system_prompt, created_at, updated_at)
+       VALUES ($1, $2, $3, $4, $5, $6, COALESCE($7, 'game'), $8, $9, $10, NOW(), NOW())
        RETURNING *;`,
-      [id, wallet, url, name, description, isPublic ?? false]
+      [id, wallet, url, name, description, isPublic ?? false, type, glbUrl, rpmAvatarId, systemPrompt]
     );
 
     return NextResponse.json({ project: result.rows[0] }, { status: 201 });

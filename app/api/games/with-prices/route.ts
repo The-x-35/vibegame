@@ -75,7 +75,7 @@ export async function GET(request: Request) {
     const result = await query(
       `SELECT id, name, url, description, likes_count, wallet, thumbnail, ca, views_count, created_at 
        FROM projects 
-       WHERE ca IS NOT NULL AND ca != ''`,
+       WHERE ca IS NOT NULL AND ca != '' AND (type IS NULL OR type = 'game')`,
       []
     );
     

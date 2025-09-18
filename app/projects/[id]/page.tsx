@@ -27,6 +27,9 @@ interface ProjectRow {
   ca: string | null;
   is_public: boolean;
   thumbnail?: string; // Ensure thumbnail is optional and of type string
+  type?: 'game' | 'waifu';
+  glb_url?: string | null;
+  rpm_avatar_id?: string | null;
 }
 
 export default function ProjectPage({
@@ -166,13 +169,23 @@ export default function ProjectPage({
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2">
           <div className="rounded-lg overflow-hidden shadow-sm border border-border/50">
-            {/* Replace iframe with image element to display thumbnail */}
-            <div className="relative aspect-video bg-muted overflow-hidden">
-              <img
-                src={project.thumbnail}
-                alt={project.name}
-                className="w-full h-full object-cover"
-              />
+            <div className="relative aspect-video bg-black overflow-hidden">
+              {project.type === 'waifu' && (project.glb_url || project.rpm_avatar_id) ? (
+                <model-viewer
+                  src={project.glb_url || `https://models.readyplayer.me/${project.rpm_avatar_id}.glb`}
+                  alt={project.name}
+                  ar
+                  auto-rotate
+                  camera-controls
+                  style={{ width: '100%', height: '100%' }}
+                />
+              ) : (
+                <img
+                  src={project.thumbnail}
+                  alt={project.name}
+                  className="w-full h-full object-cover"
+                />
+              )}
               <div className="absolute inset-0 bg-black/10 group-hover:bg-black/0 transition-all duration-300" />
             </div>
           </div>

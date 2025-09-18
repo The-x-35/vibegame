@@ -87,6 +87,7 @@ export default function Navbar() {
     { href: "https://t.me/vibegamescreenerbot", label: "Telegram Bot", icon: <Send className="w-4 h-4 mr-2" />, external: true },
     { href: "https://x.com/vibegamefun", label: "Twitter/X", icon: <Twitter className="w-4 h-4 mr-2" />, external: true },
     { href: "/games", label: "Games & Coins", icon: <GamepadIcon className="w-4 h-4 mr-2" /> },
+    { href: "/waifus", label: "Waifus", icon: <GamepadIcon className="w-4 h-4 mr-2" /> },
     { href: "/docs", label: "Docs", icon: <Code className="w-4 h-4 mr-2" /> },
   ];
 

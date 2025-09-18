@@ -7,6 +7,7 @@ import { WalletContextProvider } from '@/components/wallet-provider';
 import { UserProvider } from '@/lib/contexts/user-context';
 import { NavbarWrapper } from '@/components/layout/navbar-wrapper';
 import { Analytics } from '@vercel/analytics/next';
+import Script from 'next/script';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -45,6 +46,16 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${inter.className} min-h-screen flex flex-col`}>
+        {/* Import map to resolve bare module specifiers used by public/wifegame/modules/* */}
+        <Script id="importmap-three" type="importmap">
+          {JSON.stringify({
+            imports: {
+              "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+              "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+            }
+          })}
+        </Script>
+        <Script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js" />
         <ThemeProvider
           attribute="class"
           defaultTheme="dark"

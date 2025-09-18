@@ -185,7 +185,7 @@ export function CommentsSection({ projectId, onCommentAdded }: CommentsSectionPr
       {/* Comments list */}
       <div className="flex-1 overflow-y-auto space-y-4 pr-2">
         {comments.map((comment) => (
-          <div key={comment.id} className="flex gap-4 p-4 rounded-lg border">
+          <div key={comment.id} className="flex gap-4 p-4 rounded-lg border border-gray-200">
             <Avatar className="h-8 w-8">
               <AvatarImage src={getAvatarUrl(comment.wallet)} alt={comment.wallet} className="h-8 w-8" />
               <AvatarFallback className="text-xs">{getInitials(comment.wallet)}</AvatarFallback>
@@ -206,7 +206,7 @@ export function CommentsSection({ projectId, onCommentAdded }: CommentsSectionPr
       </div>
 
       {/* Comment input form at bottom */}
-      <div className="mt-4 pt-4 border-t">
+      <div className="mt-4 pt-4 border-t border-gray-200">
         <form onSubmit={handleSubmit} className="space-y-4">
           <Textarea
             placeholder="Send it to the..."

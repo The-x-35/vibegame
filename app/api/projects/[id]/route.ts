@@ -12,7 +12,7 @@ export async function GET(
     
     // Get project data
     const result = await query(
-      'SELECT * FROM projects WHERE id = $1',
+      'SELECT *, glb_url, rpm_avatar_id, type FROM projects WHERE id = $1',
       [id]
     );
     

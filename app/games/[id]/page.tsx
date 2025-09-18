@@ -30,6 +30,10 @@ interface Game {
   likesCount?: number;
   viewsCount?: number;
   commentsCount?: number;
+  type?: 'game' | 'waifu';
+  glbUrl?: string;
+  rpmAvatarId?: string;
+  systemPrompt?: string;
 }
 
 interface PriceData {
@@ -660,6 +664,12 @@ export default function GameDetailPage() {
         </div>
       </div>
     );
+  }
+
+  // If this is a waifu project, redirect to /waifus/[id] route for waifu-specific UI
+  if (game.type === 'waifu') {
+    router.push(`/waifus/${gameId}`);
+    return null;
   }
 
   return (
