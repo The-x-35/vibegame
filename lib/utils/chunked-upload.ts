@@ -3,7 +3,7 @@ export interface ChunkedUploadOptions {
   filename: string;
   userId: string;
   fileId?: string;
-  uploadType: 'project' | 'template' | 'thumbnail';
+  uploadType: 'project' | 'template' | 'thumbnail' | 'webgame';
   chunkSize?: number;
   token?: string;
   metadata?: any;
@@ -138,6 +138,30 @@ export async function uploadProjectFile(
     uploadType: 'project',
     token,
     onProgress: onProgress ? (progress, _, __) => onProgress(progress) : undefined
+  });
+}
+
+/**
+ * Helper function for uploading a single web game file (HTML/CSS/JS/assets)
+ */
+export async function uploadWebGameFile(
+  fileContentBase64: string,
+  filename: string,
+  userId: string,
+  folderPrefix: string, // e.g., wallet/v2/<id>/
+  token: string,
+  relativePath?: string,
+  onProgress?: (progress: number) => void
+): Promise<ChunkedUploadResult> {
+  return uploadFileInChunks({
+    file: fileContentBase64,
+    filename,
+    userId,
+    fileId: folderPrefix,
+    uploadType: 'webgame',
+    token,
+    metadata: relativePath ? { path: relativePath } : undefined,
+    onProgress: onProgress ? (progress) => onProgress(progress) : undefined,
   });
 }
 

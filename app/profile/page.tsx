@@ -15,6 +15,7 @@ export default function ProfilePage() {
   const { user, isLoading } = useUser();
   const { connected } = useWallet();
   const [projects, setProjects] = useState<Project[]>([]);
+  const [v2Games, setV2Games] = useState<Array<{ id: string; name: string; description: string; index_key: string; created_at: string; updated_at: string }>>([]);
   const [isProjectsLoading, setIsProjectsLoading] = useState(true);
 
   useEffect(() => {
@@ -24,34 +25,41 @@ export default function ProfilePage() {
   }, [connected, isLoading, router]);
 
   useEffect(() => {
-    // Fetch the authenticated user's projects from the API
     if (!isLoading && user) {
       (async () => {
         setIsProjectsLoading(true);
         try {
-          const response = await fetch(`/api/projects?wallet=${user.wallet}`);
-          if (!response.ok) {
-            throw new Error(`Failed to fetch projects: ${response.statusText}`);
+          // fetch v2 games only
+          const v2Res = await fetch(`/api/v2/games?wallet=${user.wallet}`);
+          if (v2Res.ok) {
+            const v2Data = await v2Res.json();
+            setV2Games(v2Data.games || []);
+          } else {
+            setV2Games([]);
           }
-          const data = await response.json();
-          // Map API rows to Project type
-          const fetched: Project[] = data.projects.map((p: any) => ({
-            id: p.id,
-            url: p.url,
-            name: p.name,
-            description: p.description,
-            ca: p.ca,
-            createdAt: new Date(p.created_at),
-            updatedAt: new Date(p.updated_at),
-            thumbnail: p.thumbnail,
-          }));
-          setProjects(fetched);
         } catch (err) {
-          console.error('Error fetching user projects:', err);
+          console.error('Error fetching v2 games:', err);
+          setV2Games([]);
         } finally {
           setIsProjectsLoading(false);
         }
       })();
+    }
+  }, [user, isLoading]);
+
+  // Poll periodically to reflect immediate upserts from /editor
+  useEffect(() => {
+    if (!isLoading && user) {
+      const interval = setInterval(async () => {
+        try {
+          const v2Res = await fetch(`/api/v2/games?wallet=${user.wallet}`);
+          if (v2Res.ok) {
+            const v2Data = await v2Res.json();
+            setV2Games(v2Data.games || []);
+          }
+        } catch {}
+      }, 4000);
+      return () => clearInterval(interval);
     }
   }, [user, isLoading]);
 
@@ -88,48 +96,11 @@ export default function ProfilePage() {
         <CreateProjectDialog />
       </div>
       
-      <Tabs defaultValue="all" className="w-full">
+      <Tabs defaultValue="v2" className="w-full">
         <TabsList className="mb-6">
-          <TabsTrigger value="all">All Projects</TabsTrigger>
-          <TabsTrigger value="public">Launched</TabsTrigger>
-          <TabsTrigger value="private">Draft</TabsTrigger>
+          <TabsTrigger value="v2">AI Games</TabsTrigger>
         </TabsList>
-        
-        <TabsContent value="all">
-          {isProjectsLoading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {Array.from({ length: 4 }).map((_, idx) => (
-                <div key={idx} className="rounded-lg overflow-hidden border border-border/50 shadow-sm animate-pulse">
-                  <div className="h-48 bg-muted" />
-                  <div className="p-4 space-y-3">
-                    <div className="h-5 bg-muted rounded-md w-3/4" />
-                    <div className="h-4 bg-muted rounded-md w-full" />
-                    <div className="h-8 bg-muted rounded-md w-full mt-4" />
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : projects.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {projects.map(project => (
-                <ProjectCard
-                  key={project.id}
-                  project={project}
-                  onClick={() => router.push(`/projects/${project.id}`)}
-                />
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-16 bg-muted/20 rounded-lg border border-dashed">
-              <Gamepad2 className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-              <h3 className="text-lg font-medium mb-2">No projects yet</h3>
-              <p className="text-muted-foreground mb-6">Start by creating your first game project</p>
-              <CreateProjectDialog />
-            </div>
-          )}
-        </TabsContent>
-        
-        <TabsContent value="public">
+        <TabsContent value="v2">
           {isProjectsLoading ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {Array.from({ length: 2 }).map((_, idx) => (
@@ -143,56 +114,24 @@ export default function ProfilePage() {
                 </div>
               ))}
             </div>
-          ) : getPublicProjects().length > 0 ? (
+          ) : v2Games.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {getPublicProjects().map(project => (
-                <ProjectCard
-                  key={project.id}
-                  project={project}
-                  onClick={() => router.push(`/projects/${project.id}`)}
-                />
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-16 bg-muted/20 rounded-lg border border-dashed">
-              <h3 className="text-lg font-medium mb-2">No launched projects</h3>
-              <p className="text-muted-foreground mb-6">
-                Make one of your projects public to launch it and share it with the world.
-              </p>
-            </div>
-          )}
-        </TabsContent>
-        
-        <TabsContent value="private">
-          {isProjectsLoading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {Array.from({ length: 2 }).map((_, idx) => (
-                <div key={idx} className="rounded-lg overflow-hidden border border-border/50 shadow-sm animate-pulse">
-                  <div className="h-48 bg-muted" />
-                  <div className="p-4 space-y-3">
-                    <div className="h-5 bg-muted rounded-md w-3/4" />
-                    <div className="h-4 bg-muted rounded-md w-full" />
-                    <div className="h-8 bg-muted rounded-md w-full mt-4" />
+              {v2Games.map(g => (
+                <div key={g.id} className="rounded-lg overflow-hidden border border-border/50 shadow-sm p-4 bg-card">
+                  <div className="font-semibold text-lg mb-1">{g.name || g.id}</div>
+                  <div className="text-sm text-muted-foreground mb-3 line-clamp-2">{g.description || 'AI web game'}</div>
+                  <div className="flex gap-2">
+                    <Button onClick={() => router.push(`/editor/${g.id}`)} size="sm">Open</Button>
+                    <Button variant="outline" size="sm" onClick={() => router.push(`/projects/${g.id}`)}>Open in Projects</Button>
                   </div>
                 </div>
               ))}
             </div>
-          ) : getPrivateProjects().length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {getPrivateProjects().map(project => (
-                <ProjectCard
-                  key={project.id}
-                  project={project}
-                  onClick={() => router.push(`/projects/${project.id}`)}
-                />
-              ))}
-            </div>
           ) : (
             <div className="text-center py-16 bg-muted/20 rounded-lg border border-dashed">
-              <h3 className="text-lg font-medium mb-2">No draft projects</h3>
-              <p className="text-muted-foreground mb-6">
-                All your projects are currently launched. Create a new project to start drafting.
-              </p>
+              <h3 className="text-lg font-medium mb-2">No AI games yet</h3>
+              <p className="text-muted-foreground mb-6">Use the AI editor to create your first web game.</p>
+              <Button onClick={() => router.push('/editor')}>Open AI Editor</Button>
             </div>
           )}
         </TabsContent>

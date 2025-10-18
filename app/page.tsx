@@ -2,34 +2,18 @@
 
 import { BuildInput } from "@/components/layout/build-input";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Sparkles, Zap, Gamepad2, Star, Users, Copy } from "lucide-react";
+import { Sparkles, Copy } from "lucide-react";
 import Link from "next/link";
 import { ALPHA_GUI } from "@/global/constant";
-import { useState, useEffect, useRef } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useUser } from "@/lib/hooks/use-user";
-import SuggestionCard from "@/components/suggestion-card";
 import { useWalletModal } from '@solana/wallet-adapter-react-ui';
 import { useToast } from '@/components/ui/use-toast';
 
-// Template interface
-interface Template {
-  id: string;
-  name: string;
-  url: string;
-  description: string;
-  thumbnail?: string;
-}
 
 export default function Home() {
   const [copied, setCopied] = useState(false);
-  const [isCloning, setIsCloning] = useState(false);
-  const [templates, setTemplates] = useState<Template[]>([]);
-  const [isTemplatesLoading, setIsTemplatesLoading] = useState(true);
-  const [allTemplates, setAllTemplates] = useState<Template[]>([]);
-  const [displayedCount, setDisplayedCount] = useState(20);
-  const [hasMore, setHasMore] = useState(true);
-  const loaderRef = useRef<HTMLDivElement | null>(null);
   const router = useRouter();
   const { user } = useUser();
   const { setVisible } = useWalletModal();
@@ -41,188 +25,9 @@ export default function Home() {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  // Shuffle array function
-  const shuffleArray = (array: Template[]) => {
-    const shuffled = [...array];
-    for (let i = shuffled.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-    }
-    return shuffled;
-  };
-
-  // Fetch all templates, shuffle them, and display first 20
-  const fetchAllTemplates = async () => {
-    setIsTemplatesLoading(true);
-    try {
-      // Fetch all templates at once with a large limit
-      const response = await fetch(`/api/templates?limit=1000&offset=0`);
-      if (!response.ok) throw new Error(`Failed to fetch templates: ${response.statusText}`);
-      const data = await response.json();
-      
-      // Shuffle all templates from the database
-      const shuffledTemplates = shuffleArray(data.templates);
-      setAllTemplates(shuffledTemplates);
-      
-      // Display first 20 templates
-      setTemplates(shuffledTemplates.slice(0, 20));
-      setDisplayedCount(20);
-      setHasMore(shuffledTemplates.length > 20);
-    } catch (error) {
-      console.error('Error fetching templates:', error);
-    } finally {
-      setIsTemplatesLoading(false);
-    }
-  };
-
-  // Load more templates when scrolling
-  const loadMoreTemplates = () => {
-    console.log('loadMoreTemplates called', { isTemplatesLoading, hasMore, displayedCount, allTemplatesLength: allTemplates.length });
-    
-    if (isTemplatesLoading || !hasMore) {
-      console.log('Early return:', { isTemplatesLoading, hasMore });
-      return;
-    }
-    
-    setIsTemplatesLoading(true);
-    const nextCount = Math.min(displayedCount + 20, allTemplates.length);
-    console.log('Loading more templates:', { displayedCount, nextCount, allTemplatesLength: allTemplates.length });
-    
-    setTemplates(allTemplates.slice(0, nextCount));
-    setDisplayedCount(nextCount);
-    setHasMore(nextCount < allTemplates.length);
-    setIsTemplatesLoading(false);
-  };
-
-  // Fetch all templates on mount
-  useEffect(() => {
-    setTemplates([]);
-    setAllTemplates([]);
-    setDisplayedCount(20);
-    setHasMore(true);
-    fetchAllTemplates();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // Infinite scroll: load more when loaderRef is visible
-  useEffect(() => {
-    const observer = new window.IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting && hasMore && !isTemplatesLoading) {
-          console.log('Loading more templates...', { displayedCount, allTemplatesLength: allTemplates.length });
-          loadMoreTemplates();
-        }
-      },
-      { threshold: 0.1, rootMargin: '100px' }
-    );
-    
-    if (loaderRef.current) {
-      observer.observe(loaderRef.current);
-    }
-    
-    return () => {
-      if (loaderRef.current) {
-        observer.unobserve(loaderRef.current);
-      }
-    };
-  }, [hasMore, isTemplatesLoading, displayedCount, allTemplates.length]);
 
 
 
-  const handleCloneTemplate = async (template: Template) => {
-    // If user is not authenticated, redirect to login
-    console.log("[handleCloneTemplate] user", user);
-    if (!user) {
-      setVisible(true);
-      toast({
-        title: 'Connect Wallet',
-        description: 'Please connect your wallet to continue.',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    setIsCloning(true);
-    try {
-      const response = await fetch('/api/projects/clone', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          projectId: template.id,
-          name: template.name,
-          description: '',
-          isPublic: false,
-          wallet: user.wallet,
-        }),
-      });
-
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to clone template');
-      }
-
-      const projectId = data.project.id;
-      router.push(`/editor/${projectId}`);
-    } catch (err) {
-      console.error(err);
-      alert(err instanceof Error ? err.message : 'Error cloning template');
-    } finally {
-      setIsCloning(false);
-    }
-  };
-
-  const handleEditRandomTemplate = async () => {
-    console.log('handleEditRandomTemplate - User state:', user);
-    // If user is not authenticated, redirect to login
-    if (!user) {
-      setVisible(true);
-      toast({
-        title: 'Connect Wallet',
-        description: 'Please connect your wallet to continue.',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    if (templates.length === 0) {
-      alert('No templates available to edit.');
-      return;
-    }
-
-    setIsCloning(true);
-    try {
-      // Select a random template
-      const randomTemplate = templates[Math.floor(Math.random() * templates.length)];
-      const response = await fetch('/api/projects/clone', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          projectId: randomTemplate.id,
-          name: randomTemplate.name, // Use template's name
-          description: randomTemplate.description, // Use template's description
-          isPublic: false,
-          wallet: user.wallet,
-        }),
-      });
-
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to edit random template');
-      }
-
-      const projectId = data.project.id;
-      router.push(`/editor/${projectId}`);
-    } catch (err) {
-      console.error(err);
-      alert(err instanceof Error ? err.message : 'Error editing random template');
-    } finally {
-      setIsCloning(false);
-    }
-  };
 
   return (
     <div className="relative">
@@ -293,75 +98,16 @@ export default function Home() {
               size="default" 
               className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 font-matrix-sans-regular text-sm" 
               asChild
-              disabled={isCloning}
             >
-              <Link href="/games">
+              <Link href="/editor">
                 <Sparkles className="mr-2 h-4 w-4" />
-                Explore Games
+                Open AI Editor
               </Link>
-            </Button>
-            <Button 
-              size="default" 
-              variant="outline" 
-              className="group font-matrix-sans-regular text-sm" 
-              onClick={handleEditRandomTemplate}
-              disabled={isCloning}
-            >
-              {isCloning ? 'Creating...' : 'Edit Random Template'}
-              <ArrowRight className="ml-2 h-3 w-3 group-hover:translate-x-1 transition-transform" />
             </Button>
           </div>
                 </div>
       </section>
       
-      {/* Templates Section */}
-      <section className="py-8">
-        <div className="container px-4 mx-auto">
-          <div className="max-w-6xl mx-auto">
-            <div className="text-center mb-6">
-              <h2 className="text-3xl font-bold mb-4 bg-clip-text text-white font-matrix-sans-regular">
-                Community Game Templates
-              </h2>
-            </div>
-            {templates.length === 0 && isTemplatesLoading ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {Array.from({ length: 6 }).map((_, idx) => (
-                  <div key={idx} className="rounded-lg overflow-hidden border border-border/50 shadow-sm">
-                    <div className="h-48 bg-muted animate-pulse" />
-                    <div className="p-4 space-y-3">
-                      <div className="h-5 bg-muted animate-pulse rounded-md w-3/4" />
-                      <div className="h-4 bg-muted animate-pulse rounded-md w-full" />
-                      <div className="h-8 bg-muted animate-pulse rounded-md w-full mt-4" />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 bg-transparent">
-                  {templates.map((template) => (
-                    <SuggestionCard
-                      key={template.id}
-                      embedUrl={`${ALPHA_GUI.EMBED_URL}?project_url=${encodeURIComponent(template.url)}`}
-                      name={template.name}
-                      description={template.description}
-                      onOpen={() => handleCloneTemplate(template)}
-                      buttonText="Use Template"
-                      thumbnail={template.thumbnail}
-                      isLoading={isCloning}
-                    />
-                  ))}
-                </div>
-                {hasMore && <div ref={loaderRef} style={{ height: 20, marginTop: 20 }} />}
-                {isTemplatesLoading && <div className="text-center py-4">Loading more...</div>}
-                {!hasMore && templates.length > 0 && (
-                  <div className="text-center py-4 text-muted-foreground">No more templates to load.</div>
-                )}
-              </>
-            )}
-          </div>
-        </div>
-      </section>
     </div>
   );
 }

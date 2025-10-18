@@ -22,18 +22,18 @@ const chunkStorage = new Map<string, {
     filename: string;
     userId: string;
     fileId?: string;
-    uploadType: 'project' | 'template' | 'thumbnail';
+    uploadType: 'project' | 'template' | 'thumbnail' | 'webgame';
     metadata?: any;
 }>();
 
 export async function POST(req: NextRequest) {
     try {
         const formData = await req.formData();
-        const uploadType = formData.get('uploadType') as 'project' | 'template' | 'thumbnail';
+        const uploadType = formData.get('uploadType') as 'project' | 'template' | 'thumbnail' | 'webgame';
         
-        // Authenticate user only for project uploads
+        // Authenticate user for project and webgame uploads
         let wallet: string | undefined;
-        if (uploadType === 'project') {
+        if (uploadType === 'project' || uploadType === 'webgame') {
             const token = req.headers.get("Authorization")?.split(" ")[1];
             if (!token) {
                 return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -63,8 +63,8 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
         }
 
-        // Check authorization only for project uploads
-        if (uploadType === 'project' && userId !== wallet) {
+        // Check authorization for project and webgame uploads
+        if ((uploadType === 'project' || uploadType === 'webgame') && userId !== wallet) {
             return NextResponse.json({ error: "User not authorized to upload to this file" }, { status: 401 });
         }
 
@@ -133,6 +133,39 @@ export async function POST(req: NextRequest) {
                     key = `thumbnails/${Date.now()}-${filename}`;
                     contentType = metadata?.mimeType || 'image/jpeg';
                     break;
+                case 'webgame':
+                    // For web games, allow common web asset extensions and construct keys under a prefix
+                    const lower = filename.toLowerCase();
+                    const ext = lower.split('.').pop() || '';
+                    const allowed = ['html','htm','css','js','json','png','jpg','jpeg','gif','svg','webp','ico','txt','mp3','wav','ogg'];
+                    if (!allowed.includes(ext)) {
+                        return NextResponse.json({ error: "Unsupported webgame file extension" }, { status: 400 });
+                    }
+                    // fileId acts as the folder prefix (e.g., wallet/v2/<id>/)
+                    const path = (metadata?.path as string) || filename;
+                    const basePrefix = fileId ? (fileId.endsWith('/') ? fileId : `${fileId}/`) : `${userId}/v2/${Date.now()}/`;
+                    key = `${basePrefix}${path}`;
+                    // Basic content type inference
+                    const ctMap: Record<string,string> = {
+                        html: 'text/html; charset=utf-8',
+                        htm: 'text/html; charset=utf-8',
+                        css: 'text/css; charset=utf-8',
+                        js: 'application/javascript; charset=utf-8',
+                        json: 'application/json; charset=utf-8',
+                        png: 'image/png',
+                        jpg: 'image/jpeg',
+                        jpeg: 'image/jpeg',
+                        gif: 'image/gif',
+                        svg: 'image/svg+xml',
+                        webp: 'image/webp',
+                        ico: 'image/x-icon',
+                        txt: 'text/plain; charset=utf-8',
+                        mp3: 'audio/mpeg',
+                        wav: 'audio/wav',
+                        ogg: 'audio/ogg',
+                    };
+                    contentType = ctMap[ext] || 'application/octet-stream';
+                    break;
                 
                 default:
                     return NextResponse.json({ error: "Invalid upload type" }, { status: 400 });
@@ -147,7 +180,7 @@ export async function POST(req: NextRequest) {
                 Body: completeFile,
                 ContentType: contentType,
                 ACL: 'public-read',
-                ...(uploadType === 'project' && {
+                ...((uploadType === 'project' || uploadType === 'webgame') && {
                     CacheControl: 'no-cache, no-store, must-revalidate, max-age=0',
                     Expires: new Date(Date.now() - 1000 * 60 * 60 * 24),
                     Metadata: {

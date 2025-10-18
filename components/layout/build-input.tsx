@@ -74,18 +74,17 @@ export function BuildInput({ placeholder = "What do you want to build?", classNa
     setLastRequest(input);
     setIsLoading(true);
     try {
-      const res = await fetch("/api/search", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query: input }),
-      });
-      if (!res.ok) throw new Error("Failed to fetch suggestions");
-      const data = await res.json();
-      if (data.suggestions) {
-        setDynamicSuggestions(data.suggestions);
-      }
+      // v2 flow: slugify prompt to id, store prompt in sessionStorage, open /editor/[id]
+      const id = input
+        .toLowerCase()
+        .replace(/[^a-z0-9\s-]/g, '')
+        .trim()
+        .replace(/\s+/g, '-')
+        .slice(0, 48) || `game-${Date.now().toString(36)}`;
+      try { sessionStorage.setItem(`editor-prompt:${id}`, input); } catch {}
+      router.push(`/editor/${id}`);
     } catch (error) {
-      console.error("Error fetching suggestions:", error);
+      console.error("Error starting AI editor:", error);
     } finally {
       setIsLoading(false);
       setInput("");
